@@ -1,34 +1,34 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-enum BuySell {
+enum TransactionType {
   buy, sell,
 }
 
-class NewBuySell {
-  NewBuySell({required this.stockId, required this.price, required this.count, required this.buySell});
+class Transaction {
+  Transaction({required this.stockId, required this.price, required this.count, required this.transactionType});
+
   final String stockId;
   final int price;
   final int count;
-  final BuySell buySell;
+  final TransactionType transactionType;
 }
 
-class NewBuySellEntry extends StatefulWidget {
-  const NewBuySellEntry({super.key, required this.onNewEntry});
+class NewTransactionWidget extends StatefulWidget {
+  const NewTransactionWidget({super.key, required this.onNewTransaction});
 
-  final Function(NewBuySell newBuySell) onNewEntry;
+  final Function(Transaction transaction) onNewTransaction;
 
   @override
-  State<StatefulWidget> createState()  => _NewBuySellEntryState();
+  State<StatefulWidget> createState()  => _NewTransactionWidgetState();
 }
 
-class _NewBuySellEntryState extends State<NewBuySellEntry> {
+class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   final TextEditingController _stockIdController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _countController = TextEditingController();
 
-  void onPress(BuySell buySell) {
-    widget.onNewEntry(NewBuySell(buySell: buySell, count: int.tryParse(_countController.text) ?? 0, price: int.tryParse(_priceController.text) ?? 0, stockId: _stockIdController.text));
+  void onPress(TransactionType transactionType) {
+    widget.onNewTransaction(Transaction(transactionType: transactionType, count: int.tryParse(_countController.text) ?? 0, price: int.tryParse(_priceController.text) ?? 0, stockId: _stockIdController.text));
     clearTextFields();
   }
 
@@ -47,7 +47,6 @@ class _NewBuySellEntryState extends State<NewBuySellEntry> {
 
   @override
   Widget build(BuildContext context) {
-
     return Column(
         children: <Widget>[
           Row(
@@ -103,7 +102,7 @@ class _NewBuySellEntryState extends State<NewBuySellEntry> {
                   style: ButtonStyle(
                     foregroundColor: MaterialStateProperty.all<Color>(Colors.redAccent),
                   ),
-                  onPressed: () { onPress(BuySell.buy); },
+                  onPressed: () { onPress(TransactionType.buy); },
                   child: const Text('매수'),
                 ),
               ),
@@ -112,7 +111,7 @@ class _NewBuySellEntryState extends State<NewBuySellEntry> {
                   style: ButtonStyle(
                     foregroundColor: MaterialStateProperty.all<Color>(Colors.blueAccent),
                   ),
-                  onPressed: () { onPress(BuySell.sell); },
+                  onPressed: () { onPress(TransactionType.sell); },
                   child: const Text('매도'),
                 ),
               ),

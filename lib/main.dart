@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/new_buy_sell.dart';
+import 'package:lonely_flutter/new_transaction_widget.dart';
 
-import 'buy_sell_history.dart';
+import 'transaction_widget.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,16 +34,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-  final _buySellHistoryEntryList = <BuySellHistoryEntry>[];
+  final _transactionList = <TransactionWidget>[];
 
   void _incrementCounter() {
     setState(() {
       _counter++;
-
-      _buySellHistoryEntryList.add(const BuySellHistoryEntry(
-        stockId: "003030",
-        stockName: "종목2",
-      ));
     });
   }
 
@@ -54,18 +49,13 @@ class _MyHomePageState extends State<MyHomePage> {
         child: ListView(
           //mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            NewBuySellEntry(onNewEntry: onNewBuySell),
+            NewTransactionWidget(onNewTransaction: onNewTransaction),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Column(
-              children: _buySellHistoryEntryList,
-            ),
-            const BuySellHistoryEntry(stockId: "123456", stockName: "종목1"),
-            const BuySellHistoryEntry(
-              stockId: "003030",
-              stockName: "종목2",
+              children: _transactionList,
             ),
           ],
         ),
@@ -79,10 +69,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
 
-  onNewBuySell(NewBuySell newBuySell) {
+  onNewTransaction(Transaction transaction) {
     if (kDebugMode) {
-      print('new buy sell entry!');
-      print(newBuySell);
+      print('new transaction entry!');
+      print(transaction);
     }
+
+    setState(() {
+      _transactionList.add(TransactionWidget(transaction: transaction));
+    });
   }
 }
