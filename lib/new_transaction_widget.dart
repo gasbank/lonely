@@ -13,11 +13,21 @@ class Transaction {
       required this.transactionType,
       required this.dateTime});
 
-  final String stockId;
-  final int price;
-  final int count;
-  final TransactionType transactionType;
-  final DateTime dateTime;
+  Transaction.fromMap(Map<String, dynamic> map)
+  {
+    stockId = map['stockId'];
+    price = map['price'];
+    count = map['count'];
+    transactionType = map['transactionType'] == 0 ? TransactionType.buy : TransactionType.sell;
+    dateTime = DateTime.parse(map['dateTime']);
+    earn = map['earn'];
+  }
+
+  late final String stockId;
+  late final int price;
+  late final int count;
+  late final TransactionType transactionType;
+  late final DateTime dateTime;
   int? earn;
 
   Map<String, dynamic> toMap() {

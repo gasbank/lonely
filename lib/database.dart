@@ -32,8 +32,19 @@ CREATE TABLE IF NOT EXISTS transactions
     return database;
   }
 
-  void insert(Map<String, Object?> values) async {
+  static const transactionsTable = 'transactions';
+
+  void insertTransaction(Map<String, Object?> values) async {
     final db = await database;
-    await db.insert('transactions', values);
+    await db.insert(
+      transactionsTable,
+      values,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> queryTransaction() async {
+    final db = await database;
+    return await db.query(transactionsTable);
   }
 }

@@ -7,13 +7,11 @@ import 'package:lonely_flutter/inventory_widget.dart';
 import 'package:lonely_flutter/transaction_history_widget.dart';
 
 void main() async {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
-
-  final LonelyDatabase _database = LonelyDatabase();
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +20,19 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.grey,
       ),
-      home: MyHomePage(title: '고독한 투자자', database: _database,),
+      home: MyHomePage(
+        title: '고독한 투자자',
+        database: LonelyDatabase(),
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title, required this.database});
+  const MyHomePage(
+      {super.key,
+      required this.title,
+      required this.database});
 
   final String title;
   final LonelyDatabase database;
@@ -38,6 +42,25 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  @override void initState() {
+    loadTransactions();
+    super.initState();
+  }
+
+  void loadTransactions() async {
+    final transactions = await widget.database.queryTransaction();
+    final transactionList =
+    transactions.map((e) => Transaction.fromMap(e)).toList();
+
+    if (kDebugMode) {
+      print('${transactionList.length} transaction(s) loaded.');
+    }
+
+    setState(() {
+      _transactionList.addAll(transactionList);
+    });
+  }
+
   final _transactionList = <Transaction>[];
   final _itemList = <Item>[];
   Map<String, Item> _itemMap = {};
@@ -86,12 +109,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if (item != null) {
         transaction.earn = ((transaction.price - item.accumPrice / item.count) *
-            transaction.count)
+                transaction.count)
             .round();
       }
     }
 
-    widget.database.insert(transaction.toMap());
+    widget.database.insertTransaction(transaction.toMap());
 
     setState(() {
       _transactionList.add(transaction);
