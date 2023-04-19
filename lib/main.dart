@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/item_widget.dart';
 import 'package:lonely_flutter/new_transaction_widget.dart';
-
-import 'transaction_widget.dart';
+import 'package:lonely_flutter/inventory_widget.dart';
+import 'package:lonely_flutter/transaction_history_widget.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,14 +34,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  final _transactionList = <TransactionWidget>[];
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+  final _transactionList = <Transaction>[];
+  final _itemList = <Item>[];
 
   @override
   Widget build(BuildContext context) {
@@ -49,34 +44,49 @@ class _MyHomePageState extends State<MyHomePage> {
         child: ListView(
           //mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            InventoryWidget(itemList: _itemList),
             NewTransactionWidget(onNewTransaction: onNewTransaction),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            Column(
-              children: _transactionList,
-            ),
+            FittedBox(child: TransactionHistoryWidget(transactionList: _transactionList)),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: '값을 증가시켜 봅니다~',
-        child: const Icon(Icons.add),
       ),
     );
   }
 
+  int stockSum(String stockId, TransactionType transactionType) {
+    return _transactionList
+        .where((e) => e.stockId == stockId && e.transactionType == transactionType)
+        .map((e) => e.count)
+        .fold(0, (a, b) => a + b);
+  }
 
-  onNewTransaction(Transaction transaction) {
+  bool onNewTransaction(Transaction transaction) {
     if (kDebugMode) {
       print('new transaction entry!');
       print(transaction);
     }
 
+    if (transaction.transactionType == TransactionType.sell) {
+      final buySum = stockSum(transaction.stockId, TransactionType.buy);
+      final sellSum = stockSum(transaction.stockId, TransactionType.sell);
+      if (buySum - sellSum < transaction.count) {
+        showSimpleError('가진 것보다 더 팔 수는 없죠.');
+        return false;
+      }
+    }
+
     setState(() {
-      _transactionList.add(TransactionWidget(transaction: transaction));
+      _transactionList.add(transaction);
     });
+
+    return true;
+  }
+
+  void showSimpleError(String msg) {
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+    ));
   }
 }

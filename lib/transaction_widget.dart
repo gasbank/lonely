@@ -36,7 +36,9 @@ class _TransactionWidgetState extends State<TransactionWidget> {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: <Widget>[
+          Text(widget.transaction.dateTime.toIso8601String().substring(0, 10)),
           Text(
             widget.transaction.transactionType == TransactionType.buy ? '매수' : '매도'
           ),
