@@ -19,6 +19,21 @@ class Transaction {
   final TransactionType transactionType;
   final DateTime dateTime;
   int? earn;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'stockId': stockId,
+      'price': price,
+      'count': count,
+      'transactionType': transactionType == TransactionType.buy
+          ? 0
+          : transactionType == TransactionType.sell
+              ? 1
+              : -1,
+      'dateTime': dateTime.toIso8601String(),
+      'earn': earn,
+    };
+  }
 }
 
 class NewTransactionWidget extends StatefulWidget {

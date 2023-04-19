@@ -1,16 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/database.dart';
 import 'package:lonely_flutter/item_widget.dart';
 import 'package:lonely_flutter/new_transaction_widget.dart';
 import 'package:lonely_flutter/inventory_widget.dart';
 import 'package:lonely_flutter/transaction_history_widget.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final LonelyDatabase _database = LonelyDatabase();
 
   @override
   Widget build(BuildContext context) {
@@ -19,15 +22,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.grey,
       ),
-      home: const MyHomePage(title: '고독한 투자자'),
+      home: MyHomePage(title: '고독한 투자자', database: _database,),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({super.key, required this.title, required this.database});
 
   final String title;
+  final LonelyDatabase database;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -82,10 +86,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if (item != null) {
         transaction.earn = ((transaction.price - item.accumPrice / item.count) *
-                transaction.count)
+            transaction.count)
             .round();
       }
     }
+
+    widget.database.insert(transaction.toMap());
 
     setState(() {
       _transactionList.add(transaction);
