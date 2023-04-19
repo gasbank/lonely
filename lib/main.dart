@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/new_buy_sell.dart';
 
 import 'buy_sell_history.dart';
 
@@ -52,70 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: ListView(
           //mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: const [
-                Flexible(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '종목코드',
-                          contentPadding: EdgeInsets.all(10.0)),
-                    ),
-                  ),
-                ),
-                Flexible(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '단가',
-                          contentPadding: EdgeInsets.all(10.0)),
-                    ),
-                  ),
-                ),
-                Flexible(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '수량',
-                          contentPadding: EdgeInsets.all(10.0)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Flexible(
-                  child: OutlinedButton(
-                    style: ButtonStyle(
-                      foregroundColor: MaterialStateProperty.all<Color>(Colors.redAccent),
-                    ),
-                    onPressed: () {  },
-                    child: const Text('매수'),
-                  ),
-                ),
-                Flexible(
-                  child: OutlinedButton(
-                    style: ButtonStyle(
-                      foregroundColor: MaterialStateProperty.all<Color>(Colors.blueAccent),
-                    ),
-                    onPressed: () {  },
-                    child: const Text('매도'),
-                  ),
-                ),
-              ],
-            ),
+            NewBuySellEntry(onNewEntry: onNewBuySell),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
@@ -137,5 +76,13 @@ class _MyHomePageState extends State<MyHomePage> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+
+  onNewBuySell(NewBuySell newBuySell) {
+    if (kDebugMode) {
+      print('new buy sell entry!');
+      print(newBuySell);
+    }
   }
 }
