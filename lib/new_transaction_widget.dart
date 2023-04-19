@@ -18,6 +18,7 @@ class Transaction {
   final int count;
   final TransactionType transactionType;
   final DateTime dateTime;
+  int? earn;
 }
 
 class NewTransactionWidget extends StatefulWidget {

@@ -17,12 +17,13 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
   Widget build(BuildContext context) {
     final dataRowList = widget.transactionList.reversed
         .map((e) => DataRow(cells: <DataCell>[
-              DataCell(Text(e.dateTime.toIso8601String().substring(0, 10))),
+              DataCell(Text(e.dateTime.toIso8601String().substring(5, 10))),
               DataCell(Text('종목명 ${e.stockId}')),
               DataCell(Text(formatThousands(e.price))),
               DataCell(Text(formatThousands(e.count))),
-              DataCell(
-                  Text(e.transactionType == TransactionType.buy ? '' : '???')),
+              DataCell(Text(e.transactionType == TransactionType.buy
+                  ? ''
+                  : formatThousandsStr(e.earn?.toString() ?? '???'))),
             ]))
         .toList();
 

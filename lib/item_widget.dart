@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:lonely_flutter/transaction_widget.dart';
 
 class Item {
-  Item(this.stockId, this.stockName, this.count, this.avgPrice);
+  Item(this.stockId);
 
   final String stockId;
-  final String stockName;
-  final int count;
-  final int avgPrice;
+  String stockName = '';
+  int count = 0;
+  int avgPrice = 0;
+  int accumPrice = 0;
+  int accumBuyPrice = 0;
+  int accumSellPrice = 0;
+  int accumBuyCount = 0;
+  int accumSellCount = 0;
+  int accumEarn = 0;
 }
 
 class ItemWidget extends StatefulWidget {
