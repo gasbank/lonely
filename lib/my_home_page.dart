@@ -8,9 +8,7 @@ import 'new_transaction_widget.dart';
 import 'transaction_history_widget.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key,
-    required this.title,
-    required this.database});
+  const MyHomePage({super.key, required this.title, required this.database});
 
   final String title;
   final LonelyDatabase database;
@@ -56,7 +54,8 @@ Map<String, Item> createItemMap(List<Transaction> transactionList) {
 class _MyHomePageState extends State<MyHomePage> {
   late Future<List<Transaction>> _transactionList;
 
-  @override void initState() {
+  @override
+  void initState() {
     super.initState();
     _transactionList = loadTransactions();
   }
@@ -98,13 +97,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if (item != null) {
         transaction.earn = ((transaction.price - item.accumPrice / item.count) *
-            transaction.count)
+                transaction.count)
             .round();
       }
     }
 
-    final insertedId = await widget.database.insertTransaction(
-        transaction.toMap());
+    final insertedId =
+        await widget.database.insertTransaction(transaction.toMap());
     transaction.id = insertedId;
 
     final transactionList = await _transactionList;
@@ -116,6 +115,15 @@ class _MyHomePageState extends State<MyHomePage> {
     return true;
   }
 
+  void onRemoveTransaction(Set<int> dbIdSet) async {
+    final count = await widget.database.removeTransaction(dbIdSet.toList());
+    showSimpleError('기록 $count개가 지워졌다~');
+    final transactionList = await _transactionList;
+    setState(() {
+      transactionList.removeWhere((e) => dbIdSet.contains(e.id));
+    });
+  }
+
   void showSimpleError(String msg) {
     ScaffoldMessenger.of(context)
         .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
@@ -123,8 +131,6 @@ class _MyHomePageState extends State<MyHomePage> {
       content: Text(msg),
     ));
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -135,23 +141,41 @@ class _MyHomePageState extends State<MyHomePage> {
           child: ListView(
             //mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              FutureBuilder(future: _transactionList, builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return InventoryWidget(itemMap: createItemMap(snapshot.data!));
-                } else {
-                  return const CircularProgressIndicator();
-                }
-              },),
+              FutureBuilder(
+                future: _transactionList,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return InventoryWidget(
+                        itemMap: createItemMap(snapshot.data!));
+                  } else {
+                    return const CircularProgressIndicator();
+                  }
+                },
+              ),
               NewTransactionWidget(onNewTransaction: onNewTransaction),
-              FutureBuilder(future: _transactionList, builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return FittedBox(
-                      child: TransactionHistoryWidget(
-                          transactionList: snapshot.data!));
-                } else {
-                  return const CircularProgressIndicator();
-                }
-              },),
+              FutureBuilder(
+                future: _transactionList,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return FittedBox(
+                        child: TransactionHistoryWidget(
+                            onRemoveTransaction: onRemoveTransaction,
+                            transactionList: snapshot.data!));
+                  } else {
+                    return const CircularProgressIndicator();
+                  }
+                },
+              ),
+              FutureBuilder(
+                future: _transactionList,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Text('${snapshot.data!.length} transaction(s)');
+                  } else {
+                    return const Text('---');
+                  }
+                },
+              )
             ],
           ),
         ),

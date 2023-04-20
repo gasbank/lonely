@@ -47,4 +47,15 @@ CREATE TABLE IF NOT EXISTS transactions
     final db = await database;
     return await db.query(transactionsTable);
   }
+
+  Future<int> removeTransaction(List<int> dbIdSet) async {
+    if (dbIdSet.isEmpty) {
+      return 0;
+    }
+
+    final db = await database;
+    return await db.delete(transactionsTable,
+        where: 'id IN (${List.filled(dbIdSet.length, '?').join(',')})',
+        whereArgs: dbIdSet);
+  }
 }

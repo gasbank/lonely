@@ -5,9 +5,11 @@ import 'package:lonely_flutter/transaction_widget.dart';
 import 'new_transaction_widget.dart';
 
 class TransactionHistoryWidget extends StatefulWidget {
-  const TransactionHistoryWidget({super.key, required this.transactionList});
+
+  const TransactionHistoryWidget({super.key, required this.transactionList, required this.onRemoveTransaction});
 
   final List<Transaction> transactionList;
+  final void Function(Set<int> dbIdSet) onRemoveTransaction;
 
   @override
   State<StatefulWidget> createState() => _TransactionHistoryState();
@@ -81,7 +83,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context, 'OK');
-                        deleteSelected();
+                        removeSelectedTransaction();
                       },
                       child: const Text('삭제'),
                     ),
@@ -92,9 +94,10 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
     );
   }
 
-  void deleteSelected() {
+  void removeSelectedTransaction() async {
+    widget.onRemoveTransaction(selectedSet.toSet());
+
     setState(() {
-      widget.transactionList.removeWhere((e) => selectedSet.contains(e.id));
       selectedSet.clear();
     });
   }
@@ -111,38 +114,28 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
       dataRowHeight: 30,
       columns: const <DataColumn>[
         DataColumn(
-          label: Expanded(
-            child: Text(
-              '날짜',
-            ),
+          label: Text(
+            '날짜',
           ),
         ),
         DataColumn(
-          label: Expanded(
-            child: Text(
-              '종목명',
-            ),
+          label: Text(
+            '종목명',
           ),
         ),
         DataColumn(
-          label: Expanded(
-            child: Text(
-              '단가',
-            ),
+          label: Text(
+            '단가',
           ),
         ),
         DataColumn(
-          label: Expanded(
-            child: Text(
-              '수량',
-            ),
+          label: Text(
+            '수량',
           ),
         ),
         DataColumn(
-          label: Expanded(
-            child: Text(
-              '수익',
-            ),
+          label: Text(
+            '수익',
           ),
         ),
       ],
