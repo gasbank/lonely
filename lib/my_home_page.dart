@@ -52,12 +52,14 @@ Map<String, Item> createItemMap(List<Transaction> transactionList) {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Future<List<Transaction>> _transactionList;
+  late final Future<List<Transaction>> _transactionList;
+  late final Future<Map<String, Stock>> _stockMap;
 
   @override
   void initState() {
     super.initState();
     _transactionList = loadTransactions();
+    _stockMap = loadStocks();
   }
 
   Future<List<Transaction>> loadTransactions() async {
@@ -68,6 +70,22 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return transactions.map((e) => Transaction.fromMap(e)).toList();
+  }
+
+  Future<Map<String, Stock>> loadStocks() async {
+    final stocks = await widget.database.queryStock();
+
+    if (kDebugMode) {
+      print('${stocks.length} stock(s) loaded from database.');
+    }
+
+    final stockList = stocks.map((e) => Stock.fromMap(e)).toList();
+
+    final m = <String, Stock>{};
+    for (var s in stockList) {
+      m[s.stockId] = s;
+    }
+    return m;
   }
 
   Future<int> stockSum(String stockId, TransactionType transactionType) async {
@@ -91,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
       final buySum = await stockSum(transaction.stockId, TransactionType.buy);
       final sellSum = await stockSum(transaction.stockId, TransactionType.sell);
       if (buySum - sellSum < transaction.count) {
-        showSimpleError('가진 것보다 더 팔 수는 없죠.');
+        showSimpleMessage('가진 것보다 더 팔 수는 없죠.');
         return false;
       }
 
@@ -107,9 +125,25 @@ class _MyHomePageState extends State<MyHomePage> {
     transaction.id = insertedId;
 
     final transactionList = await _transactionList;
+    final stockMap = await _stockMap;
+
+    final krStock = fetchKrStock(transaction.stockId);
+    final krStockValue = await krStock;
+    final stockName = krStockValue?.stockName ?? '';
+    final stockInsertedId = await writeKrStockToDb(krStock, widget.database);
+    if (stockName.isNotEmpty && stockInsertedId != null) {
+      showSimpleMessage('$stockName 종목 기록 성공~~');
+    }
 
     setState(() {
       transactionList.add(transaction);
+
+      if (stockName.isNotEmpty &&
+          krStockValue != null &&
+          stockInsertedId != null) {
+        stockMap[transaction.stockId] = Stock(
+            id: stockInsertedId, stockId: transaction.stockId, name: stockName);
+      }
     });
 
     return true;
@@ -117,14 +151,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void onRemoveTransaction(Set<int> dbIdSet) async {
     final count = await widget.database.removeTransaction(dbIdSet.toList());
-    showSimpleError('기록 $count개가 지워졌다~');
+    showSimpleMessage('기록 $count개가 지워졌다~');
     final transactionList = await _transactionList;
     setState(() {
       transactionList.removeWhere((e) => dbIdSet.contains(e.id));
     });
   }
 
-  void showSimpleError(String msg) {
+  void showSimpleMessage(String msg) {
     ScaffoldMessenger.of(context)
         .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -146,7 +180,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     return InventoryWidget(
-                        itemMap: createItemMap(snapshot.data!));
+                      itemMap: createItemMap(snapshot.data!),
+                      database: widget.database,
+                    );
                   } else {
                     return const CircularProgressIndicator();
                   }
@@ -159,8 +195,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   if (snapshot.hasData) {
                     return FittedBox(
                         child: TransactionHistoryWidget(
-                            onRemoveTransaction: onRemoveTransaction,
-                            transactionList: snapshot.data!));
+                      onRemoveTransaction: onRemoveTransaction,
+                      transactionList: snapshot.data!,
+                      stockMap: _stockMap,
+                    ));
                   } else {
                     return const CircularProgressIndicator();
                   }

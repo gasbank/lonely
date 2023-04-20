@@ -1,25 +1,30 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/database.dart';
 import 'package:lonely_flutter/transaction_widget.dart';
 
 import 'new_transaction_widget.dart';
 
 class TransactionHistoryWidget extends StatefulWidget {
-
-  const TransactionHistoryWidget({super.key, required this.transactionList, required this.onRemoveTransaction});
-
   final List<Transaction> transactionList;
   final void Function(Set<int> dbIdSet) onRemoveTransaction;
+  final Future<Map<String, Stock>> stockMap;
+
+  const TransactionHistoryWidget(
+      {super.key,
+      required this.transactionList,
+      required this.onRemoveTransaction,
+      required this.stockMap});
 
   @override
   State<StatefulWidget> createState() => _TransactionHistoryState();
 }
 
-List<DataCell> _dataCellListFromTransaction(Transaction t) {
+List<DataCell> _dataCellListFromTransaction(Transaction t, String stockName) {
   return <DataCell>[
     DataCell(Text(t.dateTime.toIso8601String().substring(5, 10))),
     DataCell(Text(
-        '${t.transactionType == TransactionType.buy ? '🔸' : '🔹'}종목명 ${t.stockId}')),
+        '${t.transactionType == TransactionType.buy ? '🔸' : '🔹'}$stockName')),
     DataCell(Text(formatThousands(t.price))),
     DataCell(Text(formatThousands(t.count))),
     DataCell(Text(t.transactionType == TransactionType.buy
@@ -39,9 +44,9 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
     ));
   }
 
-  DataRow _dataRowFromTransaction(Transaction e) {
+  DataRow _dataRowFromTransaction(Transaction e, Stock? stock) {
     return DataRow(
-      cells: _dataCellListFromTransaction(e),
+      cells: _dataCellListFromTransaction(e, stock?.name ?? '? ${e.stockId} ?'),
       selected: selectedSet.contains(e.id),
       color: MaterialStateProperty.resolveWith<Color?>(
           (Set<MaterialState> states) {
@@ -104,42 +109,51 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final dataRowList = widget.transactionList.reversed
-        .map((e) => _dataRowFromTransaction(e))
-        .toList();
+    return FutureBuilder(
+      future: widget.stockMap,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final dataRowList = widget.transactionList.reversed
+              .map((e) => _dataRowFromTransaction(e, snapshot.data![e.stockId]))
+              .toList();
 
-    return DataTable(
-      showCheckboxColumn: false,
-      headingRowHeight: 30,
-      dataRowHeight: 30,
-      columns: const <DataColumn>[
-        DataColumn(
-          label: Text(
-            '날짜',
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            '종목명',
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            '단가',
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            '수량',
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            '수익',
-          ),
-        ),
-      ],
-      rows: dataRowList,
+          return DataTable(
+            showCheckboxColumn: false,
+            headingRowHeight: 30,
+            dataRowHeight: 30,
+            columns: const <DataColumn>[
+              DataColumn(
+                label: Text(
+                  '날짜',
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  '종목명',
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  '단가',
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  '수량',
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  '수익',
+                ),
+              ),
+            ],
+            rows: dataRowList,
+          );
+        } else {
+          return const Text('...');
+        }
+      },
     );
   }
 }

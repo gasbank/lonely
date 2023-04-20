@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:lonely_flutter/database.dart';
 import 'transaction_widget.dart';
 
 class Item {
@@ -42,16 +43,30 @@ class KrStock {
   }
 }
 
+Future<int?> writeKrStockToDb(Future<KrStock?> stock, LonelyDatabase database) async {
+  final s = await stock;
+
+  if (s != null &&
+      s.stockName.isNotEmpty &&
+      (await database.queryStockName(s.itemCode)) == null) {
+    return await database.insertStock(
+        Stock(id: 0, stockId: s.itemCode, name: s.stockName).toMap());
+  }
+
+  return null;
+}
+
 class ItemWidget extends StatefulWidget {
-  const ItemWidget({super.key, required this.item});
+  const ItemWidget({super.key, required this.item, required this.database});
 
   final Item item;
+  final LonelyDatabase database;
 
   @override
   State<StatefulWidget> createState() => _ItemWidgetState();
 }
 
-Future<KrStock?> fetchStock(String stockId) async {
+Future<KrStock?> fetchKrStock(String stockId) async {
   final response = await http
       .get(Uri.parse('https://m.stock.naver.com/api/stock/$stockId/basic'));
   if (response.statusCode == 200) {
@@ -64,12 +79,13 @@ Future<KrStock?> fetchStock(String stockId) async {
 }
 
 class _ItemWidgetState extends State<ItemWidget> {
-  late Future<KrStock?> stock;
+  late Future<KrStock?> krStock;
 
   @override
   void initState() {
     super.initState();
-    stock = fetchStock(widget.item.stockId);
+    krStock = fetchKrStock(widget.item.stockId);
+    //writeKrStockToDb(krStock, widget.database);
   }
 
   Widget buildWidget(Item item, KrStock? stock) {
@@ -115,7 +131,7 @@ class _ItemWidgetState extends State<ItemWidget> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: stock,
+      future: krStock,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return buildWidget(widget.item, snapshot.data!);
