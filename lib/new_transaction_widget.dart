@@ -15,6 +15,7 @@ class Transaction {
 
   Transaction.fromMap(Map<String, dynamic> map)
   {
+    id = map['id'];
     stockId = map['stockId'];
     price = map['price'];
     count = map['count'];
@@ -23,6 +24,7 @@ class Transaction {
     earn = map['earn'];
   }
 
+  int? id;
   late final String stockId;
   late final int price;
   late final int count;

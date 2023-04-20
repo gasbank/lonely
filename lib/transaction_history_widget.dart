@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely_flutter/transaction_widget.dart';
 
@@ -12,19 +13,87 @@ class TransactionHistoryWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _TransactionHistoryState();
 }
 
+List<DataCell> _dataCellListFromTransaction(Transaction t) {
+  return <DataCell>[
+    DataCell(Text(t.dateTime.toIso8601String().substring(5, 10))),
+    DataCell(Text(
+        '${t.transactionType == TransactionType.buy ? '🔸' : '🔹'}종목명 ${t.stockId}')),
+    DataCell(Text(formatThousands(t.price))),
+    DataCell(Text(formatThousands(t.count))),
+    DataCell(Text(t.transactionType == TransactionType.buy
+        ? ''
+        : formatThousandsStr(t.earn?.toString() ?? '???'))),
+  ];
+}
+
 class _TransactionHistoryState extends State<TransactionHistoryWidget> {
+  final selectedSet = <int>{};
+
+  DataRow _dataRowFromTransaction(Transaction e) {
+    return DataRow(
+      cells: _dataCellListFromTransaction(e),
+      selected: selectedSet.contains(e.id),
+      color: MaterialStateProperty.resolveWith<Color?>(
+          (Set<MaterialState> states) {
+        if (states.contains(MaterialState.selected)) {
+          return Theme.of(context).colorScheme.primary.withOpacity(0.22);
+        }
+        return null; // Use the default value.
+      }),
+      onSelectChanged: (value) {
+        if (kDebugMode) {
+          print(value);
+        }
+        if (e.id != null) {
+          setState(() {
+            if (value ?? false) {
+              selectedSet.add(e.id!);
+            } else {
+              selectedSet.remove(e.id!);
+            }
+          });
+        }
+      },
+      onLongPress: () {
+        if (selectedSet.isEmpty) {
+          return;
+        }
+
+        showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+                  title: const Text('확인'),
+                  content: Text('선택한 매매 기록 ${selectedSet.length}건을 모두 지울까요?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, 'Cancel'),
+                      child: const Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context, 'OK');
+                        deleteSelected();
+                      },
+                      child: const Text('삭제'),
+                    ),
+                  ],
+                ),
+            barrierDismissible: true);
+      },
+    );
+  }
+
+  void deleteSelected() {
+    setState(() {
+      widget.transactionList.removeWhere((e) => selectedSet.contains(e.id));
+      selectedSet.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final dataRowList = widget.transactionList.reversed
-        .map((e) => DataRow(cells: <DataCell>[
-              DataCell(Text(e.dateTime.toIso8601String().substring(5, 10))),
-              DataCell(Text('${e.transactionType == TransactionType.buy ? '🔸' : '🔹'}종목명 ${e.stockId}')),
-              DataCell(Text(formatThousands(e.price))),
-              DataCell(Text(formatThousands(e.count))),
-              DataCell(Text(e.transactionType == TransactionType.buy
-                  ? ''
-                  : formatThousandsStr(e.earn?.toString() ?? '???'))),
-            ]))
+        .map((e) => _dataRowFromTransaction(e))
         .toList();
 
     return DataTable(
