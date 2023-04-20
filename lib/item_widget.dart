@@ -77,6 +77,7 @@ class _ItemWidgetState extends State<ItemWidget> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               decoration: BoxDecoration(

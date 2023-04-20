@@ -129,28 +129,31 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: ListView(
-          //mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            FutureBuilder(future: _transactionList, builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return InventoryWidget(itemMap: createItemMap(snapshot.data!));
-              } else {
-                return const CircularProgressIndicator();
-              }
-            },),
-            NewTransactionWidget(onNewTransaction: onNewTransaction),
-            FutureBuilder(future: _transactionList, builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return FittedBox(
-                    child: TransactionHistoryWidget(
-                        transactionList: snapshot.data!));
-              } else {
-                return const CircularProgressIndicator();
-              }
-            },),
-          ],
+      body: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Center(
+          child: ListView(
+            //mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              FutureBuilder(future: _transactionList, builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return InventoryWidget(itemMap: createItemMap(snapshot.data!));
+                } else {
+                  return const CircularProgressIndicator();
+                }
+              },),
+              NewTransactionWidget(onNewTransaction: onNewTransaction),
+              FutureBuilder(future: _transactionList, builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return FittedBox(
+                      child: TransactionHistoryWidget(
+                          transactionList: snapshot.data!));
+                } else {
+                  return const CircularProgressIndicator();
+                }
+              },),
+            ],
+          ),
         ),
       ),
     );
