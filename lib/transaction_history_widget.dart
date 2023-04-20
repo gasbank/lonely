@@ -106,6 +106,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
         .toList();
 
     return DataTable(
+      showCheckboxColumn: false,
       headingRowHeight: 30,
       dataRowHeight: 30,
       columns: const <DataColumn>[
