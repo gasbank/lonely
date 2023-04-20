@@ -8,10 +8,9 @@ import 'new_transaction_widget.dart';
 import 'transaction_history_widget.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage(
-      {super.key,
-        required this.title,
-        required this.database});
+  const MyHomePage({super.key,
+    required this.title,
+    required this.database});
 
   final String title;
   final LonelyDatabase database;
@@ -20,36 +19,65 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  final _transactionList = <Transaction>[];
-  final _itemList = <Item>[];
-  Map<String, Item> _itemMap = {};
+Map<String, Item> createItemMap(List<Transaction> transactionList) {
+  final itemMap = <String, Item>{};
 
-  @override void initState() {
-    loadTransactions();
-    super.initState();
-  }
-
-  void loadTransactions() async {
-    final transactions = await widget.database.queryTransaction();
-    final transactionList =
-    transactions.map((e) => Transaction.fromMap(e)).toList();
-
-    if (kDebugMode) {
-      print('${transactionList.length} transaction(s) loaded.');
+  for (var e in transactionList) {
+    if (e.stockId.isEmpty || e.count <= 0 || e.price <= 0) {
+      if (kDebugMode) {
+        print('invalid transaction');
+      }
+      continue;
     }
 
-    setState(() {
-      _transactionList.addAll(transactionList);
-    });
+    final item = itemMap[e.stockId] ?? Item(e.stockId);
+
+    if (e.transactionType == TransactionType.buy) {
+      item.accumPrice += e.count * e.price;
+      item.count += e.count;
+
+      item.accumBuyPrice += e.count * e.price;
+      item.accumBuyCount += e.count;
+    } else if (e.transactionType == TransactionType.sell) {
+      item.accumPrice -= (e.count * (item.accumPrice / item.count)).round();
+      item.count -= e.count;
+
+      item.accumSellPrice += e.count * e.price;
+      item.accumSellCount += e.count;
+      item.accumEarn += e.earn ?? 0;
+    }
+
+    itemMap[e.stockId] = item;
   }
 
-  int stockSum(String stockId, TransactionType transactionType) {
-    return _transactionList
+  return itemMap;
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  late Future<List<Transaction>> _transactionList;
+
+  @override void initState() {
+    super.initState();
+    _transactionList = loadTransactions();
+  }
+
+  Future<List<Transaction>> loadTransactions() async {
+    final transactions = await widget.database.queryTransaction();
+
+    if (kDebugMode) {
+      print('${transactions.length} transaction(s) loaded from database.');
+    }
+
+    return transactions.map((e) => Transaction.fromMap(e)).toList();
+  }
+
+  Future<int> stockSum(String stockId, TransactionType transactionType) async {
+    final sum = (await _transactionList)
         .where(
             (e) => e.stockId == stockId && e.transactionType == transactionType)
         .map((e) => e.count)
         .fold(0, (a, b) => a + b);
+    return sum;
   }
 
   Future<bool> onNewTransaction(Transaction transaction) async {
@@ -58,11 +86,11 @@ class _MyHomePageState extends State<MyHomePage> {
       print(transaction);
     }
 
-    final item = _itemMap[transaction.stockId];
+    final item = (createItemMap(await _transactionList))[transaction.stockId];
 
     if (transaction.transactionType == TransactionType.sell) {
-      final buySum = stockSum(transaction.stockId, TransactionType.buy);
-      final sellSum = stockSum(transaction.stockId, TransactionType.sell);
+      final buySum = await stockSum(transaction.stockId, TransactionType.buy);
+      final sellSum = await stockSum(transaction.stockId, TransactionType.sell);
       if (buySum - sellSum < transaction.count) {
         showSimpleError('가진 것보다 더 팔 수는 없죠.');
         return false;
@@ -75,12 +103,14 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    final insertedId = await widget.database.insertTransaction(transaction.toMap());
+    final insertedId = await widget.database.insertTransaction(
+        transaction.toMap());
     transaction.id = insertedId;
 
+    final transactionList = await _transactionList;
+
     setState(() {
-      _transactionList.add(transaction);
-      _itemMap = createItemMap();
+      transactionList.add(transaction);
     });
 
     return true;
@@ -94,39 +124,7 @@ class _MyHomePageState extends State<MyHomePage> {
     ));
   }
 
-  Map<String, Item> createItemMap() {
-    final newItemMap = <String, Item>{};
 
-    for (var e in _transactionList) {
-      if (e.stockId.isEmpty || e.count <= 0 || e.price <= 0) {
-        if (kDebugMode) {
-          print('invalid transaction');
-        }
-        continue;
-      }
-
-      final item = newItemMap[e.stockId] ?? Item(e.stockId);
-
-      if (e.transactionType == TransactionType.buy) {
-        item.accumPrice += e.count * e.price;
-        item.count += e.count;
-
-        item.accumBuyPrice += e.count * e.price;
-        item.accumBuyCount += e.count;
-      } else if (e.transactionType == TransactionType.sell) {
-        item.accumPrice -= (e.count * (item.accumPrice / item.count)).round();
-        item.count -= e.count;
-
-        item.accumSellPrice += e.count * e.price;
-        item.accumSellCount += e.count;
-        item.accumEarn += e.earn ?? 0;
-      }
-
-      newItemMap[e.stockId] = item;
-    }
-
-    return newItemMap;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,11 +133,23 @@ class _MyHomePageState extends State<MyHomePage> {
         child: ListView(
           //mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            InventoryWidget(itemList: _itemList),
+            FutureBuilder(future: _transactionList, builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return InventoryWidget(itemMap: createItemMap(snapshot.data!));
+              } else {
+                return const CircularProgressIndicator();
+              }
+            },),
             NewTransactionWidget(onNewTransaction: onNewTransaction),
-            FittedBox(
-                child: TransactionHistoryWidget(
-                    transactionList: _transactionList)),
+            FutureBuilder(future: _transactionList, builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return FittedBox(
+                    child: TransactionHistoryWidget(
+                        transactionList: snapshot.data!));
+              } else {
+                return const CircularProgressIndicator();
+              }
+            },),
           ],
         ),
       ),

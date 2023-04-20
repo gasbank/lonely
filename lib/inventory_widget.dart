@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'item_widget.dart';
 
 class InventoryWidget extends StatefulWidget {
-  const InventoryWidget({super.key, required this.itemList});
+  const InventoryWidget({super.key, required this.itemMap});
 
-  final List<Item> itemList;
+  final Map<String, Item> itemMap;
 
   @override
   State<StatefulWidget> createState() => _InventoryWidgetState();
@@ -16,7 +16,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   Widget build(BuildContext context) {
     return Column(
       children:
-          widget.itemList.map((e) => ItemWidget(item: e)).toList(),
+          widget.itemMap.values.map((e) => ItemWidget(item: e)).toList(),
     );
   }
 }
