@@ -51,7 +51,7 @@ class Transaction {
 class NewTransactionWidget extends StatefulWidget {
   const NewTransactionWidget({super.key, required this.onNewTransaction});
 
-  final bool Function(Transaction transaction) onNewTransaction;
+  final Future<bool> Function(Transaction transaction) onNewTransaction;
 
   @override
   State<StatefulWidget> createState() => _NewTransactionWidgetState();
@@ -62,7 +62,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _countController = TextEditingController();
 
-  void onPress(TransactionType transactionType) {
+  void onPress(TransactionType transactionType) async {
     if (_stockIdController.text.isEmpty ||
         _priceController.text.isEmpty ||
         _countController.text.isEmpty) {
@@ -83,7 +83,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       return;
     }
 
-    if (widget.onNewTransaction(Transaction(
+    if (await widget.onNewTransaction(Transaction(
         transactionType: transactionType,
         count: count,
         price: price,

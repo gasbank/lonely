@@ -34,9 +34,9 @@ CREATE TABLE IF NOT EXISTS transactions
 
   static const transactionsTable = 'transactions';
 
-  void insertTransaction(Map<String, Object?> values) async {
+  Future<int> insertTransaction(Map<String, Object?> values) async {
     final db = await database;
-    await db.insert(
+    return await db.insert(
       transactionsTable,
       values,
       conflictAlgorithm: ConflictAlgorithm.replace,

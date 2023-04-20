@@ -91,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
         .fold(0, (a, b) => a + b);
   }
 
-  bool onNewTransaction(Transaction transaction) {
+  Future<bool> onNewTransaction(Transaction transaction) async {
     if (kDebugMode) {
       print('new transaction entry!');
       print(transaction);
@@ -114,7 +114,8 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    widget.database.insertTransaction(transaction.toMap());
+    final insertedId = await widget.database.insertTransaction(transaction.toMap());
+    transaction.id = insertedId;
 
     setState(() {
       _transactionList.add(transaction);

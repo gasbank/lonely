@@ -29,6 +29,14 @@ List<DataCell> _dataCellListFromTransaction(Transaction t) {
 class _TransactionHistoryState extends State<TransactionHistoryWidget> {
   final selectedSet = <int>{};
 
+  void showSimpleError(String msg) {
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+    ));
+  }
+
   DataRow _dataRowFromTransaction(Transaction e) {
     return DataRow(
       cells: _dataCellListFromTransaction(e),
@@ -56,6 +64,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
       },
       onLongPress: () {
         if (selectedSet.isEmpty) {
+          showSimpleError('하나 이상 선택하고 롱 탭하세요.');
           return;
         }
 
