@@ -57,7 +57,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
       }),
       onSelectChanged: (value) {
         if (kDebugMode) {
-          print(value);
+          //print(value);
         }
         if (e.id != null) {
           setState(() {
@@ -110,7 +110,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
   @override
   void initState() {
     if (kDebugMode) {
-      print('initState(): TransactionHistoryWidget');
+      //print('initState(): TransactionHistoryWidget');
     }
     super.initState();
   }
@@ -125,41 +125,43 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
               .map((e) => _dataRowFromTransaction(e, snapshot.data![e.stockId]))
               .toList();
 
-          return DataTable(
-            showCheckboxColumn: false,
-            headingRowHeight: 30,
-            dataRowHeight: 30,
-            columns: const <DataColumn>[
-              DataColumn(
-                label: Text(
-                  '날짜',
+          return FittedBox(
+            child: DataTable(
+              showCheckboxColumn: false,
+              headingRowHeight: 30,
+              dataRowHeight: 30,
+              columns: const <DataColumn>[
+                DataColumn(
+                  label: Text(
+                    '날짜',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '종목명',
+                DataColumn(
+                  label: Text(
+                    '종목명',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '단가',
+                DataColumn(
+                  label: Text(
+                    '단가',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '수량',
+                DataColumn(
+                  label: Text(
+                    '수량',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '수익',
+                DataColumn(
+                  label: Text(
+                    '수익',
+                  ),
                 ),
-              ),
-            ],
-            rows: dataRowList,
+              ],
+              rows: dataRowList,
+            ),
           );
         } else {
-          return const Text(' ');
+          return const Text('...');
         }
       },
     );

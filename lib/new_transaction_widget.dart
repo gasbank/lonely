@@ -120,7 +120,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   @override
   void initState() {
     if (kDebugMode) {
-      print('initState(): NewTransactionWidget');
+      //print('initState(): NewTransactionWidget');
     }
     super.initState();
   }
@@ -142,6 +142,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
                     hintText: '종목코드',
                     contentPadding: EdgeInsets.all(10.0)),
                 autocorrect: false,
+                textInputAction: TextInputAction.next,
               ),
             ),
           ),
@@ -155,6 +156,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
                     border: OutlineInputBorder(),
                     hintText: '단가',
                     contentPadding: EdgeInsets.all(10.0)),
+                textInputAction: TextInputAction.next,
               ),
             ),
           ),
@@ -168,6 +170,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
                     border: OutlineInputBorder(),
                     hintText: '수량',
                     contentPadding: EdgeInsets.all(10.0)),
+                textInputAction: TextInputAction.done,
               ),
             ),
           ),

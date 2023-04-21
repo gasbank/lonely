@@ -18,9 +18,9 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.grey,
       ),
       home: MyHomePage(
-        title: '고독한 투자자',
         database: LonelyDatabase(),
       ),
     );
   }
+
 }

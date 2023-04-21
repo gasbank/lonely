@@ -45,7 +45,7 @@ class KrStock {
   }
 
   factory KrStock.fromJsonD(Map<String, dynamic> json) {
-    final closePrice = json['tradePrice'];
+    final closePrice = (json['tradePrice'] as double).round();
     return KrStock(
         itemCode: (json['symbolCode'] as String).substring(1),
         stockName: json['name'],
@@ -122,7 +122,7 @@ class _ItemWidgetState extends State<ItemWidget> {
   @override
   void initState() {
     if (kDebugMode) {
-      print('initState(): ItemWidget');
+      //print('initState(): ItemWidget');
     }
     super.initState();
   }

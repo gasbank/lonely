@@ -23,7 +23,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   @override
   void initState() {
     if (kDebugMode) {
-      print('initState(): InventoryWidget');
+      //print('initState(): InventoryWidget');
     }
     super.initState();
   }
@@ -32,11 +32,14 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: widget.itemMap.values
-          .map((e) => ItemWidget(
-                item: e,
-                database: widget.database,
-                stockMap: widget.stockMap,
-              ))
+          .map((e) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: ItemWidget(
+                  item: e,
+                  database: widget.database,
+                  stockMap: widget.stockMap,
+                ),
+          ))
           .toList(),
     );
   }
