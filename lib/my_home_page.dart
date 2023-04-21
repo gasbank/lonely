@@ -17,7 +17,8 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-Map<String, Item> createItemMap(List<Transaction> transactionList) {
+Map<String, Item> createItemMap(
+    List<Transaction> transactionList, Map<String, Stock> stockMap) {
   final itemMap = <String, Item>{};
 
   for (var e in transactionList) {
@@ -29,6 +30,10 @@ Map<String, Item> createItemMap(List<Transaction> transactionList) {
     }
 
     final item = itemMap[e.stockId] ?? Item(e.stockId);
+
+    if (item.stockName.isEmpty) {
+      item.stockName = stockMap[e.stockId]?.name ?? '';
+    }
 
     if (e.transactionType == TransactionType.buy) {
       item.accumPrice += e.count * e.price;
@@ -47,7 +52,6 @@ Map<String, Item> createItemMap(List<Transaction> transactionList) {
 
     itemMap[e.stockId] = item;
   }
-
   return itemMap;
 }
 
@@ -103,7 +107,8 @@ class _MyHomePageState extends State<MyHomePage> {
       print(transaction);
     }
 
-    final item = (createItemMap(await _transactionList))[transaction.stockId];
+    final item = (createItemMap(
+        await _transactionList, await _stockMap))[transaction.stockId];
 
     if (transaction.transactionType == TransactionType.sell) {
       final buySum = await stockSum(transaction.stockId, TransactionType.buy);
@@ -127,7 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final transactionList = await _transactionList;
     final stockMap = await _stockMap;
 
-    final krStock = fetchKrStock(transaction.stockId);
+    final krStock = fetchKrStockN(transaction.stockId);
     final krStockValue = await krStock;
     final stockName = krStockValue?.stockName ?? '';
     final stockInsertedId = await writeKrStockToDb(krStock, widget.database);
@@ -168,6 +173,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final inventoryBuilder = FutureBuilder(
+      future: _stockMap,
+      builder: (context, stockMap) {
+        return FutureBuilder(
+          future: _transactionList,
+          builder: (context, transactionList) {
+            if (stockMap.hasData && transactionList.hasData) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: InventoryWidget(
+                  itemMap: createItemMap(transactionList.data!, stockMap.data!),
+                  database: widget.database,
+                  stockMap: _stockMap,
+                ),
+              );
+            } else {
+              return const CircularProgressIndicator();
+            }
+          },
+        );
+      },
+    );
+
     return Scaffold(
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
@@ -175,19 +203,7 @@ class _MyHomePageState extends State<MyHomePage> {
           child: ListView(
             //mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              FutureBuilder(
-                future: _transactionList,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return InventoryWidget(
-                      itemMap: createItemMap(snapshot.data!),
-                      database: widget.database,
-                    );
-                  } else {
-                    return const CircularProgressIndicator();
-                  }
-                },
-              ),
+              inventoryBuilder,
               NewTransactionWidget(onNewTransaction: onNewTransaction),
               FutureBuilder(
                 future: _transactionList,

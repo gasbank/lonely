@@ -4,11 +4,15 @@ import 'database.dart';
 import 'item_widget.dart';
 
 class InventoryWidget extends StatefulWidget {
-  const InventoryWidget(
-      {super.key, required this.itemMap, required this.database});
-
   final Map<String, Item> itemMap;
   final LonelyDatabase database;
+  final Future<Map<String, Stock>> stockMap;
+
+  const InventoryWidget(
+      {super.key,
+      required this.itemMap,
+      required this.database,
+      required this.stockMap});
 
   @override
   State<StatefulWidget> createState() => _InventoryWidgetState();
@@ -22,6 +26,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
           .map((e) => ItemWidget(
                 item: e,
                 database: widget.database,
+                stockMap: widget.stockMap,
               ))
           .toList(),
     );
