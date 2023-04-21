@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'database.dart';
@@ -19,6 +20,14 @@ class InventoryWidget extends StatefulWidget {
 }
 
 class _InventoryWidgetState extends State<InventoryWidget> {
+  @override
+  void initState() {
+    if (kDebugMode) {
+      print('initState(): InventoryWidget');
+    }
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(

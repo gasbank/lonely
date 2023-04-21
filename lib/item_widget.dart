@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lonely_flutter/database.dart';
-import 'transaction_widget.dart';
+import 'number_format_util.dart';
 
 class Item {
   Item(this.stockId);
@@ -94,6 +95,10 @@ Future<KrStock?> fetchKrStockN(String stockId) async {
 }
 
 Future<KrStock?> fetchKrStockD(String stockId) async {
+  if (stockId.length != 6) {
+    return null;
+  }
+
   final response = await http.get(
       Uri.parse(
           'https://finance.daum.net/api/quotes/A$stockId?changeStatistics=true&chartSlideImage=true&isMobile=true'),
@@ -114,13 +119,12 @@ Future<KrStock?> fetchKrStockD(String stockId) async {
 }
 
 class _ItemWidgetState extends State<ItemWidget> {
-  late Future<KrStock?> krStock;
-
   @override
   void initState() {
+    if (kDebugMode) {
+      print('initState(): ItemWidget');
+    }
     super.initState();
-    krStock = fetchKrStockN(widget.item.stockId);
-    //writeKrStockToDb(krStock, widget.database);
   }
 
   Widget buildWidget(Item item, KrStock? stock, Map<String, Stock>? stockMap) {
@@ -182,7 +186,7 @@ class _ItemWidgetState extends State<ItemWidget> {
       future: widget.stockMap,
       builder: (context, stockMap) {
         return StreamBuilder(
-          stream: Stream.periodic(const Duration(seconds: 5)).asyncMap((e) =>
+          stream: onceAndPeriodic(const Duration(seconds: 5), () =>
               Random().nextInt(2) == 0
                   ? fetchKrStockD(widget.item.stockId)
                   : fetchKrStockN(widget.item.stockId)),
@@ -193,4 +197,9 @@ class _ItemWidgetState extends State<ItemWidget> {
       },
     );
   }
+}
+
+Stream<T> onceAndPeriodic<T>(Duration period, Future<T> Function() computation) async* {
+  yield await computation();
+  yield* Stream.periodic(period).asyncMap((e) => computation());
 }

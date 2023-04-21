@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 enum TransactionType {
@@ -114,6 +115,14 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
     _priceController.dispose();
     _countController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    if (kDebugMode) {
+      print('initState(): NewTransactionWidget');
+    }
+    super.initState();
   }
 
   @override

@@ -62,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     if (kDebugMode) {
-      print('init');
+      print('initState(): MyHomePage');
     }
     super.initState();
     _transactionList = loadTransactions();
@@ -76,11 +76,11 @@ class _MyHomePageState extends State<MyHomePage> {
               onNewTransaction: onNewTransaction,
               onRemoveTransaction: onRemoveTransaction)),
       const Text(
-        'Index 1: Business',
+        '매매 기록',
         style: optionStyle,
       ),
       const Text(
-        'Index 2: School',
+        '계좌 목록',
         style: optionStyle,
       ),
     ];
@@ -207,21 +207,23 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-        child: _widgetOptions.elementAt(_selectedIndex),
+        child: Center(child: _widgetOptions.elementAt(_selectedIndex)),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.business),
-            label: 'Business',
+            icon: Icon(Icons.feed),
+            label: 'Transactions',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.school),
-            label: 'School',
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Accounts',
           ),
         ],
         currentIndex: _selectedIndex,

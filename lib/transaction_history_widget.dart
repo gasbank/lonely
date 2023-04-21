@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely_flutter/database.dart';
-import 'package:lonely_flutter/transaction_widget.dart';
+import 'package:lonely_flutter/number_format_util.dart';
 
 import 'new_transaction_widget.dart';
 
@@ -108,6 +108,14 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
   }
 
   @override
+  void initState() {
+    if (kDebugMode) {
+      print('initState(): TransactionHistoryWidget');
+    }
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: widget.stockMap,
@@ -151,7 +159,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
             rows: dataRowList,
           );
         } else {
-          return const Text('...');
+          return const Text(' ');
         }
       },
     );

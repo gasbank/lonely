@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'database.dart';
@@ -32,6 +33,14 @@ class PortfolioWidget extends StatefulWidget {
 
 class _NewPortfolioState extends State<PortfolioWidget> {
   @override
+  void initState() {
+    if (kDebugMode) {
+      print('initState(): PortfolioWidget');
+    }
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final inventoryBuilder = FutureBuilder(
       future: widget.portfolioContext.stockMap,
@@ -49,48 +58,46 @@ class _NewPortfolioState extends State<PortfolioWidget> {
                 ),
               );
             } else {
-              return const CircularProgressIndicator();
+              return const Text(' ');
             }
           },
         );
       },
     );
 
-    return Center(
-      child: ListView(
-        //mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          inventoryBuilder,
-          NewTransactionWidget(
-              onNewTransaction: widget.portfolioContext.onNewTransaction),
-          FutureBuilder(
-            future: widget.portfolioContext.transactionList,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return FittedBox(
-                    child: TransactionHistoryWidget(
-                  onRemoveTransaction:
-                      widget.portfolioContext.onRemoveTransaction,
-                  transactionList: snapshot.data!,
-                  stockMap: widget.portfolioContext.stockMap,
-                ));
-              } else {
-                return const CircularProgressIndicator();
-              }
-            },
-          ),
-          FutureBuilder(
-            future: widget.portfolioContext.transactionList,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Text('${snapshot.data!.length} transaction(s)');
-              } else {
-                return const Text('---');
-              }
-            },
-          )
-        ],
-      ),
+    return ListView(
+      //mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        inventoryBuilder,
+        NewTransactionWidget(
+            onNewTransaction: widget.portfolioContext.onNewTransaction),
+        FutureBuilder(
+          future: widget.portfolioContext.transactionList,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return FittedBox(
+                  child: TransactionHistoryWidget(
+                onRemoveTransaction:
+                    widget.portfolioContext.onRemoveTransaction,
+                transactionList: snapshot.data!,
+                stockMap: widget.portfolioContext.stockMap,
+              ));
+            } else {
+              return const Text(' ');
+            }
+          },
+        ),
+        FutureBuilder(
+          future: widget.portfolioContext.transactionList,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text('${snapshot.data!.length} transaction(s)');
+            } else {
+              return const Text('---');
+            }
+          },
+        )
+      ],
     );
   }
 }
