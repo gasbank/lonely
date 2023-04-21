@@ -51,21 +51,24 @@ class Transaction {
 }
 
 class NewTransactionWidget extends StatefulWidget {
-  const NewTransactionWidget({super.key, required this.onNewTransaction});
-
   final Future<bool> Function(Transaction transaction) onNewTransaction;
+  final TextEditingController stockIdController;
+
+  const NewTransactionWidget(
+      {super.key,
+      required this.onNewTransaction,
+      required this.stockIdController});
 
   @override
   State<StatefulWidget> createState() => _NewTransactionWidgetState();
 }
 
 class _NewTransactionWidgetState extends State<NewTransactionWidget> {
-  final TextEditingController _stockIdController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _countController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _countController = TextEditingController();
 
   void onPress(TransactionType transactionType) async {
-    if (_stockIdController.text.isEmpty ||
+    if (widget.stockIdController.text.isEmpty ||
         _priceController.text.isEmpty ||
         _countController.text.isEmpty) {
       showSimpleError('칸을 모두 채우세요.');
@@ -89,7 +92,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         transactionType: transactionType,
         count: count,
         price: price,
-        stockId: _stockIdController.text,
+        stockId: widget.stockIdController.text,
         dateTime: DateTime.now()))) {
       clearTextFields();
     }
@@ -104,14 +107,13 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   }
 
   void clearTextFields() {
-    _stockIdController.text = '';
+    widget.stockIdController.text = '';
     _priceController.text = '';
     _countController.text = '';
   }
 
   @override
   void dispose() {
-    _stockIdController.dispose();
     _priceController.dispose();
     _countController.dispose();
     super.dispose();
@@ -135,7 +137,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: TextField(
-                controller: _stockIdController,
+                controller: widget.stockIdController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                     border: OutlineInputBorder(),

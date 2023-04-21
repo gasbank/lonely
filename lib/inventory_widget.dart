@@ -8,12 +8,14 @@ class InventoryWidget extends StatefulWidget {
   final Map<String, Item> itemMap;
   final LonelyDatabase database;
   final Future<Map<String, Stock>> stockMap;
+  final Function(String) onStockSelected;
 
   const InventoryWidget(
       {super.key,
       required this.itemMap,
       required this.database,
-      required this.stockMap});
+      required this.stockMap,
+      required this.onStockSelected});
 
   @override
   State<StatefulWidget> createState() => _InventoryWidgetState();
@@ -32,14 +34,19 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: widget.itemMap.values
-          .map((e) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: ItemWidget(
-                  item: e,
-                  database: widget.database,
-                  stockMap: widget.stockMap,
+          .where((e) => e.count > 0)
+          .map((e) => InkWell(
+                onTap: () => widget.onStockSelected(e.stockId),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                  child: ItemWidget(
+                    item: e,
+                    database: widget.database,
+                    stockMap: widget.stockMap,
+                  ),
                 ),
-          ))
+              ))
           .toList(),
     );
   }

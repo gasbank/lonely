@@ -157,8 +157,8 @@ class _ItemWidgetState extends State<ItemWidget> {
             ),
             Text(
                 stock != null
-                    ? '${formatThousands(stock.closePrice * widget.item.count)}원'
-                    : '---원',
+                    ? '${formatThousands(stock.closePrice * widget.item.count)}'
+                    : '---',
                 style: DefaultTextStyle.of(context)
                     .style
                     .apply(fontSizeFactor: 1.8)),
@@ -172,8 +172,8 @@ class _ItemWidgetState extends State<ItemWidget> {
                 ? '${formatThousandsStr(((stock.closePrice / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
                 : '---%'),
             Text(stock != null
-                ? '${formatThousandsStr(item.diffPrice(stock.closePrice).toStringAsFixed(0))}원'
-                : '---원'),
+                ? '${formatThousandsStr(item.diffPrice(stock.closePrice).toStringAsFixed(0))}'
+                : '---'),
           ],
         ),
       ],

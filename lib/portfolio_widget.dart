@@ -57,6 +57,7 @@ class PortfolioWidget extends StatefulWidget {
 class _NewPortfolioState extends State<PortfolioWidget> {
   late final Future<List<Transaction>> _transactionList;
   late final Future<Map<String, Stock>> _stockMap;
+  final _stockIdController = TextEditingController();
 
   @override
   void initState() {
@@ -123,13 +124,13 @@ class _NewPortfolioState extends State<PortfolioWidget> {
 
       if (item != null) {
         transaction.earn = ((transaction.price - item.accumPrice / item.count) *
-            transaction.count)
+                transaction.count)
             .round();
       }
     }
 
     final insertedId =
-    await widget.database.insertTransaction(transaction.toMap());
+        await widget.database.insertTransaction(transaction.toMap());
     transaction.id = insertedId;
 
     final transactionList = await _transactionList;
@@ -183,13 +184,17 @@ class _NewPortfolioState extends State<PortfolioWidget> {
           future: _transactionList,
           builder: (context, transactionList) {
             if (stockMap.hasData && transactionList.hasData) {
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: InventoryWidget(
-                  itemMap: createItemMap(transactionList.data!, stockMap.data!),
-                  database: widget.database,
-                  stockMap: _stockMap,
-                ),
+              return InventoryWidget(
+                itemMap: createItemMap(transactionList.data!, stockMap.data!),
+                database: widget.database,
+                stockMap: _stockMap,
+                onStockSelected: (selectedStockId) {
+                  if (_stockIdController.text == selectedStockId) {
+                    _stockIdController.text = '';
+                  } else {
+                    _stockIdController.text = selectedStockId;
+                  }
+                },
               );
             } else {
               return const Text('...');
@@ -204,14 +209,15 @@ class _NewPortfolioState extends State<PortfolioWidget> {
       children: <Widget>[
         inventoryBuilder,
         NewTransactionWidget(
-            onNewTransaction: onNewTransaction),
+          onNewTransaction: onNewTransaction,
+          stockIdController: _stockIdController,
+        ),
         FutureBuilder(
           future: _transactionList,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               return TransactionHistoryWidget(
-                onRemoveTransaction:
-                onRemoveTransaction,
+                onRemoveTransaction: onRemoveTransaction,
                 transactionList: snapshot.data!,
                 stockMap: _stockMap,
               );
