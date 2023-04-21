@@ -7,7 +7,7 @@ import 'new_transaction_widget.dart';
 
 class TransactionHistoryWidget extends StatefulWidget {
   final List<Transaction> transactionList;
-  final void Function(Set<int> dbIdSet) onRemoveTransaction;
+  final Function(Set<int> dbIdSet) onRemoveTransaction;
   final Future<Map<String, Stock>> stockMap;
 
   const TransactionHistoryWidget(

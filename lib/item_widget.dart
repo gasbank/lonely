@@ -29,13 +29,14 @@ class KrStock {
   final String stockName;
   final int closePrice;
 
-  KrStock({required this.itemCode,
-    required this.stockName,
-    required this.closePrice});
+  KrStock(
+      {required this.itemCode,
+      required this.stockName,
+      required this.closePrice});
 
   factory KrStock.fromJsonN(Map<String, dynamic> json) {
     final closePrice =
-    int.tryParse((json['closePrice'] as String).replaceAll(',', ''))!;
+        int.tryParse((json['closePrice'] as String).replaceAll(',', ''))!;
     return KrStock(
         itemCode: json['itemCode'],
         stockName: json['stockName'],
@@ -51,8 +52,8 @@ class KrStock {
   }
 }
 
-Future<int?> writeKrStockToDb(Future<KrStock?> stock,
-    LonelyDatabase database) async {
+Future<int?> writeKrStockToDb(
+    Future<KrStock?> stock, LonelyDatabase database) async {
   final s = await stock;
 
   if (s != null &&
@@ -70,10 +71,11 @@ class ItemWidget extends StatefulWidget {
   final LonelyDatabase database;
   final Future<Map<String, Stock>> stockMap;
 
-  const ItemWidget({super.key,
-    required this.item,
-    required this.database,
-    required this.stockMap});
+  const ItemWidget(
+      {super.key,
+      required this.item,
+      required this.database,
+      required this.stockMap});
 
   @override
   State<StatefulWidget> createState() => _ItemWidgetState();
@@ -128,23 +130,32 @@ class _ItemWidgetState extends State<ItemWidget> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Colors.grey,
-                  ),
-                  borderRadius: BorderRadius.circular(4)),
-              child: Text(
-                  '${item.stockId} ${stock?.stockName ?? stockMap?[item.stockId]?.name ??
-                      '---'} ${formatThousands(widget.item.count)}주'),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      borderRadius: BorderRadius.circular(4)),
+                  child: Text(
+                      '${stock?.stockName ?? stockMap?[item.stockId]?.name ?? '---'} ${formatThousands(widget.item.count)}주'),
+                ),
+                const SizedBox(
+                  width: 4,
+                ),
+                Text(item.stockId,
+                    style: DefaultTextStyle.of(context)
+                        .style
+                        .apply(color: Theme.of(context).colorScheme.primary)),
+              ],
             ),
             Text(
                 stock != null
-                    ? '${formatThousands(
-                    stock.closePrice * widget.item.count)}원'
+                    ? '${formatThousands(stock.closePrice * widget.item.count)}원'
                     : '---원',
-                style: DefaultTextStyle
-                    .of(context)
+                style: DefaultTextStyle.of(context)
                     .style
                     .apply(fontSizeFactor: 1.8)),
           ],
@@ -154,13 +165,10 @@ class _ItemWidgetState extends State<ItemWidget> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(stock != null
-                ? '${formatThousandsStr(
-                ((stock.closePrice / item.avgPrice() - 1) * 100)
-                    .toStringAsFixed(2))}%'
+                ? '${formatThousandsStr(((stock.closePrice / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
                 : '---%'),
             Text(stock != null
-                ? '${formatThousandsStr(
-                item.diffPrice(stock.closePrice).toStringAsFixed(0))}원'
+                ? '${formatThousandsStr(item.diffPrice(stock.closePrice).toStringAsFixed(0))}원'
                 : '---원'),
           ],
         ),
@@ -175,9 +183,9 @@ class _ItemWidgetState extends State<ItemWidget> {
       builder: (context, stockMap) {
         return StreamBuilder(
           stream: Stream.periodic(const Duration(seconds: 5)).asyncMap((e) =>
-          Random().nextInt(2) == 0
-              ? fetchKrStockD(widget.item.stockId)
-              : fetchKrStockN(widget.item.stockId)),
+              Random().nextInt(2) == 0
+                  ? fetchKrStockD(widget.item.stockId)
+                  : fetchKrStockN(widget.item.stockId)),
           builder: (context, krStock) {
             return buildWidget(widget.item, krStock.data, stockMap.data);
           },
