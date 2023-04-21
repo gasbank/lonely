@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/portfolio_widget.dart';
 
 import 'database.dart';
-import 'inventory_widget.dart';
 import 'item_widget.dart';
 import 'new_transaction_widget.dart';
-import 'transaction_history_widget.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title, required this.database});
@@ -58,12 +57,33 @@ Map<String, Item> createItemMap(
 class _MyHomePageState extends State<MyHomePage> {
   late final Future<List<Transaction>> _transactionList;
   late final Future<Map<String, Stock>> _stockMap;
+  late final List<Widget> _widgetOptions;
 
   @override
   void initState() {
+    if (kDebugMode) {
+      print('init');
+    }
     super.initState();
     _transactionList = loadTransactions();
     _stockMap = loadStocks();
+    _widgetOptions = <Widget>[
+      PortfolioWidget(
+          portfolioContext: PortfolioContext(
+              database: widget.database,
+              transactionList: _transactionList,
+              stockMap: _stockMap,
+              onNewTransaction: onNewTransaction,
+              onRemoveTransaction: onRemoveTransaction)),
+      const Text(
+        'Index 1: Business',
+        style: optionStyle,
+      ),
+      const Text(
+        'Index 2: School',
+        style: optionStyle,
+      ),
+    ];
   }
 
   Future<List<Transaction>> loadTransactions() async {
@@ -174,21 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
   static const TextStyle optionStyle =
-  TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
-  static const List<Widget> _widgetOptions = <Widget>[
-    Text(
-      'Index 0: Home',
-      style: optionStyle,
-    ),
-    Text(
-      'Index 1: Business',
-      style: optionStyle,
-    ),
-    Text(
-      'Index 2: School',
-      style: optionStyle,
-    ),
-  ];
+      TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
 
   void _onItemTapped(int index) {
     setState(() {
@@ -198,66 +204,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final inventoryBuilder = FutureBuilder(
-      future: _stockMap,
-      builder: (context, stockMap) {
-        return FutureBuilder(
-          future: _transactionList,
-          builder: (context, transactionList) {
-            if (stockMap.hasData && transactionList.hasData) {
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: InventoryWidget(
-                  itemMap: createItemMap(transactionList.data!, stockMap.data!),
-                  database: widget.database,
-                  stockMap: _stockMap,
-                ),
-              );
-            } else {
-              return const CircularProgressIndicator();
-            }
-          },
-        );
-      },
-    );
-
     return Scaffold(
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-        child: Center(
-          child: ListView(
-            //mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              inventoryBuilder,
-              NewTransactionWidget(onNewTransaction: onNewTransaction),
-              FutureBuilder(
-                future: _transactionList,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return FittedBox(
-                        child: TransactionHistoryWidget(
-                      onRemoveTransaction: onRemoveTransaction,
-                      transactionList: snapshot.data!,
-                      stockMap: _stockMap,
-                    ));
-                  } else {
-                    return const CircularProgressIndicator();
-                  }
-                },
-              ),
-              FutureBuilder(
-                future: _transactionList,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return Text('${snapshot.data!.length} transaction(s)');
-                  } else {
-                    return const Text('---');
-                  }
-                },
-              )
-            ],
-          ),
-        ),
+        child: _widgetOptions.elementAt(_selectedIndex),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
