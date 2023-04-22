@@ -33,7 +33,7 @@ dependencies:
   sqflite:
   path:
   http: ^0.13.5
-
+  provider:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

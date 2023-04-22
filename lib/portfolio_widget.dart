@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/lonely_model.dart';
+import 'package:provider/provider.dart';
 
 import 'database.dart';
 import 'inventory_widget.dart';
@@ -155,7 +157,7 @@ class _NewPortfolioState extends State<PortfolioWidget> {
           krStockValue != null &&
           stockInsertedId != null) {
         stockMap[transaction.stockId] = Stock(
-            id: stockInsertedId, stockId: transaction.stockId, name: stockName);
+            id: stockInsertedId, stockId: transaction.stockId, name: stockName, closePrice: krStockValue.closePrice);
       }
     });
 
@@ -210,7 +212,7 @@ class _NewPortfolioState extends State<PortfolioWidget> {
 
     return ListView(
       //mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
+      children: [
         inventoryBuilder,
         NewTransactionWidget(
           onNewTransaction: onNewTransaction,

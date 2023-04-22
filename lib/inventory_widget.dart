@@ -17,7 +17,7 @@ class InventoryWidget extends StatefulWidget {
       required this.stockMap,
       required this.onStockSelected}) {
     if (kDebugMode) {
-      print('InventoryWidget()');
+      //print('InventoryWidget()');
     }
   }
 

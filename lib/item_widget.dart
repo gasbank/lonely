@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lonely_flutter/database.dart';
+import 'package:provider/provider.dart';
+import 'lonely_model.dart';
 import 'number_format_util.dart';
 
 class Item {
@@ -61,7 +65,7 @@ Future<int?> writeKrStockToDb(
       s.stockName.isNotEmpty &&
       (await database.queryStockName(s.itemCode)) == null) {
     return await database.insertStock(
-        Stock(id: 0, stockId: s.itemCode, name: s.stockName).toMap());
+        Stock(id: 0, stockId: s.itemCode, name: s.stockName, closePrice: s.closePrice).toMap());
   }
 
   return null;
@@ -71,7 +75,6 @@ class ItemWidget extends StatefulWidget {
   final Item item;
   final LonelyDatabase database;
   final Future<Map<String, Stock>> stockMap;
-  late final Stream _fetchStream;
 
   ItemWidget(
       {super.key,
@@ -79,13 +82,8 @@ class ItemWidget extends StatefulWidget {
       required this.database,
       required this.stockMap}) {
     if (kDebugMode) {
-      print('ItemWidget()');
+      //print('ItemWidget()');
     }
-    _fetchStream = onceAndPeriodic(
-        const Duration(seconds: 5),
-        () => Random().nextInt(2) == 0
-            ? fetchKrStockD(item.stockId)
-            : fetchKrStockN(item.stockId));
   }
 
   @override
@@ -93,14 +91,25 @@ class ItemWidget extends StatefulWidget {
 }
 
 Future<KrStock?> fetchKrStockN(String stockId) async {
-  final response = await http
-      .get(Uri.parse('https://m.stock.naver.com/api/stock/$stockId/basic'));
-  if (response.statusCode == 200) {
-    return KrStock.fromJsonN(jsonDecode(response.body));
-  } else if ((response.statusCode == 409)) {
+  if (stockId.length != 6) {
     return null;
-  } else {
-    throw Exception('failed to http get');
+  }
+
+  try {
+    final response = await http
+        .get(Uri.parse('https://m.stock.naver.com/api/stock/$stockId/basic'));
+    if (response.statusCode == 200) {
+      return KrStock.fromJsonN(jsonDecode(response.body));
+    } else if ((response.statusCode == 409)) {
+      return null;
+    } else {
+      throw Exception('failed to http get');
+    }
+  } on SocketException catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
+    return null;
   }
 }
 
@@ -109,27 +118,61 @@ Future<KrStock?> fetchKrStockD(String stockId) async {
     return null;
   }
 
-  final response = await http.get(
-      Uri.parse(
-          'https://finance.daum.net/api/quotes/A$stockId?changeStatistics=true&chartSlideImage=true&isMobile=true'),
-      headers: {
-        'referer': 'https://m.finance.daum.net/',
-      });
-  if (response.statusCode == 200) {
-    return KrStock.fromJsonD(jsonDecode(response.body));
-  } else if ((response.statusCode == 409)) {
-    // Conflict
+  try {
+    final response = await http.get(
+        Uri.parse(
+            'https://finance.daum.net/api/quotes/A$stockId?changeStatistics=true&chartSlideImage=true&isMobile=true'),
+        headers: {
+          'referer': 'https://m.finance.daum.net/',
+        });
+    if (response.statusCode == 200) {
+      return KrStock.fromJsonD(jsonDecode(response.body));
+    } else if ((response.statusCode == 409)) {
+      // Conflict
+      return null;
+    } else if ((response.statusCode == 502)) {
+      // Bad Gateway
+      return null;
+    } else {
+      throw Exception('failed to http get');
+    }
+  } on SocketException catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
     return null;
-  } else if ((response.statusCode == 502)) {
-    // Bad Gateway
-    return null;
-  } else {
-    throw Exception('failed to http get');
   }
 }
 
 class _ItemWidgetState extends State<ItemWidget> {
-  Widget buildWidget(Item item, KrStock? stock, Map<String, Stock>? stockMap) {
+  late final Stream<KrStock?> _stockStream;
+  late final LonelyModel _model;
+
+  @override void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    _model = context.read<LonelyModel>();
+
+    _stockStream = onceAndPeriodic(const Duration(seconds: 5), () {
+      final fetchFuture = Random().nextInt(2) == 0
+          ? fetchKrStockD(widget.item.stockId)
+          : fetchKrStockN(widget.item.stockId);
+      saveToModel(fetchFuture);
+      return fetchFuture;
+    });
+  }
+
+  void saveToModel(Future<KrStock?> fetchFuture) async {
+    final krStock = await fetchFuture;
+    if (krStock != null) {
+      _model.setStock(Stock(id: 0, stockId: krStock.itemCode, name: krStock.stockName, closePrice: krStock.closePrice));
+    }
+  }
+
+  Widget buildWidget(Item item, LonelyModel model) {
+    final stock = model.stocks[item.stockId];
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -146,7 +189,7 @@ class _ItemWidgetState extends State<ItemWidget> {
                       ),
                       borderRadius: BorderRadius.circular(4)),
                   child: Text(
-                      '${stock?.stockName ?? stockMap?[item.stockId]?.name ?? '---'} ${formatThousands(widget.item.count)}주'),
+                      '${stock?.name ?? '---'} ${formatThousands(widget.item.count)}주'),
                 ),
                 const SizedBox(
                   width: 4,
@@ -158,7 +201,7 @@ class _ItemWidgetState extends State<ItemWidget> {
               ],
             ),
             Text(
-                stock != null
+            stock != null
                     ? formatThousands(stock.closePrice * widget.item.count)
                     : '---',
                 style: DefaultTextStyle.of(context)
@@ -185,16 +228,15 @@ class _ItemWidgetState extends State<ItemWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: widget.stockMap,
-      builder: (context, stockMap) {
-        return StreamBuilder(
-          stream: widget._fetchStream,
-          builder: (context, krStock) {
-            return buildWidget(widget.item, krStock.data, stockMap.data);
+    return StreamBuilder<KrStock?>(
+      stream: _stockStream,
+      builder: (_, __) {
+        return Consumer<LonelyModel>(
+          builder: (context, lonelyModel, child) {
+            return buildWidget(widget.item, lonelyModel);
           },
         );
-      },
+      }
     );
   }
 }

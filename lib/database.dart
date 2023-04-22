@@ -9,11 +9,12 @@ class Stock {
   final int id;
   final String stockId;
   final String name;
+  final int closePrice;
 
-  const Stock({required this.id, required this.stockId, required this.name});
+  Stock({required this.id, required this.stockId, required this.name, required this.closePrice});
 
   factory Stock.fromMap(Map<String, dynamic> map) {
-    return Stock(id: map['id'], stockId: map['stockId'], name: map['name']);
+    return Stock(id: map['id'], stockId: map['stockId'], name: map['name'], closePrice: 0);
   }
 
   Map<String, dynamic> toMap() {
