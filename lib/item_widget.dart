@@ -149,7 +149,6 @@ class _ItemWidgetState extends State<ItemWidget> {
   late final LonelyModel _model;
 
   @override void initState() {
-    // TODO: implement initState
     super.initState();
 
     _model = context.read<LonelyModel>();
@@ -243,6 +242,6 @@ class _ItemWidgetState extends State<ItemWidget> {
 
 Stream<T> onceAndPeriodic<T>(
     Duration period, Future<T> Function() computation) async* {
-  //yield await computation();
+  yield await computation();
   yield* Stream.periodic(period).asyncMap((e) => computation());
 }

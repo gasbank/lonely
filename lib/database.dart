@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 
 const transactionsTable = 'transactions';
 const stocksTable = 'stocks';
+const accountsTable = 'accounts';
 
 class Stock {
   final int id;
@@ -25,7 +26,7 @@ class Stock {
   }
 }
 
-void _createTransactionsTableV1(Batch batch) {
+void _createTransactionsTableV2(Batch batch) {
   batch.execute('''
 CREATE TABLE IF NOT EXISTS $transactionsTable
 (
@@ -35,9 +36,14 @@ CREATE TABLE IF NOT EXISTS $transactionsTable
   count           INTEGER NOT NULL,
   transactionType INTEGER NOT NULL,
   dateTime        DATETIME,
-  earn            INTEGER
+  earn            INTEGER,
+  accountId       INTEGER,
 );
 ''');
+}
+
+void _updateTransactionsTableV1toV2(Batch batch) {
+  batch.execute('ALTER TABLE $transactionsTable ADD accountId INTEGER');
 }
 
 void _createStocksTableV1(Batch batch) {
@@ -51,24 +57,40 @@ CREATE TABLE IF NOT EXISTS $stocksTable
 ''');
 }
 
+void _createAccountsTableV1(Batch batch) {
+  batch.execute('''
+CREATE TABLE IF NOT EXISTS $accountsTable
+(
+  id              INTEGER PRIMARY KEY,
+  name            TEXT    NOT NULL
+);
+''');
+}
+
 Future<Database> _initDatabase() async {
   WidgetsFlutterBinding.ensureInitialized();
   final database = openDatabase(
     join(await getDatabasesPath(), 'lonely.db'),
     onCreate: (db, version) async {
       final batch = db.batch();
-      _createTransactionsTableV1(batch);
+      _createTransactionsTableV2(batch);
       _createStocksTableV1(batch);
+      _createAccountsTableV1(batch);
       await batch.commit();
     },
     onUpgrade: (db, oldVersion, newVersion) async {
       final batch = db.batch();
       if (oldVersion == 1) {
         _createStocksTableV1(batch);
+        oldVersion++;
+      }
+      if (oldVersion == 2) {
+        _createAccountsTableV1(batch);
+        _updateTransactionsTableV1toV2(batch);
       }
       await batch.commit();
     },
-    version: 2,
+    version: 3,
   );
   return database;
 }

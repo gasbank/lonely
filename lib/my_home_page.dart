@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/account_list_widget.dart';
 import 'package:lonely_flutter/lonely_model.dart';
 import 'package:lonely_flutter/portfolio_widget.dart';
 import 'package:provider/provider.dart';
@@ -31,13 +32,9 @@ class _MyHomePageState extends State<MyHomePage> {
         '매매 기록',
         style: optionStyle,
       ),
-      const Text(
-        '계좌 목록',
-        style: optionStyle,
-      ),
+      AccountListWidget(),
     ];
   }
-
 
   static const TextStyle optionStyle =
       TextStyle(fontSize: 30, fontWeight: FontWeight.bold);

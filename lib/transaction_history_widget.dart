@@ -130,7 +130,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
               showCheckboxColumn: false,
               headingRowHeight: 30,
               dataRowHeight: 30,
-              columns: const <DataColumn>[
+              columns: const [
                 DataColumn(
                   label: Text(
                     '날짜',
