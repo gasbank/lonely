@@ -71,12 +71,22 @@ class ItemWidget extends StatefulWidget {
   final Item item;
   final LonelyDatabase database;
   final Future<Map<String, Stock>> stockMap;
+  late final Stream _fetchStream;
 
-  const ItemWidget(
+  ItemWidget(
       {super.key,
       required this.item,
       required this.database,
-      required this.stockMap});
+      required this.stockMap}) {
+    if (kDebugMode) {
+      print('ItemWidget()');
+    }
+    _fetchStream = onceAndPeriodic(
+        const Duration(seconds: 5),
+        () => Random().nextInt(2) == 0
+            ? fetchKrStockD(item.stockId)
+            : fetchKrStockN(item.stockId));
+  }
 
   @override
   State<StatefulWidget> createState() => _ItemWidgetState();
@@ -119,14 +129,6 @@ Future<KrStock?> fetchKrStockD(String stockId) async {
 }
 
 class _ItemWidgetState extends State<ItemWidget> {
-  @override
-  void initState() {
-    if (kDebugMode) {
-      //print('initState(): ItemWidget');
-    }
-    super.initState();
-  }
-
   Widget buildWidget(Item item, KrStock? stock, Map<String, Stock>? stockMap) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -157,7 +159,7 @@ class _ItemWidgetState extends State<ItemWidget> {
             ),
             Text(
                 stock != null
-                    ? '${formatThousands(stock.closePrice * widget.item.count)}'
+                    ? formatThousands(stock.closePrice * widget.item.count)
                     : '---',
                 style: DefaultTextStyle.of(context)
                     .style
@@ -172,7 +174,8 @@ class _ItemWidgetState extends State<ItemWidget> {
                 ? '${formatThousandsStr(((stock.closePrice / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
                 : '---%'),
             Text(stock != null
-                ? '${formatThousandsStr(item.diffPrice(stock.closePrice).toStringAsFixed(0))}'
+                ? formatThousandsStr(
+                    item.diffPrice(stock.closePrice).toStringAsFixed(0))
                 : '---'),
           ],
         ),
@@ -186,10 +189,7 @@ class _ItemWidgetState extends State<ItemWidget> {
       future: widget.stockMap,
       builder: (context, stockMap) {
         return StreamBuilder(
-          stream: onceAndPeriodic(const Duration(seconds: 5), () =>
-              Random().nextInt(2) == 0
-                  ? fetchKrStockD(widget.item.stockId)
-                  : fetchKrStockN(widget.item.stockId)),
+          stream: widget._fetchStream,
           builder: (context, krStock) {
             return buildWidget(widget.item, krStock.data, stockMap.data);
           },
@@ -199,7 +199,8 @@ class _ItemWidgetState extends State<ItemWidget> {
   }
 }
 
-Stream<T> onceAndPeriodic<T>(Duration period, Future<T> Function() computation) async* {
-  yield await computation();
+Stream<T> onceAndPeriodic<T>(
+    Duration period, Future<T> Function() computation) async* {
+  //yield await computation();
   yield* Stream.periodic(period).asyncMap((e) => computation());
 }

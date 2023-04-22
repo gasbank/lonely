@@ -10,12 +10,16 @@ class InventoryWidget extends StatefulWidget {
   final Future<Map<String, Stock>> stockMap;
   final Function(String) onStockSelected;
 
-  const InventoryWidget(
+  InventoryWidget(
       {super.key,
       required this.itemMap,
       required this.database,
       required this.stockMap,
-      required this.onStockSelected});
+      required this.onStockSelected}) {
+    if (kDebugMode) {
+      print('InventoryWidget()');
+    }
+  }
 
   @override
   State<StatefulWidget> createState() => _InventoryWidgetState();

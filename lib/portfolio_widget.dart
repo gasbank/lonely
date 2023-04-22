@@ -46,7 +46,11 @@ Map<String, Item> createItemMap(
 }
 
 class PortfolioWidget extends StatefulWidget {
-  const PortfolioWidget({super.key, required this.database});
+  PortfolioWidget({super.key, required this.database}) {
+    if (kDebugMode) {
+      print('PortfolioWidget()');
+    }
+  }
 
   final LonelyDatabase database;
 
