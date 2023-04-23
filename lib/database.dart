@@ -110,6 +110,10 @@ class LonelyDatabase {
     return _insert(stocksTable, values);
   }
 
+  Future<int> insertAccount(Map<String, Object?> values) async {
+    return _insert(accountsTable, values);
+  }
+
   Future<String?> queryStockName(String stockId) async {
     final db = await database;
     final result = await db.query(stocksTable,
@@ -137,6 +141,11 @@ class LonelyDatabase {
   Future<List<Map<String, dynamic>>> queryStock() async {
     final db = await database;
     return await db.query(stocksTable);
+  }
+
+  Future<List<Map<String, dynamic>>> queryAccount() async {
+    final db = await database;
+    return await db.query(accountsTable);
   }
 
   Future<int> removeTransaction(List<int> dbIdSet) async {

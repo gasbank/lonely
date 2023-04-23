@@ -110,6 +110,11 @@ Future<KrStock?> fetchKrStockN(String stockId) async {
       print(e);
     }
     return null;
+  } on http.ClientException catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
+    return null;
   }
 }
 
@@ -137,6 +142,11 @@ Future<KrStock?> fetchKrStockD(String stockId) async {
       throw Exception('failed to http get');
     }
   } on SocketException catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
+    return null;
+  } on http.ClientException catch (e) {
     if (kDebugMode) {
       print(e);
     }
