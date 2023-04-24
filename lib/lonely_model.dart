@@ -37,6 +37,7 @@ class LonelyModel extends ChangeNotifier {
 
   LonelyModel() {
     _loadAccounts();
+    _loadStocks();
   }
 
   void setStock(Stock stock) {
@@ -100,7 +101,7 @@ class LonelyModel extends ChangeNotifier {
   }
 
   void _loadAccounts() async {
-    final accounts = await _db.queryAccount();
+    final accounts = await _db.queryAccounts();
 
     if (kDebugMode) {
       print('${accounts.length} account(s) loaded from database.');
@@ -108,6 +109,20 @@ class LonelyModel extends ChangeNotifier {
 
     _accounts.clear();
     _accounts.addAll(accounts.map((e) => Account.fromMap(e)));
+    notifyListeners();
+  }
+
+  void _loadStocks() async {
+    final stocks = await _db.queryStocks();
+
+    if (kDebugMode) {
+      print('${stocks.length} stocks(s) loaded from database.');
+    }
+
+    _stocks.clear();
+    for (var stock in stocks.map((e) => Stock.fromMap(e))) {
+      _stocks[stock.stockId] = stock;
+    }
     notifyListeners();
   }
 

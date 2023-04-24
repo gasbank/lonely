@@ -161,12 +161,12 @@ class LonelyDatabase {
     return await db.query(transactionsTable);
   }
 
-  Future<List<Map<String, dynamic>>> queryStock() async {
+  Future<List<Map<String, dynamic>>> queryStocks() async {
     final db = await database;
     return await db.query(stocksTable);
   }
 
-  Future<List<Map<String, dynamic>>> queryAccount() async {
+  Future<List<Map<String, dynamic>>> queryAccounts() async {
     final db = await database;
     return await db.query(accountsTable);
   }

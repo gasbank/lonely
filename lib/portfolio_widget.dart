@@ -87,7 +87,7 @@ class _NewPortfolioState extends State<PortfolioWidget> {
   }
 
   Future<Map<String, Stock>> loadStocks() async {
-    final stocks = await widget.database.queryStock();
+    final stocks = await widget.database.queryStocks();
 
     if (kDebugMode) {
       print('${stocks.length} stock(s) loaded from database.');
@@ -99,6 +99,7 @@ class _NewPortfolioState extends State<PortfolioWidget> {
     for (var s in stockList) {
       m[s.stockId] = s;
     }
+
     return m;
   }
 
