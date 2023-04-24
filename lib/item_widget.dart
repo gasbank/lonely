@@ -49,7 +49,8 @@ class KrStock {
   }
 
   factory KrStock.fromJsonD(Map<String, dynamic> json) {
-    final closePrice = (json['tradePrice'] as double).round();
+    // tradePrice: 1000.0일 때도 있고 1000일 때도 있더라~
+    final closePrice = json['tradePrice'].toDouble().round();
     return KrStock(
         itemCode: (json['symbolCode'] as String).substring(1),
         stockName: json['name'],

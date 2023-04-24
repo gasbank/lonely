@@ -133,49 +133,10 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Flexible(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: TextField(
-                controller: widget.stockIdController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: '종목코드',
-                    contentPadding: EdgeInsets.all(10.0)),
-                autocorrect: false,
-                textInputAction: TextInputAction.next,
-              ),
-            ),
-          ),
-          Flexible(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: TextField(
-                controller: _priceController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: '단가',
-                    contentPadding: EdgeInsets.all(10.0)),
-                textInputAction: TextInputAction.next,
-              ),
-            ),
-          ),
-          Flexible(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: TextField(
-                controller: _countController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: '수량',
-                    contentPadding: EdgeInsets.all(10.0)),
-                textInputAction: TextInputAction.done,
-              ),
-            ),
-          ),
+          buildTextField(
+              "종목코드", widget.stockIdController, TextInputAction.next),
+          buildTextField("단가", _priceController, TextInputAction.next),
+          buildTextField("수량", _countController, TextInputAction.done),
         ],
       ),
       Row(
@@ -207,5 +168,24 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         ],
       ),
     ]);
+  }
+
+  Flexible buildTextField(String? hintText, TextEditingController? controller,
+      TextInputAction action) {
+    return Flexible(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        child: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              hintText: hintText,
+              contentPadding: const EdgeInsets.all(10.0)),
+          autocorrect: false,
+          textInputAction: action,
+        ),
+      ),
+    );
   }
 }
