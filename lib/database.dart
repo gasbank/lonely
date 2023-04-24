@@ -12,10 +12,18 @@ class Stock {
   final String name;
   final int closePrice;
 
-  Stock({required this.id, required this.stockId, required this.name, required this.closePrice});
+  Stock(
+      {required this.id,
+      required this.stockId,
+      required this.name,
+      required this.closePrice});
 
   factory Stock.fromMap(Map<String, dynamic> map) {
-    return Stock(id: map['id'], stockId: map['stockId'], name: map['name'], closePrice: 0);
+    return Stock(
+        id: map['id'],
+        stockId: map['stockId'],
+        name: map['name'],
+        closePrice: 0);
   }
 
   Map<String, dynamic> toMap() {
@@ -114,6 +122,10 @@ class LonelyDatabase {
     return _insert(accountsTable, values);
   }
 
+  Future<int> updateAccount(Map<String, Object?> values) async {
+    return _update(accountsTable, values);
+  }
+
   Future<String?> queryStockName(String stockId) async {
     final db = await database;
     final result = await db.query(stocksTable,
@@ -129,6 +141,17 @@ class LonelyDatabase {
     return await db.insert(
       tableName,
       values,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<int> _update(String tableName, Map<String, Object?> values) async {
+    final db = await database;
+    return await db.update(
+      tableName,
+      values,
+      where: 'id = ?',
+      whereArgs: [values['id']],
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }

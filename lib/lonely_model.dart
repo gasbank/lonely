@@ -4,13 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:lonely_flutter/database.dart';
 
 class Account {
-  final int id;
+  int? id;
   final String name;
 
-  Account({required this.id, required this.name});
+  Account({required this.name, this.id});
 
   factory Account.empty() {
-    return Account(id: 0, name: '');
+    return Account(id: null, name: '');
   }
 
   factory Account.fromMap(Map<String, dynamic> map) {
@@ -48,19 +48,55 @@ class LonelyModel extends ChangeNotifier {
     return _stocks[stockId];
   }
 
-  void addAccount(String name) {
-    final account = Account(id: 0, name: name);
+  Future<int?> addAccount(String name, {int? updateDbId}) async {
+    if (_isDuplicatedAccountName(name)) {
+      return null;
+    }
+
+    final account = Account(name: name);
+    account.id = await _addAccountToDb(account);
     _accounts.add(account);
     notifyListeners();
 
-    _addAccountToDb(account);
+    return account.id;
   }
 
-  void _addAccountToDb(Account account) async {
+  bool _isDuplicatedAccountName(String name) {
+    final account = _accounts.singleWhere((e) => e.name == name, orElse: Account.empty);
+    return account.id != null && account.id! > 0;
+  }
+
+  Future<int> updateAccount(int updateDbId, String name) async {
+    if (_isDuplicatedAccountName(name)) {
+      return 0;
+    }
+
+    if (updateDbId <= 0) {
+      return 0;
+    }
+
+    _accounts.removeWhere((e) => e.id == updateDbId);
+    final updatedAccount = Account(id: updateDbId, name: name);
+    _accounts.add(updatedAccount);
+    notifyListeners();
+
+    return _updateAccountToDb(updatedAccount);
+  }
+
+  Future<int> _addAccountToDb(Account account) async {
     final insertedId = await _db.insertAccount(account.toMap());
     if (kDebugMode) {
       print('New account DB ID: $insertedId');
     }
+    return insertedId;
+  }
+
+  Future<int> _updateAccountToDb(Account account) async {
+    final updateCount = await _db.updateAccount(account.toMap());
+    if (kDebugMode) {
+      print('Updated account DB raw count: $updateCount');
+    }
+    return updateCount;
   }
 
   void _loadAccounts() async {
@@ -81,6 +117,6 @@ class LonelyModel extends ChangeNotifier {
     }
 
     return _accounts.singleWhere((e) => e.id == accountId,
-        orElse: () => Account.empty());
+        orElse: Account.empty);
   }
 }

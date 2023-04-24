@@ -3,22 +3,46 @@ import 'package:provider/provider.dart';
 
 import 'lonely_model.dart';
 
-DataRow createAccountRow(Account account) {
-  return DataRow(cells: [
-    DataCell(Text(account.name)),
-    const DataCell(Text('---')),
-    const DataCell(Text('---')),
-    const DataCell(Text('---')),
-  ]);
-}
-
-class AccountListWidget extends StatelessWidget {
-  final _accountNameController = TextEditingController();
-
+class AccountListWidget extends StatefulWidget {
   AccountListWidget({super.key});
 
   @override
+  State<AccountListWidget> createState() => _AccountListWidgetState();
+}
+
+class _AccountListWidgetState extends State<AccountListWidget> {
+  final _accountNameController = TextEditingController();
+  final _selectedSet = <int>{};
+
+  DataRow _createAccountRow(Account account, Set<int> selectedSet) {
+    return DataRow(
+      cells: [
+        DataCell(Text(account.name)),
+        const DataCell(Text('---')),
+        const DataCell(Text('---')),
+        const DataCell(Text('---')),
+      ],
+      onSelectChanged: (selected) {
+        setState(() {
+          if (selected ?? false) {
+            selectedSet.clear();
+            selectedSet.add(account.id!);
+            _accountNameController.text = account.name;
+          } else {
+            selectedSet.remove(account.id);
+            _accountNameController.text = '';
+          }
+        });
+      },
+      selected: selectedSet.contains(account.id),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final model = context.read<LonelyModel>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     return ListView(
       children: [
         Column(
@@ -41,24 +65,7 @@ class AccountListWidget extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: OutlinedButton(
-                    style: ButtonStyle(
-                      foregroundColor:
-                          MaterialStateProperty.all<Color>(Colors.redAccent),
-                    ),
-                    onPressed: () {
-                      if (_accountNameController.text.isNotEmpty) {
-                        context
-                            .read<LonelyModel>()
-                            .addAccount(_accountNameController.text);
-                        _accountNameController.text = '';
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('계좌명을 입력하세요~')));
-                      }
-                    },
-                    child: const Text('추가'),
-                  ),
+                  child: _buildAddOrUpdateButton(model, scaffoldMessenger),
                 ),
               ],
             ),
@@ -68,6 +75,7 @@ class AccountListWidget extends StatelessWidget {
                   child: DataTable(
                       headingRowHeight: 40,
                       dataRowHeight: 40,
+                      showCheckboxColumn: false,
                       columns: const [
                         DataColumn(label: Text('계좌명')),
                         DataColumn(label: Text('종목 수')),
@@ -75,7 +83,8 @@ class AccountListWidget extends StatelessWidget {
                         DataColumn(label: Text('평가액')),
                       ],
                       rows: model.accounts
-                          .map((e) => createAccountRow(e))
+                          .sortedBy((e) => e.id ?? 0)
+                          .map((e) => _createAccountRow(e, _selectedSet))
                           .toList()),
                 );
               },
@@ -85,4 +94,39 @@ class AccountListWidget extends StatelessWidget {
       ],
     );
   }
+
+  OutlinedButton _buildAddOrUpdateButton(
+      LonelyModel model, ScaffoldMessengerState scaffoldMessenger) {
+    return OutlinedButton(
+      style: ButtonStyle(
+        foregroundColor: MaterialStateProperty.all<Color>(Colors.redAccent),
+      ),
+      onPressed: () async {
+        if (_accountNameController.text.isNotEmpty) {
+          final updateDbId =
+              _selectedSet.isNotEmpty ? _selectedSet.first : null;
+
+          if (updateDbId != null) {
+            await model.updateAccount(updateDbId, _accountNameController.text);
+          } else {
+            if ((await model.addAccount(_accountNameController.text))! > 0) {
+              _accountNameController.text = '';
+            } else {
+              scaffoldMessenger
+                  .showSnackBar(const SnackBar(content: Text('겹치는 계좌명입니다.')));
+            }
+          }
+        } else {
+          scaffoldMessenger
+              .showSnackBar(const SnackBar(content: Text('계좌명을 입력하세요~')));
+        }
+      },
+      child: _selectedSet.isEmpty ? const Text('추가') : const Text('변경'),
+    );
+  }
+}
+
+extension MyIterable<E> on Iterable<E> {
+  Iterable<E> sortedBy(Comparable Function(E e) key) =>
+      toList()..sort((a, b) => key(a).compareTo(key(b)));
 }

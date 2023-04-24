@@ -26,7 +26,12 @@ List<DataCell> _dataCellListFromTransaction(
     Transaction t, String stockName, String accountName) {
   return <DataCell>[
     DataCell(Text(t.dateTime.toIso8601String().substring(5, 10))),
-    DataCell(Text(accountName)),
+    DataCell(ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 40),
+        child: Text(
+          accountName,
+          overflow: TextOverflow.ellipsis,
+        ))),
     DataCell(Text(
         '${t.transactionType == TransactionType.buy ? '🔸' : '🔹'}$stockName')),
     DataCell(Text(formatThousands(t.price))),
@@ -135,6 +140,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
             showCheckboxColumn: false,
             headingRowHeight: 30,
             dataRowHeight: 30,
+            columnSpacing: 30,
             columns: const [
               DataColumn(
                 label: Text(
