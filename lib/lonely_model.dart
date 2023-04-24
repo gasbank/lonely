@@ -9,6 +9,10 @@ class Account {
 
   Account({required this.id, required this.name});
 
+  factory Account.empty() {
+    return Account(id: 0, name: '');
+  }
+
   factory Account.fromMap(Map<String, dynamic> map) {
     return Account(id: map['id'], name: map['name']);
   }
@@ -22,9 +26,11 @@ class Account {
 
 class LonelyModel extends ChangeNotifier {
   final _stocks = <String, Stock>{};
+
   Map<String, Stock> get stocks => UnmodifiableMapView(_stocks);
 
   final _accounts = <Account>[];
+
   List<Account> get accounts => UnmodifiableListView(_accounts);
 
   final _db = LonelyDatabase();
@@ -36,6 +42,10 @@ class LonelyModel extends ChangeNotifier {
   void setStock(Stock stock) {
     _stocks[stock.stockId] = stock;
     notifyListeners();
+  }
+
+  Stock? getStock(String stockId) {
+    return _stocks[stockId];
   }
 
   void addAccount(String name) {
@@ -63,5 +73,14 @@ class LonelyModel extends ChangeNotifier {
     _accounts.clear();
     _accounts.addAll(accounts.map((e) => Account.fromMap(e)));
     notifyListeners();
+  }
+
+  Account getAccount(int? accountId) {
+    if (accountId == null) {
+      return Account.empty();
+    }
+
+    return _accounts.singleWhere((e) => e.id == accountId,
+        orElse: () => Account.empty());
   }
 }

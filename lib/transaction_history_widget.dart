@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely_flutter/database.dart';
 import 'package:lonely_flutter/number_format_util.dart';
+import 'package:provider/provider.dart';
 
+import 'lonely_model.dart';
 import 'new_transaction_widget.dart';
 
 class TransactionHistoryWidget extends StatefulWidget {
@@ -20,9 +22,11 @@ class TransactionHistoryWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _TransactionHistoryState();
 }
 
-List<DataCell> _dataCellListFromTransaction(Transaction t, String stockName) {
+List<DataCell> _dataCellListFromTransaction(
+    Transaction t, String stockName, String accountName) {
   return <DataCell>[
     DataCell(Text(t.dateTime.toIso8601String().substring(5, 10))),
+    DataCell(Text(accountName)),
     DataCell(Text(
         '${t.transactionType == TransactionType.buy ? '🔸' : '🔹'}$stockName')),
     DataCell(Text(formatThousands(t.price))),
@@ -44,9 +48,11 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
     ));
   }
 
-  DataRow _dataRowFromTransaction(Transaction e, Stock? stock) {
+  DataRow _dataRowFromTransaction(
+      Transaction e, Stock? stock, Account? account) {
     return DataRow(
-      cells: _dataCellListFromTransaction(e, stock?.name ?? '? ${e.stockId} ?'),
+      cells: _dataCellListFromTransaction(
+          e, stock?.name ?? '? ${e.stockId} ?', account?.name ?? ''),
       selected: selectedSet.contains(e.id),
       color: MaterialStateProperty.resolveWith<Color?>(
           (Set<MaterialState> states) {
@@ -117,52 +123,53 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: widget.stockMap,
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final dataRowList = widget.transactionList.reversed
-              .map((e) => _dataRowFromTransaction(e, snapshot.data![e.stockId]))
-              .toList();
+    return Consumer<LonelyModel>(
+      builder: (context, model, child) {
+        final dataRowList = widget.transactionList.reversed
+            .map((e) => _dataRowFromTransaction(
+                e, model.getStock(e.stockId), model.getAccount(e.accountId)))
+            .toList();
 
-          return FittedBox(
-            child: DataTable(
-              showCheckboxColumn: false,
-              headingRowHeight: 30,
-              dataRowHeight: 30,
-              columns: const [
-                DataColumn(
-                  label: Text(
-                    '날짜',
-                  ),
+        return FittedBox(
+          child: DataTable(
+            showCheckboxColumn: false,
+            headingRowHeight: 30,
+            dataRowHeight: 30,
+            columns: const [
+              DataColumn(
+                label: Text(
+                  '날짜',
                 ),
-                DataColumn(
-                  label: Text(
-                    '종목명',
-                  ),
+              ),
+              DataColumn(
+                label: Text(
+                  '계좌',
                 ),
-                DataColumn(
-                  label: Text(
-                    '단가',
-                  ),
+              ),
+              DataColumn(
+                label: Text(
+                  '종목명',
                 ),
-                DataColumn(
-                  label: Text(
-                    '수량',
-                  ),
+              ),
+              DataColumn(
+                label: Text(
+                  '단가',
                 ),
-                DataColumn(
-                  label: Text(
-                    '수익',
-                  ),
+              ),
+              DataColumn(
+                label: Text(
+                  '수량',
                 ),
-              ],
-              rows: dataRowList,
-            ),
-          );
-        } else {
-          return const Text('...');
-        }
+              ),
+              DataColumn(
+                label: Text(
+                  '수익',
+                ),
+              ),
+            ],
+            rows: dataRowList,
+          ),
+        );
       },
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/lonely_model.dart';
+import 'package:provider/provider.dart';
 
 enum TransactionType {
   buy,
@@ -12,7 +14,8 @@ class Transaction {
       required this.price,
       required this.count,
       required this.transactionType,
-      required this.dateTime});
+      required this.dateTime,
+      required this.accountId});
 
   Transaction.fromMap(Map<String, dynamic> map) {
     id = map['id'];
@@ -24,6 +27,7 @@ class Transaction {
         : TransactionType.sell;
     dateTime = DateTime.parse(map['dateTime']);
     earn = map['earn'];
+    accountId = map['accountId'];
   }
 
   int? id;
@@ -33,6 +37,7 @@ class Transaction {
   late final TransactionType transactionType;
   late final DateTime dateTime;
   int? earn;
+  int? accountId;
 
   Map<String, dynamic> toMap() {
     return {
@@ -46,6 +51,7 @@ class Transaction {
               : -1,
       'dateTime': dateTime.toIso8601String(),
       'earn': earn,
+      'accountId': accountId,
     };
   }
 }
@@ -66,11 +72,13 @@ class NewTransactionWidget extends StatefulWidget {
 class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   final _priceController = TextEditingController();
   final _countController = TextEditingController();
+  int? _accountId;
 
   void onPress(TransactionType transactionType) async {
     if (widget.stockIdController.text.isEmpty ||
         _priceController.text.isEmpty ||
-        _countController.text.isEmpty) {
+        _countController.text.isEmpty ||
+        _accountId == null) {
       showSimpleError('칸을 모두 채우세요.');
       return;
     }
@@ -93,7 +101,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         count: count,
         price: price,
         stockId: widget.stockIdController.text,
-        dateTime: DateTime.now()))) {
+        dateTime: DateTime.now(),
+        accountId: _accountId))) {
       clearTextFields();
     }
   }
@@ -133,6 +142,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          buildAccountDropdown(),
           buildTextField(
               "종목코드", widget.stockIdController, TextInputAction.next),
           buildTextField("단가", _priceController, TextInputAction.next),
@@ -170,6 +180,30 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
     ]);
   }
 
+  Consumer<Object?> buildAccountDropdown() {
+    return Consumer<LonelyModel>(
+      builder: (context, model, child) {
+        return DropdownButton<int>(
+          items: [
+            // const DropdownMenuItem(value: 0, child: Text("---")),
+            // const DropdownMenuItem(value: 1, child: Text("🔸계좌1")),
+            // const DropdownMenuItem(value: 2, child: Text("🔹계좌2")),
+            // const DropdownMenuItem(value: 3, child: Text("🔥️계좌3")),
+            // const DropdownMenuItem(value: 4, child: Text("✨계좌4")),
+            // const DropdownMenuItem(value: 5, child: Text("🍉계좌5")),
+            // const DropdownMenuItem(value: 6, child: Text("❤️계좌6")),
+            // const DropdownMenuItem(value: 7, child: Text("🎈계좌7")),
+            for (var account in model.accounts) ...[
+              DropdownMenuItem(value: account.id, child: Text(account.name)),
+            ]
+          ],
+          onChanged: onAccountChanged,
+          value: _accountId,
+        );
+      },
+    );
+  }
+
   Flexible buildTextField(String? hintText, TextEditingController? controller,
       TextInputAction action) {
     return Flexible(
@@ -187,5 +221,11 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         ),
       ),
     );
+  }
+
+  void onAccountChanged(int? value) {
+    setState(() {
+      _accountId = value;
+    });
   }
 }
