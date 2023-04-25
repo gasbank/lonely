@@ -183,7 +183,7 @@ class LonelyDatabase {
     );
   }
 
-  Future<List<Map<String, dynamic>>> queryTransaction() async {
+  Future<List<Map<String, dynamic>>> queryTransactions() async {
     final db = await database;
     return await db.query(transactionsTable);
   }

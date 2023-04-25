@@ -1,14 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/lonely_model.dart';
-import 'package:provider/provider.dart';
 
 import 'database.dart';
-import 'inventory_widget.dart';
 import 'item_widget.dart';
 import 'new_transaction_widget.dart';
+import 'transaction_history_widget.dart';
 
-Map<String, Item> createItemMap(
+Map<String, Item> _createItemMap(
     List<Transaction> transactionList, Map<String, Stock> stockMap) {
   final itemMap = <String, Item>{};
 
@@ -46,20 +44,20 @@ Map<String, Item> createItemMap(
   return itemMap;
 }
 
-class PortfolioScreen extends StatefulWidget {
-  PortfolioScreen({super.key, required this.database}) {
+class HistoryScreen extends StatefulWidget {
+  HistoryScreen({super.key, required this.database}) {
     if (kDebugMode) {
-      print('PortfolioScreen()');
+      print('HistoryScreen()');
     }
   }
 
   final LonelyDatabase database;
 
   @override
-  State<StatefulWidget> createState() => _NewPortfolioState();
+  State<StatefulWidget> createState() => _NewHistoryState();
 }
 
-class _NewPortfolioState extends State<PortfolioScreen> {
+class _NewHistoryState extends State<HistoryScreen> {
   late final Future<List<Transaction>> _transactionList;
   late final Future<Map<String, Stock>> _stockMap;
   final _stockIdController = TextEditingController();
@@ -117,7 +115,7 @@ class _NewPortfolioState extends State<PortfolioScreen> {
       print(transaction);
     }
 
-    final item = (createItemMap(
+    final item = (_createItemMap(
         await _transactionList, await _stockMap))[transaction.stockId];
 
     if (transaction.transactionType == TransactionType.sell) {
@@ -157,12 +155,11 @@ class _NewPortfolioState extends State<PortfolioScreen> {
           krStockValue != null &&
           stockInsertedId != null) {
         stockMap[transaction.stockId] = Stock(
-            id: stockInsertedId,
-            stockId: transaction.stockId,
-            name: stockName,
-            closePrice: krStockValue.closePrice);
+            id: stockInsertedId, stockId: transaction.stockId, name: stockName, closePrice: krStockValue.closePrice);
       }
     });
+
+    FocusManager.instance.primaryFocus?.unfocus();
 
     return true;
   }
@@ -186,19 +183,28 @@ class _NewPortfolioState extends State<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LonelyModel>(
-      builder: (context, model, child) => InventoryWidget(
-        itemMap: createItemMap(model.transactions, model.stocks),
-        database: widget.database,
-        stockMap: model.stocks,
-        onStockSelected: (selectedStockId) {
-          if (_stockIdController.text == selectedStockId) {
-            _stockIdController.text = '';
-          } else {
-            _stockIdController.text = selectedStockId;
-          }
-        },
-      ),
+    return ListView(
+      //mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        NewTransactionWidget(
+          onNewTransaction: onNewTransaction,
+          stockIdController: _stockIdController,
+        ),
+        FutureBuilder(
+          future: _transactionList,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return TransactionHistoryWidget(
+                onRemoveTransaction: onRemoveTransaction,
+                transactionList: snapshot.data!,
+                stockMap: _stockMap,
+              );
+            } else {
+              return const Text('...');
+            }
+          },
+        ),
+      ],
     );
   }
 }

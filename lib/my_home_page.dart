@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely_flutter/account_list_widget.dart';
+import 'package:lonely_flutter/history_screen.dart';
 import 'package:lonely_flutter/lonely_model.dart';
 import 'package:lonely_flutter/portfolio_screen.dart';
 import 'package:provider/provider.dart';
@@ -28,7 +29,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _widgetOptions = <Widget>[
       PortfolioScreen(database: widget.database),
-      const MyStatefulWidget(),
+      HistoryScreen(database: widget.database),
       AccountListWidget(),
     ];
   }

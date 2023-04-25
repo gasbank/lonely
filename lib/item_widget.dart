@@ -75,7 +75,7 @@ Future<int?> writeKrStockToDb(
 class ItemWidget extends StatefulWidget {
   final Item item;
   final LonelyDatabase database;
-  final Future<Map<String, Stock>> stockMap;
+  final Map<String, Stock> stockMap;
 
   ItemWidget(
       {super.key,

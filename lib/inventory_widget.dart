@@ -7,7 +7,7 @@ import 'item_widget.dart';
 class InventoryWidget extends StatefulWidget {
   final Map<String, Item> itemMap;
   final LonelyDatabase database;
-  final Future<Map<String, Stock>> stockMap;
+  final Map<String, Stock> stockMap;
   final Function(String) onStockSelected;
 
   InventoryWidget(
@@ -36,10 +36,11 @@ class _InventoryWidgetState extends State<InventoryWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return ReorderableListView(
+      onReorder: (oldIndex, newIndex) {},
       children: widget.itemMap.values
           .where((e) => e.count > 0)
-          .map((e) => InkWell(
+          .map((e) => InkWell(key: Key(e.stockId),
                 onTap: () => widget.onStockSelected(e.stockId),
                 child: Padding(
                   padding:

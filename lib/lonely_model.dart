@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:lonely_flutter/database.dart';
 
+import 'new_transaction_widget.dart';
+
 class Account {
   int? id;
   final String name;
@@ -26,18 +28,21 @@ class Account {
 
 class LonelyModel extends ChangeNotifier {
   final _stocks = <String, Stock>{};
+  final _accounts = <Account>[];
+  final _transactions = <Transaction>[];
 
   Map<String, Stock> get stocks => UnmodifiableMapView(_stocks);
 
-  final _accounts = <Account>[];
-
   List<Account> get accounts => UnmodifiableListView(_accounts);
+
+  List<Transaction> get transactions => UnmodifiableListView(_transactions);
 
   final _db = LonelyDatabase();
 
   LonelyModel() {
     _loadAccounts();
     _loadStocks();
+    _loadTransactions();
   }
 
   void setStock(Stock stock) {
@@ -47,6 +52,15 @@ class LonelyModel extends ChangeNotifier {
 
   Stock? getStock(String stockId) {
     return _stocks[stockId];
+  }
+
+  Future<int?> addTransaction(Transaction transaction) async {
+    final insertedDbId = await _db.insertTransaction(transaction.toMap());
+    transaction.id = insertedDbId;
+    _transactions.add(transaction);
+    notifyListeners();
+
+    return insertedDbId;
   }
 
   Future<int?> addAccount(String name, {int? updateDbId}) async {
@@ -63,7 +77,8 @@ class LonelyModel extends ChangeNotifier {
   }
 
   bool _isDuplicatedAccountName(String name) {
-    final account = _accounts.singleWhere((e) => e.name == name, orElse: Account.empty);
+    final account =
+        _accounts.singleWhere((e) => e.name == name, orElse: Account.empty);
     return account.id != null && account.id! > 0;
   }
 
@@ -123,6 +138,18 @@ class LonelyModel extends ChangeNotifier {
     for (var stock in stocks.map((e) => Stock.fromMap(e))) {
       _stocks[stock.stockId] = stock;
     }
+    notifyListeners();
+  }
+
+  void _loadTransactions() async {
+    final transactions = await _db.queryTransactions();
+
+    if (kDebugMode) {
+      print('${transactions.length} transactions(s) loaded from database.');
+    }
+
+    _transactions.clear();
+    _transactions.addAll(transactions.map((e) => Transaction.fromMap(e)));
     notifyListeners();
   }
 
