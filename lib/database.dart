@@ -87,6 +87,9 @@ CREATE TABLE IF NOT EXISTS $accountsTable
   name            TEXT    NOT NULL
 );
 ''');
+  batch.execute('''
+INSERT INTO $accountsTable (name) VALUES ('기본');
+''');
 }
 
 Future<Database> _initDatabase() async {
@@ -119,7 +122,7 @@ Future<Database> _initDatabase() async {
 
   if (Platform.isWindows || Platform.isLinux) {
     return databaseFactoryFfi.openDatabase(
-        join((await getApplicationDocumentsDirectory()).path, dbName),
+        join((await getApplicationSupportDirectory()).path, dbName),
         options: options);
   } else {
     return databaseFactory.openDatabase(join(await getDatabasesPath(), dbName),

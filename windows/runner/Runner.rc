@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "top.plusalpha" "\0"
-            VALUE "FileDescription", "lonely_flutter" "\0"
+            VALUE "CompanyName", "Plus Alpha Game Studio" "\0"
+            VALUE "FileDescription", "Lonely" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "lonely_flutter" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2023 top.plusalpha. All rights reserved." "\0"
+            VALUE "InternalName", "Lonely" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2023 Plus Alpha Game Studio. All rights reserved." "\0"
             VALUE "OriginalFilename", "lonely_flutter.exe" "\0"
-            VALUE "ProductName", "lonely_flutter" "\0"
+            VALUE "ProductName", "Lonely" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
