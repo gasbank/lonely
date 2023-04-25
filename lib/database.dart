@@ -38,7 +38,7 @@ class Stock {
   }
 }
 
-void _createTransactionsTableV2(Batch batch) {
+void _createTransactionsTableV3(Batch batch) {
   batch.execute('''
 CREATE TABLE IF NOT EXISTS $transactionsTable
 (
@@ -62,7 +62,11 @@ CREATE TABLE IF NOT EXISTS $transactionsTable
 }
 
 void _updateTransactionsTableV1toV2(Batch batch) {
-  batch.execute('ALTER TABLE $transactionsTable ADD accountId INTEGER');
+  batch.execute('ALTER TABLE $transactionsTable ADD accountId INTEGER;');
+}
+
+void _updateTransactionsTableV2toV3(Batch batch) {
+  batch.execute('ALTER TABLE $transactionsTable ADD listOrder INTEGER;');
 }
 
 void _createStocksTableV1(Batch batch) {
@@ -76,6 +80,25 @@ CREATE TABLE IF NOT EXISTS $stocksTable
   name            TEXT    NOT NULL
 );
 ''');
+}
+
+void _createStocksTableV2(Batch batch) {
+  batch.execute('''
+CREATE TABLE IF NOT EXISTS $stocksTable
+(
+  id              INTEGER PRIMARY KEY
+  ,
+  stockId         TEXT    NOT NULL
+  ,
+  name            TEXT    NOT NULL
+  ,
+  inventoryOrder  INTEGER
+);
+''');
+}
+
+void _updateStocksTableV1toV2(Batch batch) {
+  batch.execute('ALTER TABLE $stocksTable ADD inventoryOrder INTEGER;');
 }
 
 void _createAccountsTableV1(Batch batch) {
@@ -98,8 +121,8 @@ Future<Database> _initDatabase() async {
   final options = OpenDatabaseOptions(
     onCreate: (db, version) async {
       final batch = db.batch();
-      _createTransactionsTableV2(batch);
-      _createStocksTableV1(batch);
+      _createTransactionsTableV3(batch);
+      _createStocksTableV2(batch);
       _createAccountsTableV1(batch);
       await batch.commit();
     },
@@ -112,10 +135,19 @@ Future<Database> _initDatabase() async {
       if (oldVersion == 2) {
         _createAccountsTableV1(batch);
         _updateTransactionsTableV1toV2(batch);
+        oldVersion++;
+      }
+      if (oldVersion == 3) {
+        _updateTransactionsTableV2toV3(batch);
+        oldVersion++;
+      }
+      if (oldVersion == 4) {
+        _updateStocksTableV1toV2(batch);
+        oldVersion++;
       }
       await batch.commit();
     },
-    version: 3,
+    version: 5,
   );
 
   const String dbName = 'lonely.db';

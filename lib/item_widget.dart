@@ -23,6 +23,7 @@ class Item {
   int accumBuyCount = 0;
   int accumSellCount = 0;
   int accumEarn = 0;
+  int listOrder = 0;
 
   double avgPrice() => count > 0 ? accumPrice / count : 0;
 

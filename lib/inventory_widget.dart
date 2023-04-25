@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'account_list_widget.dart';
 import 'database.dart';
 import 'item_widget.dart';
 import 'lonely_model.dart';
@@ -75,7 +74,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
           onReorder: (oldIndex, newIndex) {},
           children: createItemMap(model.transactions, model.stocks)
               .values
-              .sortedBy((e) => e.stockId)
+              .sortedBy((e) => e.listOrder)
               .where((e) => e.count > 0)
               .map((e) => InkWell(
                     key: Key(e.stockId),
@@ -92,5 +91,16 @@ class _InventoryWidgetState extends State<InventoryWidget> {
         );
       },
     );
+  }
+}
+
+extension MyIterable<E> on Iterable<E> {
+  Iterable<E> sortedBy(Comparable Function(E e) key) =>
+      toList()..sort((a, b) => key(a).compareTo(key(b)));
+
+  Iterable<E> stableSortedBy(Comparable Function(E e) key) {
+    final copy = toList();
+    mergeSort(copy, compare: (a, b) => key(a).compareTo(key(b)));
+    return copy;
   }
 }
