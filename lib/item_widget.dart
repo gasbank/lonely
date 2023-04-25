@@ -65,8 +65,12 @@ Future<int?> writeKrStockToDb(
   if (s != null &&
       s.stockName.isNotEmpty &&
       (await database.queryStockName(s.itemCode)) == null) {
-    return await database.insertStock(
-        Stock(id: 0, stockId: s.itemCode, name: s.stockName, closePrice: s.closePrice).toMap());
+    return await database.insertStock(Stock(
+            id: 0,
+            stockId: s.itemCode,
+            name: s.stockName,
+            closePrice: s.closePrice)
+        .toMap());
   }
 
   return null;
@@ -74,14 +78,11 @@ Future<int?> writeKrStockToDb(
 
 class ItemWidget extends StatefulWidget {
   final Item item;
-  final LonelyDatabase database;
-  final Map<String, Stock> stockMap;
 
-  ItemWidget(
-      {super.key,
-      required this.item,
-      required this.database,
-      required this.stockMap}) {
+  ItemWidget({
+    super.key,
+    required this.item,
+  }) {
     if (kDebugMode) {
       //print('ItemWidget()');
     }
@@ -159,7 +160,8 @@ class _ItemWidgetState extends State<ItemWidget> {
   late final Stream<KrStock?> _stockStream;
   late final LonelyModel _model;
 
-  @override void initState() {
+  @override
+  void initState() {
     super.initState();
 
     _model = context.read<LonelyModel>();
@@ -176,7 +178,11 @@ class _ItemWidgetState extends State<ItemWidget> {
   void saveToModel(Future<KrStock?> fetchFuture) async {
     final krStock = await fetchFuture;
     if (krStock != null) {
-      _model.setStock(Stock(id: 0, stockId: krStock.itemCode, name: krStock.stockName, closePrice: krStock.closePrice));
+      _model.setStock(Stock(
+          id: 0,
+          stockId: krStock.itemCode,
+          name: krStock.stockName,
+          closePrice: krStock.closePrice));
     }
   }
 
@@ -211,7 +217,7 @@ class _ItemWidgetState extends State<ItemWidget> {
               ],
             ),
             Text(
-            stock != null
+                stock != null
                     ? formatThousands(stock.closePrice * widget.item.count)
                     : '---',
                 style: DefaultTextStyle.of(context)
@@ -239,15 +245,14 @@ class _ItemWidgetState extends State<ItemWidget> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<KrStock?>(
-      stream: _stockStream,
-      builder: (_, __) {
-        return Consumer<LonelyModel>(
-          builder: (context, lonelyModel, child) {
-            return buildWidget(widget.item, lonelyModel);
-          },
-        );
-      }
-    );
+        stream: _stockStream,
+        builder: (_, __) {
+          return Consumer<LonelyModel>(
+            builder: (context, lonelyModel, child) {
+              return buildWidget(widget.item, lonelyModel);
+            },
+          );
+        });
   }
 }
 

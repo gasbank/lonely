@@ -1,69 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/database.dart';
 import 'package:lonely_flutter/lonely_model.dart';
 import 'package:provider/provider.dart';
 
-enum TransactionType {
-  buy,
-  sell,
-}
-
-class Transaction {
-  Transaction(
-      {required this.stockId,
-      required this.price,
-      required this.count,
-      required this.transactionType,
-      required this.dateTime,
-      required this.accountId});
-
-  Transaction.fromMap(Map<String, dynamic> map) {
-    id = map['id'];
-    stockId = map['stockId'];
-    price = map['price'];
-    count = map['count'];
-    transactionType = map['transactionType'] == 0
-        ? TransactionType.buy
-        : TransactionType.sell;
-    dateTime = DateTime.parse(map['dateTime']);
-    earn = map['earn'];
-    accountId = map['accountId'];
-  }
-
-  int? id;
-  late final String stockId;
-  late final int price;
-  late final int count;
-  late final TransactionType transactionType;
-  late final DateTime dateTime;
-  int? earn;
-  int? accountId;
-
-  Map<String, dynamic> toMap() {
-    return {
-      'stockId': stockId,
-      'price': price,
-      'count': count,
-      'transactionType': transactionType == TransactionType.buy
-          ? 0
-          : transactionType == TransactionType.sell
-              ? 1
-              : -1,
-      'dateTime': dateTime.toIso8601String(),
-      'earn': earn,
-      'accountId': accountId,
-    };
-  }
-}
+import 'inventory_widget.dart';
+import 'item_widget.dart';
+import 'transaction.dart';
 
 class NewTransactionWidget extends StatefulWidget {
-  final Future<bool> Function(Transaction transaction) onNewTransaction;
   final TextEditingController stockIdController;
 
-  const NewTransactionWidget(
-      {super.key,
-      required this.onNewTransaction,
-      required this.stockIdController});
+  const NewTransactionWidget({super.key, required this.stockIdController});
 
   @override
   State<StatefulWidget> createState() => _NewTransactionWidgetState();
@@ -74,7 +22,73 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   final _countController = TextEditingController();
   int? _accountId;
 
-  void onPress(TransactionType transactionType) async {
+  void _showSimpleMessage(String msg) {
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+    ));
+  }
+
+  Future<int> _stockSum(String stockId, TransactionType transactionType,
+      LonelyModel model) async {
+    final sum = model.transactions
+        .where(
+            (e) => e.stockId == stockId && e.transactionType == transactionType)
+        .map((e) => e.count)
+        .fold(0, (a, b) => a + b);
+    return sum;
+  }
+
+  Future<bool> _onNewTransaction(
+      Transaction transaction, LonelyModel model) async {
+    if (kDebugMode) {
+      print('new transaction entry!');
+      print(transaction);
+    }
+
+    final item =
+        createItemMap(model.transactions, model.stocks)[transaction.stockId];
+
+    if (transaction.transactionType == TransactionType.sell) {
+      final buySum =
+          await _stockSum(transaction.stockId, TransactionType.buy, model);
+      final sellSum =
+          await _stockSum(transaction.stockId, TransactionType.sell, model);
+      if (buySum - sellSum < transaction.count) {
+        _showSimpleMessage('가진 것보다 더 팔 수는 없죠.');
+        return false;
+      }
+
+      if (item != null) {
+        transaction.earn = ((transaction.price - item.accumPrice / item.count) *
+                transaction.count)
+            .round();
+      }
+    }
+
+    await model.addTransaction(transaction);
+
+    final krStock = fetchKrStockN(transaction.stockId);
+    final krStockValue = await krStock;
+    final stockName = krStockValue?.stockName ?? '';
+
+    if (krStockValue != null) {
+      if ((await model.setStock(Stock(
+          id: 0,
+          stockId: krStockValue.itemCode,
+          name: stockName,
+          closePrice: krStockValue.closePrice))) > 0) {
+        _showSimpleMessage('$stockName 종목 첫 매매 축하~~');
+      }
+    }
+
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    return true;
+  }
+
+  void onPress(TransactionType transactionType, LonelyModel model) async {
     if (widget.stockIdController.text.isEmpty ||
         _priceController.text.isEmpty ||
         _countController.text.isEmpty ||
@@ -96,13 +110,15 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       return;
     }
 
-    if (await widget.onNewTransaction(Transaction(
-        transactionType: transactionType,
-        count: count,
-        price: price,
-        stockId: widget.stockIdController.text,
-        dateTime: DateTime.now(),
-        accountId: _accountId))) {
+    if (await _onNewTransaction(
+        Transaction(
+            transactionType: transactionType,
+            count: count,
+            price: price,
+            stockId: widget.stockIdController.text,
+            dateTime: DateTime.now(),
+            accountId: _accountId),
+        model)) {
       clearTextFields();
     }
   }
@@ -152,27 +168,35 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       Row(
         children: [
           Expanded(
-            child: OutlinedButton(
-              style: ButtonStyle(
-                foregroundColor:
-                    MaterialStateProperty.all<Color>(Colors.redAccent),
-              ),
-              onPressed: () {
-                onPress(TransactionType.buy);
+            child: Consumer<LonelyModel>(
+              builder: (context, model, child) {
+                return OutlinedButton(
+                  style: ButtonStyle(
+                    foregroundColor:
+                        MaterialStateProperty.all<Color>(Colors.redAccent),
+                  ),
+                  onPressed: () {
+                    onPress(TransactionType.buy, model);
+                  },
+                  child: const Text('매수'),
+                );
               },
-              child: const Text('매수'),
             ),
           ),
           Expanded(
-            child: OutlinedButton(
-              style: ButtonStyle(
-                foregroundColor:
-                    MaterialStateProperty.all<Color>(Colors.blueAccent),
-              ),
-              onPressed: () {
-                onPress(TransactionType.sell);
+            child: Consumer<LonelyModel>(
+              builder: (context, model, child) {
+                return OutlinedButton(
+                  style: ButtonStyle(
+                    foregroundColor:
+                        MaterialStateProperty.all<Color>(Colors.blueAccent),
+                  ),
+                  onPressed: () {
+                    onPress(TransactionType.sell, model);
+                  },
+                  child: const Text('매도'),
+                );
               },
-              child: const Text('매도'),
             ),
           ),
         ],

@@ -1,22 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/database.dart';
-import 'package:lonely_flutter/number_format_util.dart';
 import 'package:provider/provider.dart';
-
+import 'number_format_util.dart';
 import 'lonely_model.dart';
-import 'new_transaction_widget.dart';
+import 'transaction.dart';
 
 class TransactionHistoryWidget extends StatefulWidget {
-  final List<Transaction> transactionList;
-  final Function(Set<int> dbIdSet) onRemoveTransaction;
-  final Future<Map<String, Stock>> stockMap;
-
-  const TransactionHistoryWidget(
-      {super.key,
-      required this.transactionList,
-      required this.onRemoveTransaction,
-      required this.stockMap});
+  const TransactionHistoryWidget({
+    super.key,
+  });
 
   @override
   State<StatefulWidget> createState() => _TransactionHistoryState();
@@ -45,7 +37,7 @@ List<DataCell> _dataCellListFromTransaction(
 class _TransactionHistoryState extends State<TransactionHistoryWidget> {
   final selectedSet = <int>{};
 
-  void showSimpleError(String msg) {
+  void _showSimpleError(String msg) {
     ScaffoldMessenger.of(context)
         .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -53,11 +45,13 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
     ));
   }
 
-  DataRow _dataRowFromTransaction(
-      Transaction e, Stock? stock, Account? account) {
+  DataRow _dataRowFromTransaction(Transaction e, LonelyModel model) {
+    final stock = model.getStock(e.stockId);
+    final account = model.getAccount(e.accountId);
+
     return DataRow(
       cells: _dataCellListFromTransaction(
-          e, stock?.name ?? '? ${e.stockId} ?', account?.name ?? ''),
+          e, stock?.name ?? '? ${e.stockId} ?', account.name),
       selected: selectedSet.contains(e.id),
       color: MaterialStateProperty.resolveWith<Color?>(
           (Set<MaterialState> states) {
@@ -82,7 +76,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
       },
       onLongPress: () {
         if (selectedSet.isEmpty) {
-          showSimpleError('하나 이상 선택하고 롱 탭하세요.');
+          _showSimpleError('하나 이상 선택하고 롱 탭하세요.');
           return;
         }
 
@@ -99,7 +93,7 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context, 'OK');
-                        removeSelectedTransaction();
+                        removeSelectedTransaction(model);
                       },
                       child: const Text('삭제'),
                     ),
@@ -110,8 +104,8 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
     );
   }
 
-  void removeSelectedTransaction() async {
-    widget.onRemoveTransaction(selectedSet.toSet());
+  void removeSelectedTransaction(LonelyModel model) {
+    model.removeTransaction(selectedSet.toList());
 
     setState(() {
       selectedSet.clear();
@@ -130,9 +124,8 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
   Widget build(BuildContext context) {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
-        final dataRowList = widget.transactionList.reversed
-            .map((e) => _dataRowFromTransaction(
-                e, model.getStock(e.stockId), model.getAccount(e.accountId)))
+        final dataRowList = model.transactions.reversed
+            .map((e) => _dataRowFromTransaction(e, model))
             .toList();
 
         return FittedBox(

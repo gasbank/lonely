@@ -1,9 +1,7 @@
 import 'dart:collection';
-
 import 'package:flutter/foundation.dart';
-import 'package:lonely_flutter/database.dart';
-
-import 'new_transaction_widget.dart';
+import 'database.dart';
+import 'transaction.dart';
 
 class Account {
   int? id;
@@ -45,9 +43,16 @@ class LonelyModel extends ChangeNotifier {
     _loadTransactions();
   }
 
-  void setStock(Stock stock) {
-    _stocks[stock.stockId] = stock;
+  Future<int> setStock(Stock s) async {
+    // 이번에 들어온 Stock 정보에 이름이 있고, DB에 기록된 적이 없을 때만 기록
+    if (s.name.isNotEmpty && (getStock(s.stockId)?.name.isEmpty ?? true)) {
+      s.id = await _db.insertStock(s.toMap());
+    }
+
+    _stocks[s.stockId] = s;
     notifyListeners();
+
+    return s.id ?? 0;
   }
 
   Stock? getStock(String stockId) {
@@ -61,6 +66,14 @@ class LonelyModel extends ChangeNotifier {
     notifyListeners();
 
     return insertedDbId;
+  }
+
+  Future<int> removeTransaction(List<int> dbIdList) async {
+    final removedCount = await _db.removeTransaction(dbIdList);
+    _transactions.removeWhere((e) => dbIdList.contains(e.id));
+    notifyListeners();
+
+    return removedCount;
   }
 
   Future<int?> addAccount(String name, {int? updateDbId}) async {

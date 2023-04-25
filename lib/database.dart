@@ -11,7 +11,7 @@ const stocksTable = 'stocks';
 const accountsTable = 'accounts';
 
 class Stock {
-  final int id;
+  int? id;
   final String stockId;
   final String name;
   final int closePrice;
@@ -198,14 +198,14 @@ class LonelyDatabase {
     return await db.query(accountsTable);
   }
 
-  Future<int> removeTransaction(List<int> dbIdSet) async {
-    if (dbIdSet.isEmpty) {
+  Future<int> removeTransaction(List<int> dbIdList) async {
+    if (dbIdList.isEmpty) {
       return 0;
     }
 
     final db = await database;
     return await db.delete(transactionsTable,
-        where: 'id IN (${List.filled(dbIdSet.length, '?').join(',')})',
-        whereArgs: dbIdSet);
+        where: 'id IN (${List.filled(dbIdList.length, '?').join(',')})',
+        whereArgs: dbIdList);
   }
 }
