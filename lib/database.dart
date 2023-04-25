@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 const transactionsTable = 'transactions';
 const stocksTable = 'stocks';
@@ -38,14 +42,21 @@ void _createTransactionsTableV2(Batch batch) {
   batch.execute('''
 CREATE TABLE IF NOT EXISTS $transactionsTable
 (
-  id              INTEGER PRIMARY KEY,
-  stockId         TEXT    NOT NULL,
-  price           INTEGER NOT NULL,
-  count           INTEGER NOT NULL,
-  transactionType INTEGER NOT NULL,
-  dateTime        DATETIME,
-  earn            INTEGER,
-  accountId       INTEGER,
+  id              INTEGER PRIMARY KEY
+  ,
+  stockId         TEXT    NOT NULL
+  ,
+  price           INTEGER NOT NULL
+  ,
+  count           INTEGER NOT NULL
+  ,
+  transactionType INTEGER NOT NULL
+  ,
+  dateTime        DATETIME
+  ,
+  earn            INTEGER
+  ,
+  accountId       INTEGER
 );
 ''');
 }
@@ -58,8 +69,10 @@ void _createStocksTableV1(Batch batch) {
   batch.execute('''
 CREATE TABLE IF NOT EXISTS $stocksTable
 (
-  id              INTEGER PRIMARY KEY,
-  stockId         TEXT    NOT NULL,
+  id              INTEGER PRIMARY KEY
+  ,
+  stockId         TEXT    NOT NULL
+  ,
   name            TEXT    NOT NULL
 );
 ''');
@@ -69,7 +82,8 @@ void _createAccountsTableV1(Batch batch) {
   batch.execute('''
 CREATE TABLE IF NOT EXISTS $accountsTable
 (
-  id              INTEGER PRIMARY KEY,
+  id              INTEGER PRIMARY KEY
+  ,
   name            TEXT    NOT NULL
 );
 ''');
@@ -77,8 +91,8 @@ CREATE TABLE IF NOT EXISTS $accountsTable
 
 Future<Database> _initDatabase() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final database = openDatabase(
-    join(await getDatabasesPath(), 'lonely.db'),
+
+  final options = OpenDatabaseOptions(
     onCreate: (db, version) async {
       final batch = db.batch();
       _createTransactionsTableV2(batch);
@@ -100,7 +114,17 @@ Future<Database> _initDatabase() async {
     },
     version: 3,
   );
-  return database;
+
+  const String dbName = 'lonely.db';
+
+  if (Platform.isWindows || Platform.isLinux) {
+    return databaseFactoryFfi.openDatabase(
+        join((await getApplicationDocumentsDirectory()).path, dbName),
+        options: options);
+  } else {
+    return databaseFactory.openDatabase(join(await getDatabasesPath(), dbName),
+        options: options);
+  }
 }
 
 class LonelyDatabase {
