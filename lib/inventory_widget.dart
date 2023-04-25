@@ -40,7 +40,8 @@ class _InventoryWidgetState extends State<InventoryWidget> {
       onReorder: (oldIndex, newIndex) {},
       children: widget.itemMap.values
           .where((e) => e.count > 0)
-          .map((e) => InkWell(key: Key(e.stockId),
+          .map((e) => InkWell(
+                key: Key(e.stockId),
                 onTap: () => widget.onStockSelected(e.stockId),
                 child: Padding(
                   padding:
