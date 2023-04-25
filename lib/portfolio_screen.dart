@@ -47,8 +47,8 @@ Map<String, Item> createItemMap(
   return itemMap;
 }
 
-class PortfolioWidget extends StatefulWidget {
-  PortfolioWidget({super.key, required this.database}) {
+class PortfolioScreen extends StatefulWidget {
+  PortfolioScreen({super.key, required this.database}) {
     if (kDebugMode) {
       print('PortfolioWidget()');
     }
@@ -60,7 +60,7 @@ class PortfolioWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _NewPortfolioState();
 }
 
-class _NewPortfolioState extends State<PortfolioWidget> {
+class _NewPortfolioState extends State<PortfolioScreen> {
   late final Future<List<Transaction>> _transactionList;
   late final Future<Map<String, Stock>> _stockMap;
   final _stockIdController = TextEditingController();

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely_flutter/account_list_widget.dart';
 import 'package:lonely_flutter/lonely_model.dart';
-import 'package:lonely_flutter/portfolio_widget.dart';
+import 'package:lonely_flutter/portfolio_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'database.dart';
@@ -27,7 +27,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     super.initState();
     _widgetOptions = <Widget>[
-      PortfolioWidget(database: widget.database),
+      PortfolioScreen(database: widget.database),
       const MyStatefulWidget(),
       AccountListWidget(),
     ];
