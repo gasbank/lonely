@@ -75,10 +75,11 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
 
     if (krStockValue != null) {
       if ((await model.setStock(Stock(
-          id: 0,
-          stockId: krStockValue.itemCode,
-          name: stockName,
-          closePrice: krStockValue.closePrice))) > 0) {
+              id: 0,
+              stockId: krStockValue.itemCode,
+              name: stockName,
+              closePrice: krStockValue.closePrice))) >
+          0) {
         _showSimpleMessage('$stockName 종목 첫 매매 축하~~');
       }
     }
@@ -222,7 +223,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             ]
           ],
           onChanged: onAccountChanged,
-          value: _accountId,
+          value: _accountId ??
+              (model.accounts.isNotEmpty ? model.accounts.first.id : null),
         );
       },
     );
