@@ -36,7 +36,7 @@ class _NewPortfolioState extends State<PortfolioScreen> {
       builder: (context, model, child) => InventoryWidget(
         orderedItems: createItemMap(model.transactions, model.stocks)
             .values
-            .sortedBy((e) => e.listOrder)
+            .sortedBy((e) => model.getStock(e.stockId)?.inventoryOrder ?? 0)
             .where((e) => e.count > 0)
             .toList(),
         onStockSelected: (selectedStockId) {

@@ -14,26 +14,31 @@ class Stock {
   int? id;
   final String stockId;
   final String name;
-  final int closePrice;
+  int? closePrice;
+  int? inventoryOrder;
 
   Stock(
       {required this.id,
       required this.stockId,
       required this.name,
-      required this.closePrice});
+      this.closePrice,
+      this.inventoryOrder});
 
   factory Stock.fromMap(Map<String, dynamic> map) {
     return Stock(
-        id: map['id'],
-        stockId: map['stockId'],
-        name: map['name'],
-        closePrice: 0);
+      id: map['id'],
+      stockId: map['stockId'],
+      name: map['name'],
+      closePrice: 0,
+      inventoryOrder: map['inventoryOrder'],
+    );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'stockId': stockId,
       'name': name,
+      'inventoryOrder': inventoryOrder,
     };
   }
 }
@@ -241,9 +246,10 @@ class LonelyDatabase {
         whereArgs: dbIdList);
   }
 
-  Future<int> updateStocksInventoryOrder(int dbId, int inventoryOrder) async {
+  Future<int> updateStocksInventoryOrder(
+      String stockId, int inventoryOrder) async {
     final db = await database;
-    return db.update(stocksTable, {'inventoryOrder': inventoryOrder},
-        where: 'id = ?', whereArgs: [dbId]);
+    return await db.update(stocksTable, {'inventoryOrder': inventoryOrder},
+        where: 'stockId = ?', whereArgs: [stockId]);
   }
 }

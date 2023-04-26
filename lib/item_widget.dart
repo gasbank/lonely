@@ -23,7 +23,8 @@ class Item {
   int accumBuyCount = 0;
   int accumSellCount = 0;
   int accumEarn = 0;
-  int listOrder = 0;
+
+  // Item 보여지는 순서는 여기서 관리하지 말고 Stock.inventoryOrder 이용한다.
 
   double avgPrice() => count > 0 ? accumPrice / count : 0;
 
@@ -218,8 +219,8 @@ class _ItemWidgetState extends State<ItemWidget> {
               ],
             ),
             Text(
-                stock != null
-                    ? formatThousands(stock.closePrice * widget.item.count)
+                (stock != null && stock.closePrice != null)
+                    ? formatThousands(stock.closePrice! * widget.item.count)
                     : '---',
                 style: DefaultTextStyle.of(context)
                     .style
@@ -230,12 +231,12 @@ class _ItemWidgetState extends State<ItemWidget> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(stock != null
-                ? '${formatThousandsStr(((stock.closePrice / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
+            Text((stock != null && stock.closePrice != null)
+                ? '${formatThousandsStr(((stock.closePrice! / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
                 : '---%'),
-            Text(stock != null
+            Text((stock != null && stock.closePrice != null)
                 ? formatThousandsStr(
-                    item.diffPrice(stock.closePrice).toStringAsFixed(0))
+                    item.diffPrice(stock.closePrice!).toStringAsFixed(0))
                 : '---'),
           ],
         ),

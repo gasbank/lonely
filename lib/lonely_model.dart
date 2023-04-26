@@ -49,7 +49,14 @@ class LonelyModel extends ChangeNotifier {
       s.id = await _db.insertStock(s.toMap());
     }
 
-    _stocks[s.stockId] = s;
+    final oldStock = _stocks[s.stockId];
+    if (oldStock != null) {
+      // 기존 항목 있다면 가격만 업데이트
+      oldStock.closePrice = s.closePrice;
+    } else {
+      // 첫 항목이면 새로 등록
+      _stocks[s.stockId] = s;
+    }
     notifyListeners();
 
     return s.id ?? 0;
@@ -173,5 +180,11 @@ class LonelyModel extends ChangeNotifier {
 
     return _accounts.singleWhere((e) => e.id == accountId,
         orElse: Account.empty);
+  }
+
+  Future<int> updateStocksInventoryOrder(
+      String stockId, int inventoryOrder) async {
+    _stocks[stockId]?.inventoryOrder = inventoryOrder;
+    return await _db.updateStocksInventoryOrder(stockId, inventoryOrder);
   }
 }
