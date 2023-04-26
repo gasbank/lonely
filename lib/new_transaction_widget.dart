@@ -208,6 +208,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   Consumer<Object?> buildAccountDropdown() {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
+        _accountId ??= (model.accounts.isNotEmpty ? model.accounts.first.id : null);
         return DropdownButton<int>(
           items: [
             // const DropdownMenuItem(value: 0, child: Text("---")),
@@ -223,8 +224,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             ]
           ],
           onChanged: onAccountChanged,
-          value: _accountId ??
-              (model.accounts.isNotEmpty ? model.accounts.first.id : null),
+          value: _accountId,
         );
       },
     );
