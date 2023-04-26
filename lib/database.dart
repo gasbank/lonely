@@ -29,7 +29,6 @@ class Stock {
       id: map['id'],
       stockId: map['stockId'],
       name: map['name'],
-      closePrice: 0,
       inventoryOrder: map['inventoryOrder'],
     );
   }
