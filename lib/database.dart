@@ -240,4 +240,10 @@ class LonelyDatabase {
         where: 'id IN (${List.filled(dbIdList.length, '?').join(',')})',
         whereArgs: dbIdList);
   }
+
+  Future<int> updateStocksInventoryOrder(int dbId, int inventoryOrder) async {
+    final db = await database;
+    return db.update(stocksTable, {'inventoryOrder': inventoryOrder},
+        where: 'id = ?', whereArgs: [dbId]);
+  }
 }

@@ -34,6 +34,11 @@ class _NewPortfolioState extends State<PortfolioScreen> {
   Widget build(BuildContext context) {
     return Consumer<LonelyModel>(
       builder: (context, model, child) => InventoryWidget(
+        orderedItems: createItemMap(model.transactions, model.stocks)
+            .values
+            .sortedBy((e) => e.listOrder)
+            .where((e) => e.count > 0)
+            .toList(),
         onStockSelected: (selectedStockId) {
           if (_stockIdController.text == selectedStockId) {
             _stockIdController.text = '';

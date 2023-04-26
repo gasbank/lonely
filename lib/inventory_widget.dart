@@ -1,15 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'database.dart';
 import 'item_widget.dart';
-import 'lonely_model.dart';
 import 'transaction.dart';
 
 class InventoryWidget extends StatefulWidget {
+  final List<Item> orderedItems;
   final Function(String) onStockSelected;
 
-  InventoryWidget({super.key, required this.onStockSelected}) {
+  InventoryWidget(
+      {super.key, required this.orderedItems, required this.onStockSelected}) {
     if (kDebugMode) {
       //print('InventoryWidget()');
     }
@@ -58,38 +58,44 @@ Map<String, Item> createItemMap(
 }
 
 class _InventoryWidgetState extends State<InventoryWidget> {
+  List<Item> orderedItems = [];
+
   @override
   void initState() {
-    if (kDebugMode) {
-      //print('initState(): InventoryWidget');
-    }
     super.initState();
+    orderedItems = widget.orderedItems.toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LonelyModel>(
-      builder: (context, model, child) {
-        return ReorderableListView(
-          onReorder: (oldIndex, newIndex) {},
-          children: createItemMap(model.transactions, model.stocks)
-              .values
-              .sortedBy((e) => e.listOrder)
-              .where((e) => e.count > 0)
-              .map((e) => InkWell(
-                    key: Key(e.stockId),
-                    onTap: () => widget.onStockSelected(e.stockId),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 6, horizontal: 12),
-                      child: ItemWidget(
-                        item: e,
-                      ),
-                    ),
-                  ))
-              .toList(),
-        );
+    return ReorderableListView(
+      onReorder: (oldIndex, newIndex) {
+        setState(() {
+          final movingItem = orderedItems[oldIndex];
+          if (kDebugMode) {
+            print('Moving ${movingItem.stockName} from index $oldIndex to $newIndex');
+          }
+          orderedItems.removeAt(oldIndex);
+          if (oldIndex > newIndex) {
+            orderedItems.insert(newIndex, movingItem);
+          } else if (oldIndex < newIndex) {
+            orderedItems.insert(newIndex - 1, movingItem);
+          }
+        });
       },
+      children: orderedItems
+          .map((e) => InkWell(
+                key: Key(e.stockId),
+                onTap: () => widget.onStockSelected(e.stockId),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                  child: ItemWidget(
+                    item: e,
+                  ),
+                ),
+              ))
+          .toList(),
     );
   }
 }
