@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/lonely_model.dart';
-import 'package:provider/provider.dart';
 
 import 'database.dart';
 import 'inventory_widget.dart';
@@ -32,21 +30,14 @@ class _NewPortfolioState extends State<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LonelyModel>(
-      builder: (context, model, child) => InventoryWidget(
-        orderedItems: createItemMap(model.transactions, model.stocks)
-            .values
-            .sortedBy((e) => model.getStock(e.stockId)?.inventoryOrder ?? 0)
-            .where((e) => e.count > 0)
-            .toList(),
-        onStockSelected: (selectedStockId) {
-          if (_stockIdController.text == selectedStockId) {
-            _stockIdController.text = '';
-          } else {
-            _stockIdController.text = selectedStockId;
-          }
-        },
-      ),
+    return InventoryWidget(
+      onStockSelected: (selectedStockId) {
+        if (_stockIdController.text == selectedStockId) {
+          _stockIdController.text = '';
+        } else {
+          _stockIdController.text = selectedStockId;
+        }
+      },
     );
   }
 }

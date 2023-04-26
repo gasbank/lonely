@@ -7,13 +7,12 @@ import 'lonely_model.dart';
 import 'transaction.dart';
 
 class InventoryWidget extends StatefulWidget {
-  final List<Item> orderedItems;
   final Function(String) onStockSelected;
 
   InventoryWidget(
-      {super.key, required this.orderedItems, required this.onStockSelected}) {
+      {super.key, required this.onStockSelected}) {
     if (kDebugMode) {
-      //print('InventoryWidget()');
+      print('InventoryWidget()');
     }
   }
 
@@ -21,8 +20,12 @@ class InventoryWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _InventoryWidgetState();
 }
 
+// TODO 현재가 조회 시마다 반복 호출되는데... 호출 빈도에 비해 계산량이 많다.
 Map<String, Item> createItemMap(
     List<Transaction> transactionList, Map<String, Stock> stockMap) {
+  if (kDebugMode) {
+    //print('createItemMap: ${transactionList.length} transactions(s), ${stockMap.length} stock(s)');
+  }
   final itemMap = <String, Item>{};
 
   for (var e in transactionList) {
@@ -60,18 +63,16 @@ Map<String, Item> createItemMap(
 }
 
 class _InventoryWidgetState extends State<InventoryWidget> {
-  List<Item> orderedItems = [];
-
-  @override
-  void initState() {
-    super.initState();
-    orderedItems = widget.orderedItems.toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
+        final orderedItems = createItemMap(model.transactions, model.stocks)
+            .values
+            .sortedBy((e) => model.getStock(e.stockId)?.inventoryOrder ?? 0)
+            .where((e) => e.count > 0)
+            .toList();
+
         return ReorderableListView(
           onReorder: (oldIndex, newIndex) {
             setState(() {
