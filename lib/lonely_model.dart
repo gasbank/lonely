@@ -29,11 +29,15 @@ class LonelyModel extends ChangeNotifier {
   final _accounts = <Account>[];
   final _transactions = <Transaction>[];
 
+  Transaction? _editingTransaction;
+
   Map<String, Stock> get stocks => UnmodifiableMapView(_stocks);
 
   List<Account> get accounts => UnmodifiableListView(_accounts);
 
   List<Transaction> get transactions => UnmodifiableListView(_transactions);
+
+  Transaction? get editingTransaction => _editingTransaction;
 
   final _db = LonelyDatabase();
 
@@ -200,5 +204,22 @@ class LonelyModel extends ChangeNotifier {
     notifyListeners();
 
     return removedCount;
+  }
+
+  void setEditingTransaction(Transaction? transaction) {
+    _editingTransaction = transaction;
+    notifyListeners();
+  }
+
+  Future<int> updateTransaction(int id, Transaction transaction) async {
+    final count = await _db.updateTransaction(id, transaction.toMap());
+
+    transaction.id = id;
+    final removeIndex = _transactions.indexWhere((e) => e.id == id);
+    _transactions.removeAt(removeIndex);
+    _transactions.insert(removeIndex, transaction);
+    notifyListeners();
+
+    return count;
   }
 }

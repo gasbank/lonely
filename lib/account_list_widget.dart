@@ -15,6 +15,12 @@ class _AccountListWidgetState extends State<AccountListWidget> {
   final _accountNameController = TextEditingController();
   final _selectedSet = <int>{};
 
+  @override
+  void dispose() {
+    _accountNameController.dispose();
+    super.dispose();
+  }
+
   void _showSimpleError(String msg) {
     ScaffoldMessenger.of(context)
         .hideCurrentSnackBar(reason: SnackBarClosedReason.action);

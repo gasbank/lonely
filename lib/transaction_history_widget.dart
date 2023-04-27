@@ -72,11 +72,13 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
               selectedSet.clear();
               selectedSet.add(e.id!);
               widget.stockIdController.text = e.stockId;
+              model.setEditingTransaction(e);
             } else {
               selectedSet.remove(e.id!);
               if (widget.stockIdController.text == e.stockId) {
                 widget.stockIdController.text = '';
               }
+              model.setEditingTransaction(null);
             }
           });
         }
@@ -114,6 +116,10 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
   void removeSelectedTransaction(LonelyModel model) {
     model.removeTransaction(selectedSet.toList());
 
+    if (selectedSet.contains(model.editingTransaction?.id)) {
+      model.setEditingTransaction(null);
+    }
+
     setState(() {
       selectedSet.clear();
     });
@@ -125,6 +131,11 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
       //print('initState(): TransactionHistoryWidget');
     }
     super.initState();
+
+    final editingTransaction = context.read<LonelyModel>().editingTransaction;
+    if (editingTransaction != null) {
+      selectedSet.add(editingTransaction.id!);
+    }
   }
 
   @override

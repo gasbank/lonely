@@ -20,6 +20,16 @@ class HistoryScreen extends StatefulWidget {
 
 class _NewHistoryState extends State<HistoryScreen> {
   final _stockIdController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _countController = TextEditingController();
+
+  @override
+  void dispose() {
+    _stockIdController.dispose();
+    _priceController.dispose();
+    _countController.dispose();
+    super.dispose();
+  }
 
   Future<List<Transaction>> loadTransactions() async {
     final transactions = await widget.database.queryTransactions();
@@ -54,6 +64,8 @@ class _NewHistoryState extends State<HistoryScreen> {
       children: [
         NewTransactionWidget(
           stockIdController: _stockIdController,
+          priceController: _priceController,
+          countController: _countController,
         ),
         TransactionHistoryWidget(
           stockIdController: _stockIdController,

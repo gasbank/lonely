@@ -22,7 +22,7 @@ class InventoryWidget extends StatefulWidget {
 
 // TODO 현재가 조회 시마다 반복 호출되는데... 호출 빈도에 비해 계산량이 많다.
 Map<String, Item> createItemMap(
-    List<Transaction> transactionList, Map<String, Stock> stockMap) {
+    Iterable<Transaction> transactionList, Map<String, Stock> stockMap) {
   if (kDebugMode) {
     //print('createItemMap: ${transactionList.length} transactions(s), ${stockMap.length} stock(s)');
   }

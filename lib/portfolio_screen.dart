@@ -20,6 +20,12 @@ class PortfolioScreen extends StatefulWidget {
 class _NewPortfolioState extends State<PortfolioScreen> {
   final _stockIdController = TextEditingController();
 
+  @override
+  void dispose() {
+    _stockIdController.dispose();
+    super.dispose();
+  }
+
   void showSimpleMessage(String msg) {
     ScaffoldMessenger.of(context)
         .hideCurrentSnackBar(reason: SnackBarClosedReason.action);

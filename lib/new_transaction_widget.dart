@@ -10,16 +10,20 @@ import 'transaction.dart';
 
 class NewTransactionWidget extends StatefulWidget {
   final TextEditingController stockIdController;
+  final TextEditingController priceController;
+  final TextEditingController countController;
 
-  const NewTransactionWidget({super.key, required this.stockIdController});
+  const NewTransactionWidget(
+      {super.key,
+      required this.stockIdController,
+      required this.priceController,
+      required this.countController});
 
   @override
   State<StatefulWidget> createState() => _NewTransactionWidgetState();
 }
 
 class _NewTransactionWidgetState extends State<NewTransactionWidget> {
-  final _priceController = TextEditingController();
-  final _countController = TextEditingController();
   int? _accountId;
 
   void _showSimpleMessage(String msg) {
@@ -31,8 +35,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   }
 
   Future<int> _stockSum(String stockId, TransactionType transactionType,
-      LonelyModel model) async {
-    final sum = model.transactions
+      Iterable<Transaction> transactions) async {
+    final sum = transactions
         .where(
             (e) => e.stockId == stockId && e.transactionType == transactionType)
         .map((e) => e.count)
@@ -51,10 +55,10 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         createItemMap(model.transactions, model.stocks)[transaction.stockId];
 
     if (transaction.transactionType == TransactionType.sell) {
-      final buySum =
-          await _stockSum(transaction.stockId, TransactionType.buy, model);
-      final sellSum =
-          await _stockSum(transaction.stockId, TransactionType.sell, model);
+      final buySum = await _stockSum(
+          transaction.stockId, TransactionType.buy, model.transactions);
+      final sellSum = await _stockSum(
+          transaction.stockId, TransactionType.sell, model.transactions);
       if (buySum - sellSum < transaction.count) {
         _showSimpleMessage('가진 것보다 더 팔 수는 없죠.');
         return false;
@@ -89,27 +93,127 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
     return true;
   }
 
-  void onPress(TransactionType transactionType, LonelyModel model) async {
-    if (widget.stockIdController.text.isEmpty ||
-        _priceController.text.isEmpty ||
-        _countController.text.isEmpty ||
-        _accountId == null) {
-      showSimpleError('칸을 모두 채우세요.');
-      return;
+  Future<bool> _onUpdateTransaction(
+      int id, Transaction transaction, LonelyModel model) async {
+    if (kDebugMode) {
+      print('update transaction entry!');
+      print(transaction);
     }
 
-    final price = int.tryParse(_priceController.text) ?? 0;
-    final count = int.tryParse(_countController.text) ?? 0;
+    final transactionsExceptUpdated =
+        model.transactions.where((e) => e.id != id);
+    final item = createItemMap(
+        model.transactions.where((e) => e.id != id), // 편집중인 항목은 빼고 계산
+        model.stocks)[transaction.stockId];
+
+    if (transaction.transactionType == TransactionType.sell) {
+      final buySum = await _stockSum(
+          transaction.stockId, TransactionType.buy, transactionsExceptUpdated);
+      final sellSum = await _stockSum(
+          transaction.stockId, TransactionType.sell, transactionsExceptUpdated);
+      if (buySum - sellSum < transaction.count) {
+        _showSimpleMessage('가진 것보다 더 팔 수는 없죠.');
+        return false;
+      }
+
+      if (item != null) {
+        transaction.earn = ((transaction.price - item.accumPrice / item.count) *
+                transaction.count)
+            .round();
+      }
+    }
+
+    await model.updateTransaction(id, transaction);
+
+    final krStock = fetchKrStockN(transaction.stockId);
+    final krStockValue = await krStock;
+    final stockName = krStockValue?.stockName ?? '';
+
+    if (krStockValue != null) {
+      if ((await model.setStock(Stock(
+              id: 0,
+              stockId: krStockValue.itemCode,
+              name: stockName,
+              closePrice: krStockValue.closePrice))) >
+          0) {
+        _showSimpleMessage('$stockName 종목 첫 매매 축하~~');
+      }
+    }
+
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    return true;
+  }
+
+  bool _checkInputs() {
+    if (widget.stockIdController.text.isEmpty ||
+        widget.priceController.text.isEmpty ||
+        widget.countController.text.isEmpty ||
+        _accountId == null) {
+      showSimpleError('칸을 모두 채우세요.');
+      return false;
+    }
+
+    final price = int.tryParse(widget.priceController.text) ?? 0;
+    final count = int.tryParse(widget.countController.text) ?? 0;
 
     if (price <= 0) {
       showSimpleError('단가가 이상하네요...');
-      return;
+      return false;
     }
 
     if (count <= 0) {
       showSimpleError('수량이 이상하네요...');
+      return false;
+    }
+
+    return true;
+  }
+
+  void onModifyPress(LonelyModel model) async {
+    if (_checkInputs() == false) {
       return;
     }
+
+    final editingTransaction = model.editingTransaction;
+    if (editingTransaction == null) {
+      return;
+    }
+
+    final editingTransactionId = editingTransaction.id;
+
+    if (editingTransactionId == null) {
+      if (kDebugMode) {
+        print('update transaction entry FAILED - id null');
+        print(editingTransaction);
+      }
+      return;
+    }
+
+    final price = int.tryParse(widget.priceController.text) ?? 0;
+    final count = int.tryParse(widget.countController.text) ?? 0;
+
+    if (await _onUpdateTransaction(
+        editingTransactionId,
+        Transaction(
+            transactionType: editingTransaction.transactionType,
+            count: count,
+            price: price,
+            stockId: widget.stockIdController.text,
+            dateTime: editingTransaction.dateTime,
+            accountId: _accountId),
+        model)) {
+      model.setEditingTransaction(null);
+    }
+  }
+
+  void onPress(TransactionType transactionType, LonelyModel model) async {
+    if (_checkInputs() == false) {
+      return;
+    }
+
+    final price = int.tryParse(widget.priceController.text) ?? 0;
+    final count = int.tryParse(widget.countController.text) ?? 0;
 
     if (await _onNewTransaction(
         Transaction(
@@ -134,15 +238,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
 
   void clearTextFields() {
     widget.stockIdController.text = '';
-    _priceController.text = '';
-    _countController.text = '';
-  }
-
-  @override
-  void dispose() {
-    _priceController.dispose();
-    _countController.dispose();
-    super.dispose();
+    widget.priceController.text = '';
+    widget.countController.text = '';
   }
 
   @override
@@ -155,60 +252,68 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: <Widget>[
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          buildAccountDropdown(),
-          buildTextField(
-              "종목코드", widget.stockIdController, TextInputAction.next),
-          buildTextField("단가", _priceController, TextInputAction.next),
-          buildTextField("수량", _countController, TextInputAction.done),
-        ],
-      ),
-      Row(
-        children: [
-          Expanded(
-            child: Consumer<LonelyModel>(
-              builder: (context, model, child) {
-                return OutlinedButton(
-                  style: ButtonStyle(
-                    foregroundColor:
-                        MaterialStateProperty.all<Color>(Colors.redAccent),
-                  ),
-                  onPressed: () {
-                    onPress(TransactionType.buy, model);
-                  },
-                  child: const Text('매수'),
-                );
-              },
-            ),
+    return Consumer<LonelyModel>(
+      builder: (context, model, child) {
+        final editingTransaction = model.editingTransaction;
+        if (editingTransaction != null) {
+          //_accountId = editingTransaction.accountId;
+          widget.stockIdController.text = editingTransaction.stockId;
+          widget.priceController.text = editingTransaction.price.toString();
+          widget.countController.text = editingTransaction.count.toString();
+        } else {
+          clearTextFields();
+        }
+
+        return Column(children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              buildAccountDropdown(),
+              buildTextField(
+                  "종목코드", widget.stockIdController, TextInputAction.next, true),
+              buildTextField(
+                  "단가", widget.priceController, TextInputAction.next, true),
+              buildTextField(
+                  "수량", widget.countController, TextInputAction.done, true),
+            ],
           ),
-          Expanded(
-            child: Consumer<LonelyModel>(
-              builder: (context, model, child) {
-                return OutlinedButton(
-                  style: ButtonStyle(
-                    foregroundColor:
-                        MaterialStateProperty.all<Color>(Colors.blueAccent),
-                  ),
-                  onPressed: () {
-                    onPress(TransactionType.sell, model);
-                  },
-                  child: const Text('매도'),
-                );
-              },
-            ),
+          Row(
+            children: [
+              if (editingTransaction == null) ...[
+                buildButton('매수', Colors.redAccent,
+                    () => onPress(TransactionType.buy, model)),
+                buildButton('매도', Colors.blueAccent,
+                    () => onPress(TransactionType.sell, model)),
+              ] else ...[
+                buildButton('편집', Colors.black, () => onModifyPress(model)),
+              ]
+            ],
           ),
-        ],
-      ),
-    ]);
+        ]);
+      },
+    );
   }
+
+  Expanded buildButton(String text, Color color, void Function() onPressed) =>
+      Expanded(
+        child: Consumer<LonelyModel>(
+          builder: (context, model, child) {
+            return OutlinedButton(
+              style: ButtonStyle(
+                foregroundColor: MaterialStateProperty.all<Color>(color),
+              ),
+              onPressed: onPressed,
+              child: Text(text),
+            );
+          },
+        ),
+      );
 
   Consumer<Object?> buildAccountDropdown() {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
-        _accountId ??= (model.accounts.isNotEmpty ? model.accounts.first.id : null);
+        _accountId ??=
+            (model.accounts.isNotEmpty ? model.accounts.first.id : null);
         return DropdownButton<int>(
           items: [
             // const DropdownMenuItem(value: 0, child: Text("---")),
@@ -231,7 +336,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   }
 
   Flexible buildTextField(String? hintText, TextEditingController? controller,
-      TextInputAction action) {
+      TextInputAction action, bool enabled) {
     return Flexible(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -244,6 +349,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
               contentPadding: const EdgeInsets.all(10.0)),
           autocorrect: false,
           textInputAction: action,
+          enabled: enabled,
         ),
       ),
     );

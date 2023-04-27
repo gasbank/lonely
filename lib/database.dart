@@ -282,4 +282,8 @@ class LonelyDatabase {
       await _clearAccountIdFromTransactionTable(idList)
     ];
   }
+
+  Future<int> updateTransaction(int id, Map<String, dynamic> values) async {
+    return _update(transactionsTable, id, values);
+  }
 }
