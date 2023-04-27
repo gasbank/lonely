@@ -74,7 +74,12 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   Widget build(BuildContext context) {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
-        final orderedItems = createItemMap(model.transactions, model.stocks)
+        final transactions = selects.isNotEmpty
+            ? model.transactions
+                .where((e) => e.accountId == selects.first)
+                .toList()
+            : model.transactions;
+        final orderedItems = createItemMap(transactions, model.stocks)
             .values
             .sortedBy((e) => model.getStock(e.stockId)?.inventoryOrder ?? 0)
             .where((e) => e.count > 0)
@@ -91,6 +96,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                   if (selects.contains(model.accounts[index].id)) {
                     selects.remove(model.accounts[index].id);
                   } else {
+                    selects.clear();
                     selects.add(model.accounts[index].id!);
                   }
                 });
@@ -121,22 +127,13 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                 },
                 children: [
                   for (var i = 0; i < orderedItems.length; i++) ...[
-                    ReorderableDragStartListener(
-                      key: Key(orderedItems[i].stockId),
-                      index: i,
-                      child: InkWell(
-                        key: Key(orderedItems[i].stockId),
-                        onTap: () =>
-                            widget.onStockSelected(orderedItems[i].stockId),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 6, horizontal: 12),
-                          child: ItemWidget(
-                            item: orderedItems[i],
-                          ),
-                        ),
-                      ),
-                    )
+                    selects.isEmpty
+                        ? ReorderableDragStartListener(
+                            key: Key(orderedItems[i].stockId),
+                            index: i,
+                            child: buildItemWidget(orderedItems[i]),
+                          )
+                        : buildItemWidget(orderedItems[i])
                   ]
                 ],
               ),
@@ -146,6 +143,17 @@ class _InventoryWidgetState extends State<InventoryWidget> {
       },
     );
   }
+
+  InkWell buildItemWidget(Item item) => InkWell(
+        key: Key(item.stockId),
+        onTap: () => widget.onStockSelected(item.stockId),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+          child: ItemWidget(
+            item: item,
+          ),
+        ),
+      );
 }
 
 extension MyIterable<E> on Iterable<E> {
