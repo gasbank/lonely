@@ -214,7 +214,8 @@ class LonelyDatabase {
     );
   }
 
-  Future<int> _update(String tableName, int id, Map<String, Object?> values) async {
+  Future<int> _update(
+      String tableName, int id, Map<String, Object?> values) async {
     final db = await database;
     return await db.update(
       tableName,
@@ -240,15 +241,32 @@ class LonelyDatabase {
     return await db.query(accountsTable);
   }
 
-  Future<int> removeTransaction(List<int> dbIdList) async {
-    if (dbIdList.isEmpty) {
+  Future<int> removeTransaction(List<int> idList) async {
+    return _removeById(transactionsTable, idList);
+  }
+
+  Future<int> _removeById(String tableName, List<int> idList) async {
+    if (idList.isEmpty) {
       return 0;
     }
 
     final db = await database;
-    return await db.delete(transactionsTable,
-        where: 'id IN (${List.filled(dbIdList.length, '?').join(',')})',
-        whereArgs: dbIdList);
+    return await db.delete(tableName,
+        where: 'id IN (${List.filled(idList.length, '?').join(',')})',
+        whereArgs: idList);
+  }
+
+  Future<int> _clearAccountIdFromTransactionTable(
+      List<int> accountIdList) async {
+    if (accountIdList.isEmpty) {
+      return 0;
+    }
+
+    final db = await database;
+    return db.update(transactionsTable, {'accountId': null},
+        where:
+            'accountId IN (${List.filled(accountIdList.length, '?').join(',')})',
+        whereArgs: accountIdList);
   }
 
   Future<int> updateStocksInventoryOrder(
@@ -256,5 +274,12 @@ class LonelyDatabase {
     final db = await database;
     return await db.update(stocksTable, {'inventoryOrder': inventoryOrder},
         where: 'stockId = ?', whereArgs: [stockId]);
+  }
+
+  Future<List<int>> removeAccount(List<int> idList) async {
+    return [
+      await _removeById(accountsTable, idList),
+      await _clearAccountIdFromTransactionTable(idList)
+    ];
   }
 }

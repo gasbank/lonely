@@ -15,7 +15,16 @@ class _AccountListWidgetState extends State<AccountListWidget> {
   final _accountNameController = TextEditingController();
   final _selectedSet = <int>{};
 
-  DataRow _createAccountRow(Account account, Set<int> selectedSet) {
+  void _showSimpleError(String msg) {
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+    ));
+  }
+
+  DataRow _createAccountRow(
+      Account account, Set<int> selectedSet, LonelyModel model) {
     return DataRow(
       cells: [
         DataCell(Text(account.name)),
@@ -36,6 +45,35 @@ class _AccountListWidgetState extends State<AccountListWidget> {
         });
       },
       selected: selectedSet.contains(account.id),
+      onLongPress: () {
+        if (selectedSet.isEmpty) {
+          _showSimpleError('하나 이상 선택하고 롱 탭하세요.');
+          return;
+        }
+
+        if (_selectedSet.isNotEmpty) {
+          showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                    title: const Text('확인'),
+                    content: Text('선택한 계좌 ${_selectedSet.length}개를 모두 지울까요?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'Cancel'),
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context, 'OK');
+                          removeSelectedAccount(model);
+                        },
+                        child: const Text('삭제'),
+                      ),
+                    ],
+                  ),
+              barrierDismissible: true);
+        }
+      },
     );
   }
 
@@ -74,19 +112,20 @@ class _AccountListWidgetState extends State<AccountListWidget> {
               builder: (context, model, child) {
                 return FittedBox(
                   child: DataTable(
-                      headingRowHeight: 40,
-                      dataRowHeight: 40,
-                      showCheckboxColumn: false,
-                      columns: const [
-                        DataColumn(label: Text('계좌명')),
-                        DataColumn(label: Text('종목 수')),
-                        DataColumn(label: Text('자산총계')),
-                        DataColumn(label: Text('평가액')),
-                      ],
-                      rows: model.accounts
-                          .sortedBy((e) => e.id ?? 0)
-                          .map((e) => _createAccountRow(e, _selectedSet))
-                          .toList()),
+                    headingRowHeight: 40,
+                    dataRowHeight: 40,
+                    showCheckboxColumn: false,
+                    columns: const [
+                      DataColumn(label: Text('계좌명')),
+                      DataColumn(label: Text('종목 수')),
+                      DataColumn(label: Text('자산총계')),
+                      DataColumn(label: Text('평가액')),
+                    ],
+                    rows: model.accounts
+                        .sortedBy((e) => e.id ?? 0)
+                        .map((e) => _createAccountRow(e, _selectedSet, model))
+                        .toList(),
+                  ),
                 );
               },
             ),
@@ -124,6 +163,15 @@ class _AccountListWidgetState extends State<AccountListWidget> {
       },
       child: _selectedSet.isEmpty ? const Text('추가') : const Text('변경'),
     );
+  }
+
+  void removeSelectedAccount(LonelyModel model) {
+    for (final id in _selectedSet.toSet()) {
+      model.removeAccount([id]);
+    }
+    setState(() {
+      _selectedSet.clear();
+    });
   }
 }
 

@@ -75,9 +75,9 @@ class LonelyModel extends ChangeNotifier {
     return insertedDbId;
   }
 
-  Future<int> removeTransaction(List<int> dbIdList) async {
-    final removedCount = await _db.removeTransaction(dbIdList);
-    _transactions.removeWhere((e) => dbIdList.contains(e.id));
+  Future<int> removeTransaction(List<int> idList) async {
+    final removedCount = await _db.removeTransaction(idList);
+    _transactions.removeWhere((e) => idList.contains(e.id));
     notifyListeners();
 
     return removedCount;
@@ -187,5 +187,18 @@ class LonelyModel extends ChangeNotifier {
       String stockId, int inventoryOrder) async {
     _stocks[stockId]?.inventoryOrder = inventoryOrder;
     return await _db.updateStocksInventoryOrder(stockId, inventoryOrder);
+  }
+
+  Future<List<int>> removeAccount(List<int> idList) async {
+    final removedCount = await _db.removeAccount(idList);
+
+    _accounts.removeWhere((e) => idList.contains(e.id));
+    _transactions.where((e) => idList.contains(e.accountId)).forEach((e) {
+      e.accountId = null;
+    });
+
+    notifyListeners();
+
+    return removedCount;
   }
 }
