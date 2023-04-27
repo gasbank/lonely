@@ -9,8 +9,7 @@ import 'transaction.dart';
 class InventoryWidget extends StatefulWidget {
   final Function(String) onStockSelected;
 
-  InventoryWidget(
-      {super.key, required this.onStockSelected}) {
+  InventoryWidget({super.key, required this.onStockSelected}) {
     if (kDebugMode) {
       print('InventoryWidget()');
     }
@@ -74,6 +73,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
             .toList();
 
         return ReorderableListView(
+          buildDefaultDragHandles: false,
           onReorder: (oldIndex, newIndex) {
             setState(() {
               final movingItem = orderedItems[oldIndex];
@@ -93,19 +93,25 @@ class _InventoryWidgetState extends State<InventoryWidget> {
               }
             });
           },
-          children: orderedItems
-              .map((e) => InkWell(
-                    key: Key(e.stockId),
-                    onTap: () => widget.onStockSelected(e.stockId),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 6, horizontal: 12),
-                      child: ItemWidget(
-                        item: e,
-                      ),
+          children: [
+            for (var i = 0; i < orderedItems.length; i++) ...[
+              ReorderableDragStartListener(
+                key: Key(orderedItems[i].stockId),
+                index: i,
+                child: InkWell(
+                  key: Key(orderedItems[i].stockId),
+                  onTap: () => widget.onStockSelected(orderedItems[i].stockId),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                    child: ItemWidget(
+                      item: orderedItems[i],
                     ),
-                  ))
-              .toList(),
+                  ),
+                ),
+              )
+            ]
+          ],
         );
       },
     );
