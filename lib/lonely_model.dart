@@ -111,9 +111,10 @@ class LonelyModel extends ChangeNotifier {
       return 0;
     }
 
+    final removedIndex = _accounts.indexWhere((e) => e.id == updateDbId);
     _accounts.removeWhere((e) => e.id == updateDbId);
     final updatedAccount = Account(id: updateDbId, name: name);
-    _accounts.add(updatedAccount);
+    _accounts.insert(removedIndex, updatedAccount);
     notifyListeners();
 
     return _updateAccountToDb(updateDbId, updatedAccount);
