@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/account_filter_widget.dart';
 import 'package:provider/provider.dart';
 import 'database.dart';
 import 'item_widget.dart';
@@ -62,6 +63,13 @@ Map<String, Item> createItemMap(
 }
 
 class _InventoryWidgetState extends State<InventoryWidget> {
+  final Set<int> selects = {};
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<LonelyModel>(
@@ -72,45 +80,67 @@ class _InventoryWidgetState extends State<InventoryWidget> {
             .where((e) => e.count > 0)
             .toList();
 
-        return ReorderableListView(
-          buildDefaultDragHandles: false,
-          onReorder: (oldIndex, newIndex) {
-            setState(() {
-              final movingItem = orderedItems[oldIndex];
-              if (kDebugMode) {
-                print(
-                    'Moving ${movingItem.stockName} from index $oldIndex to $newIndex');
-              }
-              orderedItems.removeAt(oldIndex);
-              if (oldIndex > newIndex) {
-                orderedItems.insert(newIndex, movingItem);
-              } else if (oldIndex < newIndex) {
-                orderedItems.insert(newIndex - 1, movingItem);
-              }
-
-              for (int i = 0; i < orderedItems.length; i++) {
-                model.updateStocksInventoryOrder(orderedItems[i].stockId, i);
-              }
-            });
-          },
+        return Column(
           children: [
-            for (var i = 0; i < orderedItems.length; i++) ...[
-              ReorderableDragStartListener(
-                key: Key(orderedItems[i].stockId),
-                index: i,
-                child: InkWell(
-                  key: Key(orderedItems[i].stockId),
-                  onTap: () => widget.onStockSelected(orderedItems[i].stockId),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                    child: ItemWidget(
-                      item: orderedItems[i],
-                    ),
-                  ),
-                ),
-              )
-            ]
+            AccountFilterWidget(
+              accounts: model.accounts,
+              selects:
+                  model.accounts.map((e) => selects.contains(e.id)).toList(),
+              onSelected: (index) {
+                setState(() {
+                  if (selects.contains(model.accounts[index].id)) {
+                    selects.remove(model.accounts[index].id);
+                  } else {
+                    selects.add(model.accounts[index].id!);
+                  }
+                });
+              },
+            ),
+            Expanded(
+              child: ReorderableListView(
+                buildDefaultDragHandles: false,
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    final movingItem = orderedItems[oldIndex];
+                    if (kDebugMode) {
+                      print(
+                          'Moving ${movingItem.stockName} from index $oldIndex to $newIndex');
+                    }
+                    orderedItems.removeAt(oldIndex);
+                    if (oldIndex > newIndex) {
+                      orderedItems.insert(newIndex, movingItem);
+                    } else if (oldIndex < newIndex) {
+                      orderedItems.insert(newIndex - 1, movingItem);
+                    }
+
+                    for (int i = 0; i < orderedItems.length; i++) {
+                      model.updateStocksInventoryOrder(
+                          orderedItems[i].stockId, i);
+                    }
+                  });
+                },
+                children: [
+                  for (var i = 0; i < orderedItems.length; i++) ...[
+                    ReorderableDragStartListener(
+                      key: Key(orderedItems[i].stockId),
+                      index: i,
+                      child: InkWell(
+                        key: Key(orderedItems[i].stockId),
+                        onTap: () =>
+                            widget.onStockSelected(orderedItems[i].stockId),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 6, horizontal: 12),
+                          child: ItemWidget(
+                            item: orderedItems[i],
+                          ),
+                        ),
+                      ),
+                    )
+                  ]
+                ],
+              ),
+            ),
           ],
         );
       },
