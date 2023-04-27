@@ -116,7 +116,7 @@ class LonelyModel extends ChangeNotifier {
     _accounts.add(updatedAccount);
     notifyListeners();
 
-    return _updateAccountToDb(updatedAccount);
+    return _updateAccountToDb(updateDbId, updatedAccount);
   }
 
   Future<int> _addAccountToDb(Account account) async {
@@ -127,8 +127,8 @@ class LonelyModel extends ChangeNotifier {
     return insertedId;
   }
 
-  Future<int> _updateAccountToDb(Account account) async {
-    final updateCount = await _db.updateAccount(account.toMap());
+  Future<int> _updateAccountToDb(int id, Account account) async {
+    final updateCount = await _db.updateAccount(id, account.toMap());
     if (kDebugMode) {
       print('Updated account DB raw count: $updateCount');
     }

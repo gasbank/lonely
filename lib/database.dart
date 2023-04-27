@@ -191,8 +191,8 @@ class LonelyDatabase {
     return _insert(accountsTable, values);
   }
 
-  Future<int> updateAccount(Map<String, Object?> values) async {
-    return _update(accountsTable, values);
+  Future<int> updateAccount(int id, Map<String, Object?> values) async {
+    return _update(accountsTable, id, values);
   }
 
   Future<String?> queryStockName(String stockId) async {
@@ -214,13 +214,13 @@ class LonelyDatabase {
     );
   }
 
-  Future<int> _update(String tableName, Map<String, Object?> values) async {
+  Future<int> _update(String tableName, int id, Map<String, Object?> values) async {
     final db = await database;
     return await db.update(
       tableName,
       values,
       where: 'id = ?',
-      whereArgs: [values['id']],
+      whereArgs: [id],
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
