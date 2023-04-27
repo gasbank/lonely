@@ -1,0 +1,9 @@
+/* 
+  InfoPlist.strings
+  Runner
+
+  Created by Geoyeob Kim on 4/27/23.
+  
+*/
+/* Localized Bundle Display Name */
+"CFBundleDisplayName" = "고독한 투자자";
