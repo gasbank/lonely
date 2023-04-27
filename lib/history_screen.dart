@@ -55,7 +55,9 @@ class _NewHistoryState extends State<HistoryScreen> {
         NewTransactionWidget(
           stockIdController: _stockIdController,
         ),
-        const TransactionHistoryWidget(),
+        TransactionHistoryWidget(
+          stockIdController: _stockIdController,
+        ),
       ],
     );
   }

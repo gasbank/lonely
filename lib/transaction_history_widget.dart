@@ -6,8 +6,10 @@ import 'lonely_model.dart';
 import 'transaction.dart';
 
 class TransactionHistoryWidget extends StatefulWidget {
+  final TextEditingController stockIdController;
+
   const TransactionHistoryWidget({
-    super.key,
+    super.key, required this.stockIdController,
   });
 
   @override
@@ -67,9 +69,14 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
         if (e.id != null) {
           setState(() {
             if (value ?? false) {
+              selectedSet.clear();
               selectedSet.add(e.id!);
+              widget.stockIdController.text = e.stockId;
             } else {
               selectedSet.remove(e.id!);
+              if (widget.stockIdController.text == e.stockId) {
+                widget.stockIdController.text = '';
+              }
             }
           });
         }
