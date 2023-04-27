@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -157,12 +158,17 @@ Future<Database> _initDatabase() async {
   const String dbName = 'lonely.db';
 
   if (Platform.isWindows || Platform.isLinux) {
-    return databaseFactoryFfi.openDatabase(
-        join((await getApplicationSupportDirectory()).path, dbName),
-        options: options);
+    final dbPath = join((await getApplicationSupportDirectory()).path, dbName);
+    if (kDebugMode) {
+      print('DB path: $dbPath');
+    }
+    return databaseFactoryFfi.openDatabase(dbPath, options: options);
   } else {
-    return databaseFactory.openDatabase(join(await getDatabasesPath(), dbName),
-        options: options);
+    final dbPath = join(await getDatabasesPath(), dbName);
+    if (kDebugMode) {
+      print('DB path: $dbPath');
+    }
+    return databaseFactory.openDatabase(dbPath, options: options);
   }
 }
 
