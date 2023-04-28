@@ -1,3 +1,3 @@
-# lonely_flutter
+# lonely
 
 허어...

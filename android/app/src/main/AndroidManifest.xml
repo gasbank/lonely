@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="top.plusalpha.lonely_flutter">
+    package="top.plusalpha.lonely">
    <application
         android:label="고독한 투자자"
         android:name="${applicationName}"

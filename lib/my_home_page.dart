@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/lonely_model.dart';
-import 'package:lonely_flutter/settings_widget.dart';
+import 'lonely_model.dart';
+import 'settings_widget.dart';
 import 'package:provider/provider.dart';
 import 'account_list_widget.dart';
 import 'history_screen.dart';

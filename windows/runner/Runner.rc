@@ -94,7 +94,7 @@ BEGIN
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "Lonely" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2023 Plus Alpha Game Studio. All rights reserved." "\0"
-            VALUE "OriginalFilename", "lonely_flutter.exe" "\0"
+            VALUE "OriginalFilename", "lonely.exe" "\0"
             VALUE "ProductName", "Lonely" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END

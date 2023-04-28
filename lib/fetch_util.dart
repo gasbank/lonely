@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:lonely_flutter/number_format_util.dart';
+import 'number_format_util.dart';
 import 'item_widget.dart';
 
 final krExp = RegExp(r'^[0-9]{6}$');

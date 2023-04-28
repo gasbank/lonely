@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/fetch_util.dart';
+import 'fetch_util.dart';
 import 'package:provider/provider.dart';
 import 'number_format_util.dart';
 import 'lonely_model.dart';

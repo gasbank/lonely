@@ -1,6 +1,6 @@
 {
-    "name": "lonely_flutter",
-    "short_name": "lonely_flutter",
+    "name": "lonely",
+    "short_name": "lonely",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

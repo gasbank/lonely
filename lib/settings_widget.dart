@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/database.dart';
+import 'database.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 

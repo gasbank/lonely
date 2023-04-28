@@ -1,4 +1,4 @@
-package top.plusalpha.lonely_flutter
+package top.plusalpha.lonely
 
 import io.flutter.embedding.android.FlutterActivity
 
