@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely_flutter/lonely_model.dart';
+import 'package:lonely_flutter/settings_widget.dart';
 import 'package:provider/provider.dart';
 import 'account_list_widget.dart';
 import 'history_screen.dart';
@@ -37,6 +38,10 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(title: const Text('계좌 목록')),
         body: const AccountListWidget(),
       ),
+      Scaffold(
+        appBar: AppBar(title: const Text('설정')),
+        body: const SettingsWidget(),
+      ),
     ];
   }
 
@@ -55,20 +60,25 @@ class _MyHomePageState extends State<MyHomePage> {
       bottomNavigationBar: Consumer<LonelyModel>(
         builder: (context, model, child) {
           return BottomNavigationBar(
-            showSelectedLabels: false,
-            showUnselectedLabels: false,
+            //showSelectedLabels: false,
+            //showUnselectedLabels: false,
+            type: BottomNavigationBarType.fixed,
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.summarize),
-                label: 'Home',
+                label: '포트폴리오',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.reorder),
-                label: 'Transactions',
+                label: '매매 기록',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.account_balance),
-                label: 'Accounts',
+                label: '계좌 관리',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings),
+                label: '설정',
               ),
             ],
             currentIndex: model.selectedScreenIndex,

@@ -157,18 +157,23 @@ Future<Database> _initDatabase() async {
     version: 5,
   );
 
+  final dbPath = await getDbPath();
+  if (kDebugMode) {
+    print('DB path: $dbPath');
+  }
+
   if (Platform.isWindows || Platform.isLinux) {
-    final dbPath = join((await getApplicationSupportDirectory()).path, _dbFileName);
-    if (kDebugMode) {
-      print('DB path: $dbPath');
-    }
     return databaseFactoryFfi.openDatabase(dbPath, options: options);
   } else {
-    final dbPath = join(await getDatabasesPath(), _dbFileName);
-    if (kDebugMode) {
-      print('DB path: $dbPath');
-    }
     return databaseFactory.openDatabase(dbPath, options: options);
+  }
+}
+
+Future<String> getDbPath() async {
+  if (Platform.isWindows || Platform.isLinux) {
+    return join((await getApplicationSupportDirectory()).path, _dbFileName);
+  } else {
+    return join(await getDatabasesPath(), _dbFileName);
   }
 }
 

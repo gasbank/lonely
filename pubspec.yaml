@@ -36,6 +36,7 @@ dependencies:
   provider:
   sqflite_common_ffi:
   path_provider:
+  share_plus:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
