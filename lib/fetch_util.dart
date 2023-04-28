@@ -102,6 +102,11 @@ Future<KrStock?> _fetchKrStockY(String stockId) async {
       print(e);
     }
     return null;
+  } on Exception catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
+    return null;
   }
 }
 
