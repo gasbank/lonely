@@ -71,6 +71,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   final _stockIdController = TextEditingController();
   final _priceController = TextEditingController();
   final _countController = TextEditingController();
+  bool isBalanceVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -93,21 +94,39 @@ class _InventoryWidgetState extends State<InventoryWidget> {
 
         return Column(
           children: [
-            AccountFilterWidget(
-              accounts: model.accounts,
-              selects: model.accounts
-                  .map((e) => _selectedAccounts.contains(e.id))
-                  .toList(),
-              onSelected: (index) {
-                setState(() {
-                  if (_selectedAccounts.contains(model.accounts[index].id)) {
-                    _selectedAccounts.remove(model.accounts[index].id);
-                  } else {
-                    _selectedAccounts.clear();
-                    _selectedAccounts.add(model.accounts[index].id!);
-                  }
-                });
-              },
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  AccountFilterWidget(
+                    accounts: model.accounts,
+                    selects: model.accounts
+                        .map((e) => _selectedAccounts.contains(e.id))
+                        .toList(),
+                    onSelected: (index) {
+                      setState(() {
+                        if (_selectedAccounts
+                            .contains(model.accounts[index].id)) {
+                          _selectedAccounts.remove(model.accounts[index].id);
+                        } else {
+                          _selectedAccounts.clear();
+                          _selectedAccounts.add(model.accounts[index].id!);
+                        }
+                      });
+                    },
+                  ),
+                  const Spacer(),
+                  LabeledCheckbox(
+                    label: "금액",
+                    value: isBalanceVisible,
+                    onChanged: (newValue) {
+                      setState(() {
+                        isBalanceVisible = newValue;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: ReorderableListView(
@@ -179,7 +198,9 @@ class _InventoryWidgetState extends State<InventoryWidget> {
           children: [
             ItemWidget(
               item: item,
+              isBalanceVisible: isBalanceVisible,
             ),
+            // 선택된 종목은 그 상태에서 바로 매매 항목 추가할 수 있도록 한다.
             if (_selectedItems.contains(item.stockId)) ...[
               NewTransactionWidget(
                 stockIdController: _stockIdController,
@@ -204,5 +225,38 @@ extension MyIterable<E> on Iterable<E> {
     final copy = toList();
     mergeSort(copy, compare: (a, b) => key(a).compareTo(key(b)));
     return copy;
+  }
+}
+
+class LabeledCheckbox extends StatelessWidget {
+  const LabeledCheckbox({
+    Key? key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  }) : super(key: key);
+
+  final String label;
+  final bool value;
+  final Function onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        onChanged(!value);
+      },
+      child: Row(
+        children: <Widget>[
+          Checkbox(
+            value: value,
+            onChanged: (bool? newValue) {
+              onChanged(newValue);
+            },
+          ),
+          Text(label),
+        ],
+      ),
+    );
   }
 }

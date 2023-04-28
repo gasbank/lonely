@@ -85,15 +85,13 @@ Future<int?> writeKrStockToDb(
 
 class ItemWidget extends StatefulWidget {
   final Item item;
+  final bool isBalanceVisible;
 
-  ItemWidget({
+  const ItemWidget({
     super.key,
     required this.item,
-  }) {
-    if (kDebugMode) {
-      //print('ItemWidget()');
-    }
-  }
+    required this.isBalanceVisible,
+  });
 
   @override
   State<StatefulWidget> createState() => _ItemWidgetState();
@@ -171,18 +169,26 @@ class _ItemWidgetState extends State<ItemWidget> {
                         .apply(color: Theme.of(context).colorScheme.primary)),
               ],
             ),
-            Text(currentBalanceStr,
-                style: DefaultTextStyle.of(context)
-                    .style
-                    .apply(fontSizeFactor: 1.8)),
+            if (widget.isBalanceVisible) ...[
+              Text(currentBalanceStr,
+                  style: DefaultTextStyle.of(context)
+                      .style
+                      .apply(fontSizeFactor: 1.8)),
+            ],
           ],
         ),
         const Spacer(),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(percentStr),
-            Text(diffPriceStr),
+            Text(
+              percentStr,
+              style:
+                  DefaultTextStyle.of(context).style.apply(fontWeightDelta: 0),
+            ),
+            if (widget.isBalanceVisible) ...[
+              Text(diffPriceStr),
+            ],
           ],
         ),
       ],
