@@ -5,6 +5,7 @@ class TransactionTextField extends StatefulWidget {
   final TextEditingController? controller;
   final TextInputAction action;
   final bool enabled;
+  final bool numberOnly;
 
   const TransactionTextField({
     super.key,
@@ -12,6 +13,7 @@ class TransactionTextField extends StatefulWidget {
     required this.hintText,
     required this.action,
     required this.enabled,
+    required this.numberOnly,
   });
 
   @override
@@ -47,7 +49,7 @@ class _TransactionTextFieldState extends State<TransactionTextField> {
               baseOffset: 0, extentOffset: controller.text.length);
         }
       },
-      keyboardType: TextInputType.number,
+      keyboardType: widget.numberOnly ? TextInputType.number : TextInputType.text,
       decoration: InputDecoration(
           border: const OutlineInputBorder(),
           hintText: widget.hintText,

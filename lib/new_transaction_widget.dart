@@ -271,12 +271,12 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
               buildAccountDropdown(),
               if (widget.stockIdEnabled) ...[
                 buildTextField("종목코드", widget.stockIdController,
-                    TextInputAction.next, widget.stockIdEnabled),
+                    TextInputAction.next, widget.stockIdEnabled, false),
               ],
               buildTextField(
-                  "단가", widget.priceController, TextInputAction.next, true),
+                  "단가", widget.priceController, TextInputAction.next, true, true),
               buildTextField(
-                  "수량", widget.countController, TextInputAction.done, true),
+                  "수량", widget.countController, TextInputAction.done, true, true),
             ],
           ),
           Row(
@@ -338,7 +338,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   }
 
   Flexible buildTextField(String? hintText, TextEditingController? controller,
-      TextInputAction action, bool enabled) {
+      TextInputAction action, bool enabled, bool numberOnly) {
     return Flexible(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -347,6 +347,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
           hintText: hintText,
           action: action,
           enabled: enabled,
+          numberOnly: numberOnly,
         ),
       ),
     );
