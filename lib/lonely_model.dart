@@ -28,6 +28,7 @@ class LonelyModel extends ChangeNotifier {
   final _stocks = <String, Stock>{};
   final _accounts = <Account>[];
   final _transactions = <Transaction>[];
+  int _selectedScreenIndex = 0;
 
   Transaction? _editingTransaction;
 
@@ -38,6 +39,8 @@ class LonelyModel extends ChangeNotifier {
   List<Transaction> get transactions => UnmodifiableListView(_transactions);
 
   Transaction? get editingTransaction => _editingTransaction;
+
+  int get selectedScreenIndex => _selectedScreenIndex;
 
   final _db = LonelyDatabase();
 
@@ -221,5 +224,10 @@ class LonelyModel extends ChangeNotifier {
     notifyListeners();
 
     return count;
+  }
+
+  void setSelectedScreenIndex(int index) {
+    _selectedScreenIndex = index;
+    notifyListeners();
   }
 }

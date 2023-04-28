@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'database.dart';
 import 'inventory_widget.dart';
+import 'lonely_model.dart';
 
 class PortfolioScreen extends StatefulWidget {
   const PortfolioScreen({super.key});
@@ -12,14 +14,6 @@ class PortfolioScreen extends StatefulWidget {
 }
 
 class _NewPortfolioState extends State<PortfolioScreen> {
-  final _stockIdController = TextEditingController();
-
-  @override
-  void dispose() {
-    _stockIdController.dispose();
-    super.dispose();
-  }
-
   void showSimpleMessage(String msg) {
     ScaffoldMessenger.of(context)
         .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
@@ -32,11 +26,7 @@ class _NewPortfolioState extends State<PortfolioScreen> {
   Widget build(BuildContext context) {
     return InventoryWidget(
       onStockSelected: (selectedStockId) {
-        if (_stockIdController.text == selectedStockId) {
-          _stockIdController.text = '';
-        } else {
-          _stockIdController.text = selectedStockId;
-        }
+        //context.read<LonelyModel>().setSelectedScreenIndex(1);
       },
     );
   }

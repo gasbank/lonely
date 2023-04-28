@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/new_transaction_widget.dart';
 import 'account_filter_widget.dart';
 import 'package:provider/provider.dart';
 import 'database.dart';
@@ -63,20 +64,19 @@ Map<String, Item> createItemMap(
 }
 
 class _InventoryWidgetState extends State<InventoryWidget> {
-  final Set<int> selects = {};
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  final Set<int> _selectedAccounts = {};
+  final Set<String> _selectedItems = {};
+  final _stockIdController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _countController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
-        final transactions = selects.isNotEmpty
+        final transactions = _selectedAccounts.isNotEmpty
             ? model.transactions
-                .where((e) => e.accountId == selects.first)
+                .where((e) => _selectedAccounts.contains(e.accountId))
                 .toList()
             : model.transactions;
         final orderedItems = createItemMap(transactions, model.stocks)
@@ -89,15 +89,16 @@ class _InventoryWidgetState extends State<InventoryWidget> {
           children: [
             AccountFilterWidget(
               accounts: model.accounts,
-              selects:
-                  model.accounts.map((e) => selects.contains(e.id)).toList(),
+              selects: model.accounts
+                  .map((e) => _selectedAccounts.contains(e.id))
+                  .toList(),
               onSelected: (index) {
                 setState(() {
-                  if (selects.contains(model.accounts[index].id)) {
-                    selects.remove(model.accounts[index].id);
+                  if (_selectedAccounts.contains(model.accounts[index].id)) {
+                    _selectedAccounts.remove(model.accounts[index].id);
                   } else {
-                    selects.clear();
-                    selects.add(model.accounts[index].id!);
+                    _selectedAccounts.clear();
+                    _selectedAccounts.add(model.accounts[index].id!);
                   }
                 });
               },
@@ -127,7 +128,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                 },
                 children: [
                   for (var i = 0; i < orderedItems.length; i++) ...[
-                    selects.isEmpty
+                    _selectedAccounts.isEmpty && _selectedItems.isEmpty
                         ? ReorderableDragStartListener(
                             key: Key(orderedItems[i].stockId),
                             index: i,
@@ -144,16 +145,49 @@ class _InventoryWidgetState extends State<InventoryWidget> {
     );
   }
 
-  InkWell buildItemWidget(Item item) => InkWell(
-        key: Key(item.stockId),
-        onTap: () => widget.onStockSelected(item.stockId),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-          child: ItemWidget(
-            item: item,
-          ),
+  InkWell buildItemWidget(Item item) {
+    if (_selectedItems.contains(item.stockId)) {
+      _stockIdController.text = item.stockId;
+    }
+
+    return InkWell(
+      key: Key(item.stockId),
+      onTap: () {
+        widget.onStockSelected(item.stockId);
+
+        _priceController.text = '';
+        _countController.text = '';
+
+        setState(() {
+          if (_selectedItems.contains(item.stockId)) {
+            _selectedItems.remove(item.stockId);
+          } else {
+            _selectedItems.clear();
+            _selectedItems.add(item.stockId);
+          }
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        child: Column(
+          children: [
+            ItemWidget(
+              item: item,
+            ),
+            if (_selectedItems.contains(item.stockId)) ...[
+              NewTransactionWidget(
+                stockIdController: _stockIdController,
+                priceController: _priceController,
+                countController: _countController,
+                editingTransaction: null,
+                stockIdEnabled: false,
+              ),
+            ],
+          ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 extension MyIterable<E> on Iterable<E> {

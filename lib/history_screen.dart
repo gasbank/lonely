@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'lonely_model.dart';
 import 'new_transaction_widget.dart';
 import 'transaction_history_widget.dart';
 
@@ -27,10 +28,16 @@ class _NewHistoryState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        NewTransactionWidget(
-          stockIdController: _stockIdController,
-          priceController: _priceController,
-          countController: _countController,
+        Consumer<LonelyModel>(
+          builder: (context, model, child) {
+            return NewTransactionWidget(
+              stockIdController: _stockIdController,
+              priceController: _priceController,
+              countController: _countController,
+              editingTransaction: model.editingTransaction,
+              stockIdEnabled: true,
+            );
+          },
         ),
         TransactionHistoryWidget(
           stockIdController: _stockIdController,

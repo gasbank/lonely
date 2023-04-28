@@ -7,17 +7,23 @@ import 'package:provider/provider.dart';
 import 'inventory_widget.dart';
 import 'item_widget.dart';
 import 'transaction.dart';
+import 'transaction_text_field.dart';
 
 class NewTransactionWidget extends StatefulWidget {
   final TextEditingController stockIdController;
   final TextEditingController priceController;
   final TextEditingController countController;
+  final Transaction? editingTransaction;
+  final bool stockIdEnabled;
 
-  const NewTransactionWidget(
-      {super.key,
-      required this.stockIdController,
-      required this.priceController,
-      required this.countController});
+  const NewTransactionWidget({
+    super.key,
+    required this.stockIdController,
+    required this.priceController,
+    required this.countController,
+    required this.editingTransaction,
+    required this.stockIdEnabled,
+  });
 
   @override
   State<StatefulWidget> createState() => _NewTransactionWidgetState();
@@ -243,25 +249,17 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   }
 
   @override
-  void initState() {
-    if (kDebugMode) {
-      //print('initState(): NewTransactionWidget');
-    }
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
-        final editingTransaction = model.editingTransaction;
+        final editingTransaction = widget.editingTransaction;
         if (editingTransaction != null) {
           //_accountId = editingTransaction.accountId;
           widget.stockIdController.text = editingTransaction.stockId;
           widget.priceController.text = editingTransaction.price.toString();
           widget.countController.text = editingTransaction.count.toString();
         } else {
-          clearTextFields();
+          //clearTextFields();
         }
 
         return Column(children: <Widget>[
@@ -269,8 +267,10 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               buildAccountDropdown(),
-              buildTextField(
-                  "종목코드", widget.stockIdController, TextInputAction.next, true),
+              if (widget.stockIdEnabled) ...[
+                buildTextField("종목코드", widget.stockIdController,
+                    TextInputAction.next, widget.stockIdEnabled),
+              ],
               buildTextField(
                   "단가", widget.priceController, TextInputAction.next, true),
               buildTextField(
@@ -340,15 +340,10 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
     return Flexible(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        child: TextField(
+        child: TransactionTextField(
           controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              hintText: hintText,
-              contentPadding: const EdgeInsets.all(10.0)),
-          autocorrect: false,
-          textInputAction: action,
+          hintText: hintText,
+          action: action,
           enabled: enabled,
         ),
       ),

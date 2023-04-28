@@ -75,9 +75,9 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
               model.setEditingTransaction(e);
             } else {
               selectedSet.remove(e.id!);
-              if (widget.stockIdController.text == e.stockId) {
+              /*if (widget.stockIdController.text == e.stockId) {
                 widget.stockIdController.text = '';
-              }
+              }*/
               model.setEditingTransaction(null);
             }
           });
@@ -127,10 +127,11 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
 
   @override
   void initState() {
+    super.initState();
+
     if (kDebugMode) {
       //print('initState(): TransactionHistoryWidget');
     }
-    super.initState();
 
     final editingTransaction = context.read<LonelyModel>().editingTransaction;
     if (editingTransaction != null) {
