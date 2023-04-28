@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'database.dart';
 import 'lonely_model.dart';
 import 'my_home_page.dart';
 
-void main() async {
+void main() {
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
   }
@@ -31,9 +30,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blueGrey,
         ),
-        home: MyHomePage(
-          database: LonelyDatabase(),
-        ),
+        home: const MyHomePage(),
       ),
     );
   }

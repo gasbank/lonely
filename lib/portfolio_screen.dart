@@ -5,13 +5,7 @@ import 'database.dart';
 import 'inventory_widget.dart';
 
 class PortfolioScreen extends StatefulWidget {
-  PortfolioScreen({super.key, required this.database}) {
-    if (kDebugMode) {
-      print('PortfolioScreen()');
-    }
-  }
-
-  final LonelyDatabase database;
+  const PortfolioScreen({super.key});
 
   @override
   State<StatefulWidget> createState() => _NewPortfolioState();

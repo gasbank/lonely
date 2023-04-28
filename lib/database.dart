@@ -120,6 +120,8 @@ INSERT INTO $accountsTable (name) VALUES ('기본');
 ''');
 }
 
+const String _dbFileName = 'lonely.db';
+
 Future<Database> _initDatabase() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -155,16 +157,14 @@ Future<Database> _initDatabase() async {
     version: 5,
   );
 
-  const String dbName = 'lonely.db';
-
   if (Platform.isWindows || Platform.isLinux) {
-    final dbPath = join((await getApplicationSupportDirectory()).path, dbName);
+    final dbPath = join((await getApplicationSupportDirectory()).path, _dbFileName);
     if (kDebugMode) {
       print('DB path: $dbPath');
     }
     return databaseFactoryFfi.openDatabase(dbPath, options: options);
   } else {
-    final dbPath = join(await getDatabasesPath(), dbName);
+    final dbPath = join(await getDatabasesPath(), _dbFileName);
     if (kDebugMode) {
       print('DB path: $dbPath');
     }
@@ -173,10 +173,10 @@ Future<Database> _initDatabase() async {
 }
 
 class LonelyDatabase {
-  late final Future<Database> database;
+  late final Future<Database> _database;
 
   LonelyDatabase() {
-    database = _initDatabase();
+    _database = _initDatabase();
   }
 
   Future<int> insertTransaction(Map<String, Object?> values) async {
@@ -196,7 +196,7 @@ class LonelyDatabase {
   }
 
   Future<String?> queryStockName(String stockId) async {
-    final db = await database;
+    final db = await _database;
     final result = await db.query(stocksTable,
         where: 'stockId = ?', whereArgs: [stockId], limit: 1);
     if (result.isNotEmpty) {
@@ -206,7 +206,7 @@ class LonelyDatabase {
   }
 
   Future<int> _insert(String tableName, Map<String, Object?> values) async {
-    final db = await database;
+    final db = await _database;
     return await db.insert(
       tableName,
       values,
@@ -216,7 +216,7 @@ class LonelyDatabase {
 
   Future<int> _update(
       String tableName, int id, Map<String, Object?> values) async {
-    final db = await database;
+    final db = await _database;
     return await db.update(
       tableName,
       values,
@@ -227,17 +227,17 @@ class LonelyDatabase {
   }
 
   Future<List<Map<String, dynamic>>> queryTransactions() async {
-    final db = await database;
+    final db = await _database;
     return await db.query(transactionsTable);
   }
 
   Future<List<Map<String, dynamic>>> queryStocks() async {
-    final db = await database;
+    final db = await _database;
     return await db.query(stocksTable);
   }
 
   Future<List<Map<String, dynamic>>> queryAccounts() async {
-    final db = await database;
+    final db = await _database;
     return await db.query(accountsTable);
   }
 
@@ -250,7 +250,7 @@ class LonelyDatabase {
       return 0;
     }
 
-    final db = await database;
+    final db = await _database;
     return await db.delete(tableName,
         where: 'id IN (${List.filled(idList.length, '?').join(',')})',
         whereArgs: idList);
@@ -262,7 +262,7 @@ class LonelyDatabase {
       return 0;
     }
 
-    final db = await database;
+    final db = await _database;
     return db.update(transactionsTable, {'accountId': null},
         where:
             'accountId IN (${List.filled(accountIdList.length, '?').join(',')})',
@@ -271,7 +271,7 @@ class LonelyDatabase {
 
   Future<int> updateStocksInventoryOrder(
       String stockId, int inventoryOrder) async {
-    final db = await database;
+    final db = await _database;
     return await db.update(stocksTable, {'inventoryOrder': inventoryOrder},
         where: 'stockId = ?', whereArgs: [stockId]);
   }

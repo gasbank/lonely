@@ -1,17 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/account_list_widget.dart';
-import 'package:lonely_flutter/history_screen.dart';
-import 'package:lonely_flutter/lonely_model.dart';
-import 'package:lonely_flutter/portfolio_screen.dart';
-import 'package:provider/provider.dart';
-
-import 'database.dart';
+import 'account_list_widget.dart';
+import 'history_screen.dart';
+import 'portfolio_screen.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.database});
-
-  final LonelyDatabase database;
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -29,14 +23,16 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _widgetOptions = <Widget>[
       Scaffold(
-          appBar: AppBar(title: const Text('포트폴리오')),
-          body: PortfolioScreen(database: widget.database),),
+        appBar: AppBar(title: const Text('포트폴리오')),
+        body: const PortfolioScreen(),
+      ),
       Scaffold(
         appBar: AppBar(title: const Text('매매 기록')),
-        body: HistoryScreen(database: widget.database),),
+        body: const HistoryScreen(),
+      ),
       Scaffold(
         appBar: AppBar(title: const Text('계좌 목록')),
-        body: AccountListWidget(),
+        body: const AccountListWidget(),
       ),
     ];
   }

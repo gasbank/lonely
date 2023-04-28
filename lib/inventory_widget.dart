@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/account_filter_widget.dart';
+import 'account_filter_widget.dart';
 import 'package:provider/provider.dart';
 import 'database.dart';
 import 'item_widget.dart';

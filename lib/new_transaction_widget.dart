@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely_flutter/database.dart';
-import 'package:lonely_flutter/lonely_model.dart';
+import 'database.dart';
+import 'lonely_model.dart';
 import 'package:provider/provider.dart';
 
 import 'inventory_widget.dart';

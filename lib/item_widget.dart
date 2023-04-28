@@ -6,7 +6,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:lonely_flutter/database.dart';
+import 'database.dart';
 import 'package:provider/provider.dart';
 import 'lonely_model.dart';
 import 'number_format_util.dart';
