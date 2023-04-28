@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'fetch_util.dart';
 import 'database.dart';
 import 'lonely_model.dart';
 import 'package:provider/provider.dart';
 
 import 'inventory_widget.dart';
-import 'item_widget.dart';
 import 'transaction.dart';
 import 'transaction_text_field.dart';
 
@@ -79,7 +79,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
 
     await model.addTransaction(transaction);
 
-    final krStock = fetchKrStockN(transaction.stockId);
+    final krStock = fetchStockInfo(transaction.stockId);
     final krStockValue = await krStock;
     final stockName = krStockValue?.stockName ?? '';
 
@@ -131,7 +131,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
 
     await model.updateTransaction(id, transaction);
 
-    final krStock = fetchKrStockN(transaction.stockId);
+    final krStock = fetchStockInfo(transaction.stockId);
     final krStockValue = await krStock;
     final stockName = krStockValue?.stockName ?? '';
 
@@ -160,7 +160,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       return false;
     }
 
-    final price = int.tryParse(widget.priceController.text) ?? 0;
+    final price = double.tryParse(widget.priceController.text) ?? 0;
     final count = int.tryParse(widget.countController.text) ?? 0;
 
     if (price <= 0) {
@@ -196,7 +196,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       return;
     }
 
-    final price = int.tryParse(widget.priceController.text) ?? 0;
+    final stockId = widget.stockIdController.text;
+    final price = priceInputToData(stockId, widget.priceController.text);
     final count = int.tryParse(widget.countController.text) ?? 0;
 
     if (await _onUpdateTransaction(
@@ -205,7 +206,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             transactionType: editingTransaction.transactionType,
             count: count,
             price: price,
-            stockId: widget.stockIdController.text,
+            stockId: stockId,
             dateTime: editingTransaction.dateTime,
             accountId: _accountId),
         model)) {
@@ -218,7 +219,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       return;
     }
 
-    final price = int.tryParse(widget.priceController.text) ?? 0;
+    final stockId = widget.stockIdController.text;
+    final price = priceInputToData(stockId, widget.priceController.text);
     final count = int.tryParse(widget.countController.text) ?? 0;
 
     if (await _onNewTransaction(
@@ -256,7 +258,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         if (editingTransaction != null) {
           //_accountId = editingTransaction.accountId;
           widget.stockIdController.text = editingTransaction.stockId;
-          widget.priceController.text = editingTransaction.price.toString();
+          widget.priceController.text = priceDataToDisplay(editingTransaction.stockId, editingTransaction.price);
           widget.countController.text = editingTransaction.count.toString();
         } else {
           //clearTextFields();

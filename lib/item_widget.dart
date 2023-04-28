@@ -1,11 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:lonely_flutter/fetch_util.dart';
 import 'database.dart';
 import 'package:provider/provider.dart';
 import 'lonely_model.dart';
@@ -58,6 +54,15 @@ class KrStock {
         stockName: json['name'],
         closePrice: closePrice);
   }
+
+  factory KrStock.fromJsonY(Map<String, dynamic> json) {
+    final meta = json['chart']['result'][0]['meta'];
+    final closePrice = meta['regularMarketPrice'] as double;
+    return KrStock(
+        itemCode: meta['symbol'] as String,
+        stockName: meta['symbol'] as String,
+        closePrice: (closePrice * 10000).round());
+  }
 }
 
 Future<int?> writeKrStockToDb(
@@ -94,70 +99,6 @@ class ItemWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _ItemWidgetState();
 }
 
-Future<KrStock?> fetchKrStockN(String stockId) async {
-  if (stockId.length != 6) {
-    return null;
-  }
-
-  try {
-    final response = await http
-        .get(Uri.parse('https://m.stock.naver.com/api/stock/$stockId/basic'));
-    if (response.statusCode == 200) {
-      return KrStock.fromJsonN(jsonDecode(response.body));
-    } else if ((response.statusCode == 409)) {
-      return null;
-    } else {
-      throw Exception('failed to http get');
-    }
-  } on SocketException catch (e) {
-    if (kDebugMode) {
-      print(e);
-    }
-    return null;
-  } on http.ClientException catch (e) {
-    if (kDebugMode) {
-      print(e);
-    }
-    return null;
-  }
-}
-
-Future<KrStock?> fetchKrStockD(String stockId) async {
-  if (stockId.length != 6) {
-    return null;
-  }
-
-  try {
-    final response = await http.get(
-        Uri.parse(
-            'https://finance.daum.net/api/quotes/A$stockId?changeStatistics=true&chartSlideImage=true&isMobile=true'),
-        headers: {
-          'referer': 'https://m.finance.daum.net/',
-        });
-    if (response.statusCode == 200) {
-      return KrStock.fromJsonD(jsonDecode(response.body));
-    } else if ((response.statusCode == 409)) {
-      // Conflict
-      return null;
-    } else if ((response.statusCode == 502)) {
-      // Bad Gateway
-      return null;
-    } else {
-      throw Exception('failed to http get');
-    }
-  } on SocketException catch (e) {
-    if (kDebugMode) {
-      print(e);
-    }
-    return null;
-  } on http.ClientException catch (e) {
-    if (kDebugMode) {
-      print(e);
-    }
-    return null;
-  }
-}
-
 class _ItemWidgetState extends State<ItemWidget> {
   late final Stream<KrStock?> _stockStream;
   late final LonelyModel _model;
@@ -169,9 +110,7 @@ class _ItemWidgetState extends State<ItemWidget> {
     _model = context.read<LonelyModel>();
 
     _stockStream = onceAndPeriodic(const Duration(seconds: 5), () {
-      final fetchFuture = Random().nextInt(2) == 0
-          ? fetchKrStockD(widget.item.stockId)
-          : fetchKrStockN(widget.item.stockId);
+      final fetchFuture = fetchStockInfo(widget.item.stockId);
       saveToModel(fetchFuture);
       return fetchFuture;
     });
@@ -190,6 +129,20 @@ class _ItemWidgetState extends State<ItemWidget> {
 
   Widget buildWidget(Item item, LonelyModel model) {
     final stock = model.stocks[item.stockId];
+
+    final currentBalanceStr = (stock != null && stock.closePrice != null)
+        ? formatThousandsStr(priceDataToDisplayTruncated(
+            stock.stockId, (stock.closePrice! * widget.item.count).toDouble()))
+        : '---';
+
+    final percentStr = (stock != null && stock.closePrice != null)
+        ? '${formatThousandsStr(((stock.closePrice! / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
+        : '---%';
+
+    final diffPriceStr = (stock != null && stock.closePrice != null)
+        ? formatThousandsStr(priceDataToDisplayTruncated(
+                item.stockId, item.diffPrice(stock.closePrice!)))
+        : '---';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -218,10 +171,7 @@ class _ItemWidgetState extends State<ItemWidget> {
                         .apply(color: Theme.of(context).colorScheme.primary)),
               ],
             ),
-            Text(
-                (stock != null && stock.closePrice != null)
-                    ? formatThousands(stock.closePrice! * widget.item.count)
-                    : '---',
+            Text(currentBalanceStr,
                 style: DefaultTextStyle.of(context)
                     .style
                     .apply(fontSizeFactor: 1.8)),
@@ -231,13 +181,8 @@ class _ItemWidgetState extends State<ItemWidget> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text((stock != null && stock.closePrice != null)
-                ? '${formatThousandsStr(((stock.closePrice! / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
-                : '---%'),
-            Text((stock != null && stock.closePrice != null)
-                ? formatThousandsStr(
-                    item.diffPrice(stock.closePrice!).toStringAsFixed(0))
-                : '---'),
+            Text(percentStr),
+            Text(diffPriceStr),
           ],
         ),
       ],

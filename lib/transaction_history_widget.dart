@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely_flutter/fetch_util.dart';
 import 'package:provider/provider.dart';
 import 'number_format_util.dart';
 import 'lonely_model.dart';
@@ -28,7 +29,7 @@ List<DataCell> _dataCellListFromTransaction(
         ))),
     DataCell(Text(
         '${t.transactionType == TransactionType.buy ? '🔸' : '🔹'}$stockName')),
-    DataCell(Text(formatThousands(t.price))),
+    DataCell(Text(formatThousandsStr(priceDataToDisplay(t.stockId, t.price)))),
     DataCell(Text(formatThousands(t.count))),
     DataCell(Text(t.transactionType == TransactionType.buy
         ? ''

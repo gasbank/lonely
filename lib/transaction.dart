@@ -4,13 +4,23 @@ enum TransactionType {
 }
 
 class Transaction {
-  Transaction(
-      {required this.stockId,
-        required this.price,
-        required this.count,
-        required this.transactionType,
-        required this.dateTime,
-        required this.accountId});
+  int? id;
+  late final String stockId;
+  late final int price;
+  late final int count;
+  late final TransactionType transactionType;
+  late final DateTime dateTime;
+  int? earn;
+  int? accountId;
+
+  Transaction({
+    required this.stockId,
+    required this.price,
+    required this.count,
+    required this.transactionType,
+    required this.dateTime,
+    required this.accountId,
+  });
 
   Transaction.fromMap(Map<String, dynamic> map) {
     id = map['id'];
@@ -25,15 +35,6 @@ class Transaction {
     accountId = map['accountId'];
   }
 
-  int? id;
-  late final String stockId;
-  late final int price;
-  late final int count;
-  late final TransactionType transactionType;
-  late final DateTime dateTime;
-  int? earn;
-  int? accountId;
-
   Map<String, dynamic> toMap() {
     return {
       'stockId': stockId,
@@ -42,8 +43,8 @@ class Transaction {
       'transactionType': transactionType == TransactionType.buy
           ? 0
           : transactionType == TransactionType.sell
-          ? 1
-          : -1,
+              ? 1
+              : -1,
       'dateTime': dateTime.toIso8601String(),
       'earn': earn,
       'accountId': accountId,
