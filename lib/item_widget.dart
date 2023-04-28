@@ -183,8 +183,13 @@ class _ItemWidgetState extends State<ItemWidget> {
           children: [
             Text(
               percentStr,
-              style:
-                  DefaultTextStyle.of(context).style.apply(fontWeightDelta: 0),
+              style: DefaultTextStyle.of(context)
+                  .style
+                  .apply(fontWeightDelta: 0)
+                  .apply(
+                      color: percentStr[0] == '-'
+                          ? Colors.blueAccent
+                          : Colors.redAccent),
             ),
             if (widget.isBalanceVisible) ...[
               Text(diffPriceStr),
