@@ -3,13 +3,15 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:lonely_flutter/number_format_util.dart';
 import 'item_widget.dart';
 
 final krExp = RegExp(r'^[0-9]{6}$');
 
-// $1.2345 <-> 12345
 const fracMultiplier = 10000;
 
+// KR: 12345 -> 12345
+// EN: 12345 -> 123450000
 int priceInputToData(String stockId, String priceStr) {
   return (krExp.hasMatch(stockId)
           ? int.tryParse(priceStr)
@@ -17,16 +19,41 @@ int priceInputToData(String stockId, String priceStr) {
       0;
 }
 
+// "1,000" -> "$1,000"
+// "-1" -> "-$1"
+String prependCurrencySymbol(String symbol, String priceStr) {
+  if (symbol.isEmpty) {
+    return priceStr;
+  }
+
+  if (priceStr.isEmpty) {
+    return priceStr;
+  }
+
+  if (priceStr[0] == '-') {
+    return '-$symbol${priceStr.substring(1)}';
+  } else {
+    return '$symbol$priceStr';
+  }
+}
+
 String priceDataToDisplay(String stockId, int price) {
-  return krExp.hasMatch(stockId)
-      ? price.toString()
-      : (price / fracMultiplier).toString();
+  final isKr = krExp.hasMatch(stockId);
+  return prependCurrencySymbol(
+      isKr == false ? '\$' : '', priceDataToInput(stockId, price));
+}
+
+String priceDataToInput(String stockId, int price) {
+  final isKr = krExp.hasMatch(stockId);
+  return isKr ? price.toString() : (price / fracMultiplier).toString();
 }
 
 String priceDataToDisplayTruncated(String stockId, double price) {
   final isKr = krExp.hasMatch(stockId);
-  final priceRealScale = krExp.hasMatch(stockId) ? price : (price / fracMultiplier);
-  return priceRealScale.toStringAsFixed(isKr ? 0 : 2);
+  final priceRealScale =
+      krExp.hasMatch(stockId) ? price : (price / fracMultiplier);
+  return prependCurrencySymbol(isKr == false ? '\$' : '',
+      formatThousandsStr(priceRealScale.toStringAsFixed(isKr ? 0 : 2)));
 }
 
 double priceDataToRealScale(String stockId, double price) {

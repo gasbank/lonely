@@ -131,8 +131,8 @@ class _ItemWidgetState extends State<ItemWidget> {
     final stock = model.stocks[item.stockId];
 
     final currentBalanceStr = (stock != null && stock.closePrice != null)
-        ? formatThousandsStr(priceDataToDisplayTruncated(
-            stock.stockId, (stock.closePrice! * widget.item.count).toDouble()))
+        ? priceDataToDisplayTruncated(
+            stock.stockId, (stock.closePrice! * widget.item.count).toDouble())
         : '---';
 
     final percentStr = (stock != null && stock.closePrice != null)
@@ -140,8 +140,8 @@ class _ItemWidgetState extends State<ItemWidget> {
         : '---%';
 
     final diffPriceStr = (stock != null && stock.closePrice != null)
-        ? formatThousandsStr(priceDataToDisplayTruncated(
-                item.stockId, item.diffPrice(stock.closePrice!)))
+        ? priceDataToDisplayTruncated(
+            item.stockId, item.diffPrice(stock.closePrice!))
         : '---';
 
     return Row(

@@ -258,7 +258,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         if (editingTransaction != null) {
           //_accountId = editingTransaction.accountId;
           widget.stockIdController.text = editingTransaction.stockId;
-          widget.priceController.text = priceDataToDisplay(editingTransaction.stockId, editingTransaction.price);
+          widget.priceController.text = priceDataToInput(editingTransaction.stockId, editingTransaction.price);
           widget.countController.text = editingTransaction.count.toString();
         } else {
           //clearTextFields();

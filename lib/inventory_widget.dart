@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely_flutter/new_transaction_widget.dart';
@@ -85,6 +87,10 @@ class _InventoryWidgetState extends State<InventoryWidget> {
             .where((e) => e.count > 0)
             .toList();
 
+        final allowReorder =
+            _selectedAccounts.isEmpty && _selectedItems.isEmpty;
+        final buildDefaultDragHandles = Platform.isAndroid || Platform.isIOS;
+
         return Column(
           children: [
             AccountFilterWidget(
@@ -105,7 +111,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
             ),
             Expanded(
               child: ReorderableListView(
-                buildDefaultDragHandles: false,
+                buildDefaultDragHandles: buildDefaultDragHandles,
                 onReorder: (oldIndex, newIndex) {
                   setState(() {
                     final movingItem = orderedItems[oldIndex];
@@ -128,7 +134,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                 },
                 children: [
                   for (var i = 0; i < orderedItems.length; i++) ...[
-                    _selectedAccounts.isEmpty && _selectedItems.isEmpty
+                    allowReorder && !buildDefaultDragHandles
                         ? ReorderableDragStartListener(
                             key: Key(orderedItems[i].stockId),
                             index: i,

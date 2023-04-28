@@ -10,7 +10,8 @@ class TransactionHistoryWidget extends StatefulWidget {
   final TextEditingController stockIdController;
 
   const TransactionHistoryWidget({
-    super.key, required this.stockIdController,
+    super.key,
+    required this.stockIdController,
   });
 
   @override
@@ -29,11 +30,13 @@ List<DataCell> _dataCellListFromTransaction(
         ))),
     DataCell(Text(
         '${t.transactionType == TransactionType.buy ? '🔸' : '🔹'}$stockName')),
-    DataCell(Text(formatThousandsStr(priceDataToDisplay(t.stockId, t.price)))),
+    DataCell(Text(priceDataToDisplay(t.stockId, t.price))),
     DataCell(Text(formatThousands(t.count))),
     DataCell(Text(t.transactionType == TransactionType.buy
         ? ''
-        : formatThousandsStr(t.earn?.toString() ?? '???'))),
+        : t.earn != null
+            ? priceDataToDisplay(t.stockId, t.earn!)
+            : '???')),
   ];
 }
 
