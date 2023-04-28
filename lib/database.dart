@@ -178,10 +178,20 @@ Future<String> getDbPath() async {
 }
 
 class LonelyDatabase {
-  late final Future<Database> _database;
+  late Future<Database> _database;
 
   LonelyDatabase() {
     _database = _initDatabase();
+  }
+
+  Future<void> closeAndReloadDatabase(File newDbFile) async {
+    final db = await _database;
+    if (db.isOpen) {
+      await db.close();
+      final dbPath = await getDbPath();
+      await newDbFile.copy(dbPath);
+      _database = _initDatabase();
+    }
   }
 
   Future<int> insertTransaction(Map<String, Object?> values) async {

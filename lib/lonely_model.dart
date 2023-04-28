@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'database.dart';
 import 'transaction.dart';
@@ -45,9 +46,18 @@ class LonelyModel extends ChangeNotifier {
   final _db = LonelyDatabase();
 
   LonelyModel() {
-    _loadAccounts();
-    _loadStocks();
-    _loadTransactions();
+    _loadAll();
+  }
+
+  Future<void> _loadAll() async {
+    await _loadAccounts();
+    await _loadStocks();
+    await _loadTransactions();
+  }
+
+  Future<void> closeAndReplaceDatabase(File newDb) async {
+    await _db.closeAndReloadDatabase(newDb);
+    await _loadAll();
   }
 
   Future<int> setStock(Stock s) async {
@@ -143,7 +153,7 @@ class LonelyModel extends ChangeNotifier {
     return updateCount;
   }
 
-  void _loadAccounts() async {
+  Future<void> _loadAccounts() async {
     final accounts = await _db.queryAccounts();
 
     if (kDebugMode) {
@@ -155,7 +165,7 @@ class LonelyModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _loadStocks() async {
+  Future<void> _loadStocks() async {
     final stocks = await _db.queryStocks();
 
     if (kDebugMode) {
@@ -169,7 +179,7 @@ class LonelyModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _loadTransactions() async {
+  Future<void> _loadTransactions() async {
     final transactions = await _db.queryTransactions();
 
     if (kDebugMode) {
