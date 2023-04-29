@@ -33,6 +33,7 @@ class Importer {
   }
 
   Future<void> execute(
+    int accountId,
     StockTxtLoader stockTxtLoader,
     Future<void> Function(Transaction) onNewTransaction,
     Future<void> Function(String stockId, int accountId, int splitFactor)
@@ -66,8 +67,6 @@ class Importer {
       // }
 
       final dateTime = DateTime.tryParse(dateTimeStr)!;
-
-      const accountId = 9999;
 
       if (transactionType == '매수' ||
           transactionType == '매도' ||

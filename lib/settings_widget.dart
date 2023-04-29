@@ -56,25 +56,37 @@ class SettingsWidget extends StatelessWidget {
                     print(file.path);
                   }
 
+                  const accountId = 1;
                   final importer = Importer();
                   await importer.loadSheet(file);
-                  await importer.execute(model.stockTxtLoader,
-                      (transaction) async {
-                    await registerNewTransaction(
-                        transaction, model, (_) {}, true);
-                  }, (stockId, accountId, splitFactor) async {
-                    final itemMap =
-                        createItemMap(model.transactions, model.stocks);
-                    final item = itemMap[stockId];
-                    if (item == null) return;
+                  await importer.execute(
+                    accountId,
+                    model.stockTxtLoader,
+                    (transaction) async {
+                      await registerNewTransaction(
+                          transaction, model, (_) {}, true);
+                    },
+                    (stockId, accountId, splitFactor) async {
+                      final itemMap =
+                          createItemMap(model.transactions, model.stocks);
+                      final item = itemMap[stockId];
+                      if (item == null) return;
 
-                    await splitStock(item, accountId, model, splitFactor, true);
-                  });
+                      await splitStock(
+                          item, accountId, model, splitFactor, true);
+                    },
+                  );
                 } else {
                   // User canceled the picker
                 }
               },
               child: const Text('삼성증권 XLSX 불러오기'),
+            ),
+            OutlinedButton(
+              onPressed: () async {
+                await model.closeAndReplaceDatabase(null);
+              },
+              child: const Text('DB 초기화'),
             ),
           ]);
         },

@@ -62,7 +62,7 @@ class LonelyModel extends ChangeNotifier {
     await _stockTxtLoader.load();
   }
 
-  Future<void> closeAndReplaceDatabase(File newDb) async {
+  Future<void> closeAndReplaceDatabase(File? newDb) async {
     await _db.closeAndReloadDatabase(newDb);
     await _loadAll();
   }

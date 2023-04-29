@@ -184,12 +184,16 @@ class LonelyDatabase {
     _database = _initDatabase();
   }
 
-  Future<void> closeAndReloadDatabase(File newDbFile) async {
+  Future<void> closeAndReloadDatabase(File? newDbFile) async {
     final db = await _database;
     if (db.isOpen) {
       await db.close();
       final dbPath = await getDbPath();
-      await newDbFile.copy(dbPath);
+      if (newDbFile != null) {
+        await newDbFile.copy(dbPath);
+      } else {
+        await File(dbPath).delete();
+      }
       _database = _initDatabase();
     }
   }
