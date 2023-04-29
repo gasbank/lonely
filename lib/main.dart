@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -8,6 +9,11 @@ import 'lonely_model.dart';
 import 'my_home_page.dart';
 
 void main() {
+  if (kIsWeb) {
+    // 웹에서는 sqflite 못쓴다.
+    throw Exception('Web is not supported');
+  }
+
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
   }
@@ -26,6 +32,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => LonelyModel(),
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Lonely',
         theme: ThemeData(
           primarySwatch: Colors.blueGrey,
