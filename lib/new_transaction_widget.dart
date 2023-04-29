@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'fetch_util.dart';
 import 'database.dart';
 import 'lonely_model.dart';
+import 'package:lonely/item_widget.dart';
 import 'package:provider/provider.dart';
 
 import 'inventory_widget.dart';
@@ -29,56 +30,81 @@ class NewTransactionWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _NewTransactionWidgetState();
 }
 
-class _NewTransactionWidgetState extends State<NewTransactionWidget> {
-  int? _accountId;
+Future<int> _stockSum(String stockId, TransactionType transactionType,
+    Iterable<Transaction> transactions) async {
+  final sum = transactions
+      .where(
+          (e) => e.stockId == stockId && e.transactionType == transactionType)
+      .map((e) => e.count)
+      .fold(0, (a, b) => a + b);
+  return sum;
+}
 
-  void _showSimpleMessage(String msg) {
-    ScaffoldMessenger.of(context)
-        .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-    ));
-  }
+Future<void> splitStock(Item item, int? accountId, LonelyModel model,
+    int splitFactor, bool isBatch) async {
+  // TODO 모든 계좌에서 해 줘야겠지...?
 
-  Future<int> _stockSum(String stockId, TransactionType transactionType,
-      Iterable<Transaction> transactions) async {
-    final sum = transactions
-        .where(
-            (e) => e.stockId == stockId && e.transactionType == transactionType)
-        .map((e) => e.count)
-        .fold(0, (a, b) => a + b);
-    return sum;
-  }
+  final avgPrice = (item.accumPrice / item.count).round();
+  final now = DateTime.now();
 
-  Future<bool> _onNewTransaction(
-      Transaction transaction, LonelyModel model) async {
-    if (kDebugMode) {
-      print('new transaction entry!');
-      print(transaction);
+  // 일괄 매도
+  await registerNewTransaction(
+    Transaction(
+        stockId: item.stockId,
+        price: avgPrice,
+        count: item.count,
+        transactionType: TransactionType.sell,
+        dateTime: now,
+        accountId: accountId),
+    model,
+    (_) {},
+    isBatch,
+  );
+  // 일괄 매수
+  await registerNewTransaction(
+    Transaction(
+        stockId: item.stockId,
+        price: (avgPrice / splitFactor).round(),
+        count: item.count * splitFactor,
+        transactionType: TransactionType.buy,
+        dateTime: now,
+        accountId: accountId),
+    model,
+    (_) {},
+    isBatch,
+  );
+}
+
+Future<bool> registerNewTransaction(Transaction transaction, LonelyModel model,
+    void Function(String) onSimpleMessage, bool isBatch) async {
+  // if (kDebugMode) {
+  //   print('new transaction entry!');
+  //   print(transaction);
+  // }
+
+  final itemMap = createItemMap(model.transactions, model.stocks);
+  final item = itemMap[transaction.stockId];
+
+  if (transaction.transactionType == TransactionType.sell) {
+    final buySum = await _stockSum(
+        transaction.stockId, TransactionType.buy, model.transactions);
+    final sellSum = await _stockSum(
+        transaction.stockId, TransactionType.sell, model.transactions);
+    if (buySum - sellSum < transaction.count) {
+      onSimpleMessage('가진 것보다 더 팔 수는 없죠.');
+      return false;
     }
 
-    final item =
-        createItemMap(model.transactions, model.stocks)[transaction.stockId];
-
-    if (transaction.transactionType == TransactionType.sell) {
-      final buySum = await _stockSum(
-          transaction.stockId, TransactionType.buy, model.transactions);
-      final sellSum = await _stockSum(
-          transaction.stockId, TransactionType.sell, model.transactions);
-      if (buySum - sellSum < transaction.count) {
-        _showSimpleMessage('가진 것보다 더 팔 수는 없죠.');
-        return false;
-      }
-
-      if (item != null) {
-        transaction.earn = ((transaction.price - item.accumPrice / item.count) *
-                transaction.count)
-            .round();
-      }
+    if (item != null) {
+      transaction.earn = ((transaction.price - item.accumPrice / item.count) *
+              transaction.count)
+          .round();
     }
+  }
 
-    await model.addTransaction(transaction);
+  await model.addTransaction(transaction);
 
+  if (isBatch == false) {
     final krStock = fetchStockInfo(transaction.stockId);
     final krStockValue = await krStock;
     final stockName = krStockValue?.stockName ?? '';
@@ -90,13 +116,25 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
               name: stockName,
               closePrice: krStockValue.closePrice))) >
           0) {
-        _showSimpleMessage('$stockName 종목 첫 매매 축하~~');
+        onSimpleMessage('$stockName 종목 첫 매매 축하~~');
       }
     }
+  }
 
-    FocusManager.instance.primaryFocus?.unfocus();
+  FocusManager.instance.primaryFocus?.unfocus();
 
-    return true;
+  return true;
+}
+
+class _NewTransactionWidgetState extends State<NewTransactionWidget> {
+  int? _accountId;
+
+  void _showSimpleMessage(String msg) {
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+    ));
   }
 
   Future<bool> _onUpdateTransaction(
@@ -223,15 +261,18 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
     final price = priceInputToData(stockId, widget.priceController.text);
     final count = int.tryParse(widget.countController.text) ?? 0;
 
-    if (await _onNewTransaction(
-        Transaction(
-            transactionType: transactionType,
-            count: count,
-            price: price,
-            stockId: widget.stockIdController.text,
-            dateTime: DateTime.now(),
-            accountId: _accountId),
-        model)) {
+    if (await registerNewTransaction(
+      Transaction(
+          transactionType: transactionType,
+          count: count,
+          price: price,
+          stockId: widget.stockIdController.text,
+          dateTime: DateTime.now(),
+          accountId: _accountId),
+      model,
+      _showSimpleMessage,
+      false,
+    )) {
       clearTextFields();
     }
   }
@@ -258,7 +299,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         if (editingTransaction != null) {
           //_accountId = editingTransaction.accountId;
           widget.stockIdController.text = editingTransaction.stockId;
-          widget.priceController.text = priceDataToInput(editingTransaction.stockId, editingTransaction.price);
+          widget.priceController.text = priceDataToInput(
+              editingTransaction.stockId, editingTransaction.price);
           widget.countController.text = editingTransaction.count.toString();
         } else {
           //clearTextFields();
@@ -273,10 +315,10 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
                 buildTextField("종목코드", widget.stockIdController,
                     TextInputAction.next, widget.stockIdEnabled, false),
               ],
-              buildTextField(
-                  "단가", widget.priceController, TextInputAction.next, true, true),
-              buildTextField(
-                  "수량", widget.countController, TextInputAction.done, true, true),
+              buildTextField("단가", widget.priceController, TextInputAction.next,
+                  true, true),
+              buildTextField("수량", widget.countController, TextInputAction.done,
+                  true, true),
             ],
           ),
           Row(
@@ -288,6 +330,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
                     () => onPress(TransactionType.sell, model)),
               ] else ...[
                 buildButton('편집', Colors.black, () => onModifyPress(model)),
+                buildButton('액면분할', Colors.black, () => onSplit(model)),
               ]
             ],
           ),
@@ -357,5 +400,41 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
     setState(() {
       _accountId = value;
     });
+  }
+
+  void onSplit(LonelyModel model) {
+    final editingTransaction = model.editingTransaction;
+    if (editingTransaction == null) return;
+
+    final itemMap = createItemMap(model.transactions, model.stocks);
+    final item = itemMap[editingTransaction.stockId];
+    if (item == null) return;
+
+    const splitFactor = 5;
+
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('액면분할'),
+              content: Text('\'${item.stockName}\' 종목을 $splitFactor배 액면분할합니다.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, 'Cancel'),
+                  child: const Text('취소'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context, 'OK');
+
+                    final accountId = editingTransaction.accountId;
+
+                    await splitStock(
+                        item, accountId, model, splitFactor, false);
+                  },
+                  child: const Text('실행'),
+                ),
+              ],
+            ),
+        barrierDismissible: true);
   }
 }

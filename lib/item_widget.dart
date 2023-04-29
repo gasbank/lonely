@@ -57,7 +57,12 @@ class KrStock {
 
   factory KrStock.fromJsonY(Map<String, dynamic> json) {
     final meta = json['chart']['result'][0]['meta'];
-    final closePrice = meta['regularMarketPrice'] as double;
+    final priceNode = meta['regularMarketPrice'];
+    if (priceNode == null) {
+      throw const FormatException('regularMarketPrice not found');
+    }
+
+    final closePrice = priceNode as double;
     return KrStock(
         itemCode: meta['symbol'] as String,
         stockName: meta['symbol'] as String,
@@ -126,11 +131,12 @@ class _ItemWidgetState extends State<ItemWidget> {
   }
 
   Widget buildWidget(Item item, LonelyModel model) {
-    final stock = model.stocks[item.stockId];
+    final stockId = stockIdAlternatives[item.stockId] ?? item.stockId;
+    final stock = model.stocks[stockId];
 
     final currentBalanceStr = (stock != null && stock.closePrice != null)
         ? priceDataToDisplayTruncated(
-            stock.stockId, (stock.closePrice! * widget.item.count).toDouble())
+            stockId, (stock.closePrice! * widget.item.count).toDouble())
         : '---';
 
     final percentStr = (stock != null && stock.closePrice != null)
@@ -139,7 +145,7 @@ class _ItemWidgetState extends State<ItemWidget> {
 
     final diffPriceStr = (stock != null && stock.closePrice != null)
         ? priceDataToDisplayTruncated(
-            item.stockId, item.diffPrice(stock.closePrice!))
+            stockId, item.diffPrice(stock.closePrice!))
         : '---';
 
     return Row(
@@ -163,7 +169,7 @@ class _ItemWidgetState extends State<ItemWidget> {
                 const SizedBox(
                   width: 4,
                 ),
-                Text(item.stockId,
+                Text(stockId,
                     style: DefaultTextStyle.of(context)
                         .style
                         .apply(color: Theme.of(context).colorScheme.primary)),

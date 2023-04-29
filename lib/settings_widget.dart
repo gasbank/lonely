@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely/excel_importer.dart';
+import 'package:lonely/inventory_widget.dart';
+import 'package:lonely/new_transaction_widget.dart';
 import 'database.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -27,7 +30,8 @@ class SettingsWidget extends StatelessWidget {
             ),
             OutlinedButton(
               onPressed: () async {
-                final result = await FilePicker.platform.pickFiles();
+                final result = await FilePicker.platform
+                    .pickFiles(allowedExtensions: ['db']);
 
                 if (result != null) {
                   final file = File(result.files.single.path!);
@@ -40,6 +44,37 @@ class SettingsWidget extends StatelessWidget {
                 }
               },
               child: const Text('매매 기록 불러오기'),
+            ),
+            OutlinedButton(
+              onPressed: () async {
+                final result = await FilePicker.platform
+                    .pickFiles(allowedExtensions: ['xlsx']);
+
+                if (result != null) {
+                  final file = File(result.files.single.path!);
+                  if (kDebugMode) {
+                    print(file.path);
+                  }
+
+                  final importer = Importer();
+                  await importer.loadSheet(file);
+                  await importer.execute(model.stockTxtLoader,
+                      (transaction) async {
+                    await registerNewTransaction(
+                        transaction, model, (_) {}, true);
+                  }, (stockId, accountId, splitFactor) async {
+                    final itemMap =
+                        createItemMap(model.transactions, model.stocks);
+                    final item = itemMap[stockId];
+                    if (item == null) return;
+
+                    await splitStock(item, accountId, model, splitFactor, true);
+                  });
+                } else {
+                  // User canceled the picker
+                }
+              },
+              child: const Text('삼성증권 XLSX 불러오기'),
             ),
           ]);
         },

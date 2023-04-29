@@ -17,6 +17,7 @@ void main() {
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
   }
+
   runApp(const MyApp());
 }
 

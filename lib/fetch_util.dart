@@ -10,6 +10,15 @@ final krExp = RegExp(r'^[0-9]{6}$');
 
 const fracMultiplier = 10000;
 
+const stockIdAlternatives = {
+  'ACE 미국S&P500': '360200',
+  'USD Invesco QQQ Trust ETF': 'QQQ',
+  'USD SPDR S&P 500 Trust ETF': 'SPY',
+  'KODEX K-신재생에너지액티브': '385510',
+  'USD Global X Robotics & AI ETF': 'BOTZ',
+  'KCC': '002380',
+};
+
 // 사용자가 입력한 값을 저장 상태로 변환
 // KR: "12345" -> 12345
 // EN: "12345" -> 123450000
@@ -44,6 +53,8 @@ String prependCurrencySymbol(String symbol, String priceStr) {
 // KR: 123456789 -> "123,456,789"
 // EN: 123456789 -> "$12,345.6789"
 String priceDataToDisplay(String stockId, int price) {
+  stockId = stockIdAlternatives[stockId] ?? stockId;
+
   final isKr = krExp.hasMatch(stockId);
   return prependCurrencySymbol(isKr == false ? '\$' : '',
       formatThousandsStr(priceDataToInput(stockId, price)));
@@ -53,6 +64,8 @@ String priceDataToDisplay(String stockId, int price) {
 // KR: 123456789 -> "123456789"
 // EN: 123456789 -> "12345.6789"
 String priceDataToInput(String stockId, int price) {
+  stockId = stockIdAlternatives[stockId] ?? stockId;
+
   final isKr = krExp.hasMatch(stockId);
   return isKr ? price.toString() : (price / fracMultiplier).toString();
 }
@@ -62,6 +75,8 @@ String priceDataToInput(String stockId, int price) {
 // KR: 12345.6789 -> "12,346"
 // EN: 12345.6789 -> "$1.23"
 String priceDataToDisplayTruncated(String stockId, double price) {
+  stockId = stockIdAlternatives[stockId] ?? stockId;
+
   final isKr = krExp.hasMatch(stockId);
   final priceRealScale = priceDataToRealScale(stockId, price);
   return prependCurrencySymbol(isKr == false ? '\$' : '',
@@ -72,10 +87,15 @@ String priceDataToDisplayTruncated(String stockId, double price) {
 // KR: 12345.6789 -> 12345.6789
 // EN: 12345.6789 -> 1.23456789
 double priceDataToRealScale(String stockId, double price) {
+  stockId = stockIdAlternatives[stockId] ?? stockId;
+
   return krExp.hasMatch(stockId) ? price : (price / fracMultiplier);
 }
 
 Future<KrStock?> fetchStockInfo(String stockId) async {
+
+  stockId = stockIdAlternatives[stockId] ?? stockId;
+
   if (krExp.hasMatch(stockId)) {
     return Random().nextInt(2) == 0
         ? _fetchKrStockD(stockId)
@@ -124,7 +144,11 @@ Future<KrStock?> _fetchKrStockY(String stockId) async {
           'https://query1.finance.yahoo.com/v8/finance/chart/$stockId?interval=3mo'),
     );
     if (response.statusCode == 200) {
-      return KrStock.fromJsonY(jsonDecode(response.body));
+      try {
+        return KrStock.fromJsonY(jsonDecode(response.body));
+      } on FormatException {
+        return null;
+      }
     } else if ((response.statusCode == 409)) {
       // Conflict
       return null;
