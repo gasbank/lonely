@@ -1,15 +1,14 @@
 import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely/excel_importer.dart';
-import 'package:lonely/inventory_widget.dart';
-import 'package:lonely/new_transaction_widget.dart';
-import 'database.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-
+import 'database.dart';
+import 'excel_importer.dart';
+import 'inventory_widget.dart';
+import 'item_widget.dart';
+import 'new_transaction_widget.dart';
 import 'lonely_model.dart';
 
 class SettingsWidget extends StatelessWidget {
@@ -21,76 +20,152 @@ class SettingsWidget extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: Consumer<LonelyModel>(
         builder: (context, model, child) {
-          return ListView(children: [
-            OutlinedButton(
-              onPressed: () async {
-                Share.shareXFiles([XFile(await getDbPath())]);
-              },
-              child: const Text('매매 기록 내보내기'),
-            ),
-            OutlinedButton(
-              onPressed: () async {
-                final result = await FilePicker.platform
-                    .pickFiles(allowedExtensions: ['db']);
-
-                if (result != null) {
-                  final file = File(result.files.single.path!);
-                  if (kDebugMode) {
-                    print(file.path);
-                  }
-                  await model.closeAndReplaceDatabase(file);
-                } else {
-                  // User canceled the picker
-                }
-              },
-              child: const Text('매매 기록 불러오기'),
-            ),
-            OutlinedButton(
-              onPressed: () async {
-                final result = await FilePicker.platform
-                    .pickFiles(allowedExtensions: ['xlsx']);
-
-                if (result != null) {
-                  final file = File(result.files.single.path!);
-                  if (kDebugMode) {
-                    print(file.path);
-                  }
-
-                  const accountId = 1;
-                  final importer = Importer();
-                  await importer.loadSheet(file);
-                  await importer.execute(
-                    accountId,
-                    model.stockTxtLoader,
-                    (transaction) async {
-                      await registerNewTransaction(
-                          transaction, model, (_) {}, true);
-                    },
-                    (stockId, accountId, splitFactor) async {
-                      final itemMap =
-                          createItemMap(model.transactions, model.stocks);
-                      final item = itemMap[stockId];
-                      if (item == null) return;
-
-                      await splitStock(
-                          item, accountId, model, splitFactor, true);
-                    },
-                  );
-                } else {
-                  // User canceled the picker
-                }
-              },
-              child: const Text('삼성증권 XLSX 불러오기'),
-            ),
-            OutlinedButton(
-              onPressed: () async {
-                await model.closeAndReplaceDatabase(null);
-              },
-              child: const Text('DB 초기화'),
-            ),
-          ]);
+          return Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  children: [
+                    OutlinedButton(
+                      onPressed: () async => await onExportDatabase(),
+                      child: const Text('매매 기록 내보내기'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () async => await onImportDatabase(model),
+                      child: const Text('매매 기록 불러오기'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () async => await onImportSsXlsx(model),
+                      child: const Text('삼성증권 XLSX 불러오기'),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              OutlinedButton(
+                onPressed: () => onClearAllData(context, model),
+                child: const Text(
+                  '매매 기록 모두 삭제',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+              const Spacer(),
+              const Text(
+                'v0.1.0',
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          );
         },
       ),
     );
+  }
+
+  void onClearAllData(BuildContext context, LonelyModel model) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('경고'),
+              content: const Text('모든 매매 기록이 삭제되고, 초기 상태로 돌아갑니다.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, 'Cancel'),
+                  child: const Text('취소'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context, 'OK');
+                    await model.closeAndReplaceDatabase(null);
+                    model.setEditingTransaction(null);
+                  },
+                  child: const Text('모두 삭제'),
+                ),
+              ],
+            ),
+        barrierDismissible: true);
+  }
+
+  Future<void> onImportSsXlsx(LonelyModel model) async {
+    final result =
+        await FilePicker.platform.pickFiles(allowedExtensions: ['xlsx']);
+
+    if (result != null) {
+      final file = File(result.files.single.path!);
+      if (kDebugMode) {
+        print(file.path);
+      }
+
+      // XLSX 파일 하나 당 하나의 계좌인 것으로 가정
+      const accountId = 1;
+
+      final importer = Importer();
+
+      await importer.loadSheet(file);
+
+      await importer.execute(
+        accountId,
+        model.stockTxtLoader,
+        (transaction) async {
+          await registerNewTransaction(transaction, model, (_) {}, true);
+        },
+        (stockId, splitFactor) async {
+          // 매 호출 시마다 model.transactions 바뀌기 때문에,
+          // 더 넓은 범위에서 한번만 계산해선 안된다.
+          final itemMapOnAccount = createItemMap(
+              model.transactions.where((e) => e.accountId == accountId),
+              model.stocks);
+
+          final item = itemMapOnAccount[stockId];
+          if (item == null) {
+            //throw Exception('cannot split with null item');
+            return;
+          }
+
+          final itemOnAccount = ItemOnAccount(item, accountId);
+
+          await splitStock(itemOnAccount, model, splitFactor, true);
+        },
+        (stockId, count) async {
+          // 매 호출 시마다 model.transactions 바뀌기 때문에,
+          // 더 넓은 범위에서 한번만 계산해선 안된다.
+
+          final itemMapOnAccount = createItemMap(
+              model.transactions.where((e) => e.accountId == accountId),
+              model.stocks);
+
+          final item = itemMapOnAccount[stockId];
+          if (item == null) {
+            //throw Exception('cannot transfer with null item');
+            return;
+          }
+
+          final itemOnAccount = ItemOnAccount(item, accountId);
+
+          await transferStock(itemOnAccount, count, model, true);
+        },
+      );
+    } else {
+      // User canceled the picker
+    }
+  }
+
+  Future<void> onImportDatabase(LonelyModel model) async {
+    final result =
+        await FilePicker.platform.pickFiles(allowedExtensions: ['db']);
+
+    if (result != null) {
+      final file = File(result.files.single.path!);
+      if (kDebugMode) {
+        print(file.path);
+      }
+      await model.closeAndReplaceDatabase(file);
+    } else {
+      // User canceled the picker
+    }
+  }
+
+  Future<void> onExportDatabase() async {
+    Share.shareXFiles([XFile(await getDbPath())]);
   }
 }

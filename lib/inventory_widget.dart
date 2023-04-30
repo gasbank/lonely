@@ -45,19 +45,34 @@ Map<String, Item> createItemMap(
       item.stockName = stockMap[e.stockId]?.name ?? '';
     }
 
-    if (e.transactionType == TransactionType.buy) {
-      item.accumPrice += e.count * e.price;
-      item.count += e.count;
+    switch (e.transactionType) {
+      case TransactionType.buy:
+      case TransactionType.splitIn:
+      case TransactionType.transferIn:
+        item.accumPrice += e.count * e.price;
+        item.count += e.count;
 
-      item.accumBuyPrice += e.count * e.price;
-      item.accumBuyCount += e.count;
-    } else if (e.transactionType == TransactionType.sell) {
-      item.accumPrice -= (e.count * (item.accumPrice / item.count)).round();
-      item.count -= e.count;
+        item.accumBuyPrice += e.count * e.price;
+        item.accumBuyCount += e.count;
+        break;
+      case TransactionType.sell:
+      case TransactionType.splitOut:
+      case TransactionType.transferOut:
+        if (item.count != 0) {
+          item.accumPrice -= (e.count * (item.accumPrice / item.count)).round();
+        } else {
+          if (kDebugMode) {
+            print('createItemMap warning: item.count == 0');
+          }
+        }
+        item.count -= e.count;
 
-      item.accumSellPrice += e.count * e.price;
-      item.accumSellCount += e.count;
-      item.accumEarn += e.earn ?? 0;
+        item.accumSellPrice += e.count * e.price;
+        item.accumSellCount += e.count;
+        item.accumEarn += e.earn ?? 0;
+        break;
+      default:
+        throw Exception('unknown transaction type');
     }
 
     itemMap[e.stockId] = item;
@@ -71,7 +86,8 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   final _stockIdController = TextEditingController();
   final _priceController = TextEditingController();
   final _countController = TextEditingController();
-  bool isBalanceVisible = false;
+  bool _isBalanceVisible = false;
+  bool _isOldItemVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +101,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
         final orderedItems = createItemMap(transactions, model.stocks)
             .values
             .sortedBy((e) => model.getStock(e.stockId)?.inventoryOrder ?? 0)
-            .where((e) => e.count > 0)
+            .where((e) => _isOldItemVisible || e.count > 0)
             .toList();
 
         final allowReorder =
@@ -117,11 +133,20 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                   ),
                   const Spacer(),
                   LabeledCheckbox(
-                    label: "금액",
-                    value: isBalanceVisible,
+                    label: '과거종목',
+                    value: _isOldItemVisible,
                     onChanged: (newValue) {
                       setState(() {
-                        isBalanceVisible = newValue;
+                        _isOldItemVisible = newValue;
+                      });
+                    },
+                  ),
+                  LabeledCheckbox(
+                    label: '금액',
+                    value: _isBalanceVisible,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _isBalanceVisible = newValue;
                       });
                     },
                   ),
@@ -198,7 +223,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
           children: [
             ItemWidget(
               item: item,
-              isBalanceVisible: isBalanceVisible,
+              isBalanceVisible: _isBalanceVisible,
             ),
             // 선택된 종목은 그 상태에서 바로 매매 항목 추가할 수 있도록 한다.
             if (_selectedItems.contains(item.stockId)) ...[

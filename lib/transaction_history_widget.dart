@@ -18,25 +18,31 @@ class TransactionHistoryWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _TransactionHistoryState();
 }
 
+const transactionIconMap = {
+  TransactionType.buy: '🔸',
+  TransactionType.sell: '🔹',
+  TransactionType.splitIn: '⤵️️',
+  TransactionType.splitOut: '⤴️️',
+  TransactionType.transferIn: '↘️',
+  TransactionType.transferOut: '↗️',
+};
+
 List<DataCell> _dataCellListFromTransaction(
     Transaction t, String stockName, String accountName) {
   return <DataCell>[
-    DataCell(Text(t.dateTime.toIso8601String().substring(5, 10))),
+    DataCell(Text(t.dateTime.toIso8601String().substring(2, 10))),
     DataCell(ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 40),
         child: Text(
           accountName,
           overflow: TextOverflow.ellipsis,
         ))),
-    DataCell(Text(
-        '${t.transactionType == TransactionType.buy ? '🔸' : '🔹'}$stockName')),
+    DataCell(Text('${transactionIconMap[t.transactionType]}$stockName')),
     DataCell(Text(priceDataToDisplay(t.stockId, t.price))),
     DataCell(Text(formatThousands(t.count))),
-    DataCell(Text(t.transactionType == TransactionType.buy
-        ? ''
-        : t.earn != null
-            ? priceDataToDisplay(t.stockId, t.earn!)
-            : '???')),
+    DataCell(Text(t.transactionType == TransactionType.sell
+        ? (t.earn != null ? priceDataToDisplay(t.stockId, t.earn!) : '???')
+        : '')),
   ];
 }
 

@@ -36,8 +36,8 @@ class Importer {
     int accountId,
     StockTxtLoader stockTxtLoader,
     Future<void> Function(Transaction) onNewTransaction,
-    Future<void> Function(String stockId, int accountId, int splitFactor)
-        onSplitStock,
+    Future<void> Function(String stockId, int splitFactor) onSplitStock,
+    Future<void> Function(String stockId, int count) onTransferStock,
   ) async {
     final missingStockIdNames = <String>{};
 
@@ -61,7 +61,7 @@ class Importer {
         continue;
       }
 
-      // TODO 액면분할 테스트용
+      // TODO 디버그용
       // if (stockName.toString() != '펄어비스') {
       //   continue;
       // }
@@ -72,7 +72,9 @@ class Importer {
           transactionType == '매도' ||
           transactionType.endsWith('주식매수') ||
           transactionType.endsWith('주식매도') ||
-          transactionType == '액면분할출고') {
+          transactionType == '액면분할출고' ||
+          transactionType == '타사출고' ||
+          transactionType == '타사입고') {
         final stockId = stockTxtLoader.nameToId[stockName];
         if (stockId == null) {
           missingStockIdNames.add(stockName);
@@ -105,12 +107,13 @@ class Importer {
             final nextCountInt =
                 int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
 
-            await onSplitStock(
-                stockId, accountId, (nextCountInt / countInt).round());
+            await onSplitStock(stockId, (nextCountInt / countInt).round());
 
             i++; // 다음 행 건너뛰기
-          } else {
-            // 매도, 매수
+          } else if (transactionType == '매수' ||
+              transactionType.endsWith('주식매수') ||
+              transactionType == '매도' ||
+              transactionType.endsWith('주식매도')) {
             await onNewTransaction(
               Transaction(
                 stockId: stockId ?? stockName,
@@ -124,6 +127,10 @@ class Importer {
                 accountId: accountId,
               ),
             );
+          } else if (transactionType == '타사입고') {
+            await onTransferStock(stockId, countInt);
+          } else if (transactionType == '타사출고') {
+            await onTransferStock(stockId, -countInt);
           }
         }
       } else if (transactionType == '액면분할입고') {

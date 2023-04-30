@@ -30,32 +30,69 @@ class NewTransactionWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _NewTransactionWidgetState();
 }
 
-Future<int> _stockSum(String stockId, TransactionType transactionType,
+Future<int> _stockSum(String stockId, Set<TransactionType> transactionType,
     Iterable<Transaction> transactions) async {
   final sum = transactions
-      .where(
-          (e) => e.stockId == stockId && e.transactionType == transactionType)
+      .where((e) =>
+          e.stockId == stockId && transactionType.contains(e.transactionType))
       .map((e) => e.count)
       .fold(0, (a, b) => a + b);
   return sum;
 }
 
-Future<void> splitStock(Item item, int? accountId, LonelyModel model,
-    int splitFactor, bool isBatch) async {
-  // TODO 모든 계좌에서 해 줘야겠지...?
+Future<void> transferStock(
+  ItemOnAccount itemOnAccount,
+  int count, // 음수 지원
+  LonelyModel model,
+  bool isBatch,
+) async {
+  if (count == 0) {
+    return;
+  }
+
+  final item = itemOnAccount.item;
+
+  if (item.count + count < 0) {
+    throw Exception('계좌에 있는 것보다 더 꺼낼 수는 없다~');
+  }
 
   final avgPrice = (item.accumPrice / item.count).round();
   final now = DateTime.now();
 
-  // 일괄 매도
+  await registerNewTransaction(
+    Transaction(
+        stockId: item.stockId,
+        price: avgPrice,
+        count: count.abs(),
+        transactionType: count > 0
+            ? TransactionType.transferIn
+            : TransactionType.transferOut,
+        dateTime: now,
+        accountId: itemOnAccount.accountId),
+    model,
+    (_) {},
+    isBatch,
+  );
+}
+
+Future<void> splitStock(
+  ItemOnAccount itemOnAccount,
+  LonelyModel model,
+  int splitFactor,
+  bool isBatch,
+) async {
+  final item = itemOnAccount.item;
+  final avgPrice = (item.accumPrice / item.count).round();
+  final now = DateTime.now();
+
   await registerNewTransaction(
     Transaction(
         stockId: item.stockId,
         price: avgPrice,
         count: item.count,
-        transactionType: TransactionType.sell,
+        transactionType: TransactionType.splitOut,
         dateTime: now,
-        accountId: accountId),
+        accountId: itemOnAccount.accountId),
     model,
     (_) {},
     isBatch,
@@ -66,9 +103,9 @@ Future<void> splitStock(Item item, int? accountId, LonelyModel model,
         stockId: item.stockId,
         price: (avgPrice / splitFactor).round(),
         count: item.count * splitFactor,
-        transactionType: TransactionType.buy,
+        transactionType: TransactionType.splitIn,
         dateTime: now,
-        accountId: accountId),
+        accountId: itemOnAccount.accountId),
     model,
     (_) {},
     isBatch,
@@ -85,13 +122,16 @@ Future<bool> registerNewTransaction(Transaction transaction, LonelyModel model,
   final itemMap = createItemMap(model.transactions, model.stocks);
   final item = itemMap[transaction.stockId];
 
-  if (transaction.transactionType == TransactionType.sell) {
-    final buySum = await _stockSum(
-        transaction.stockId, TransactionType.buy, model.transactions);
-    final sellSum = await _stockSum(
-        transaction.stockId, TransactionType.sell, model.transactions);
-    if (buySum - sellSum < transaction.count) {
-      onSimpleMessage('가진 것보다 더 팔 수는 없죠.');
+  if (transactionTypeOut.contains(transaction.transactionType)) {
+    final inSum = await _stockSum(
+        transaction.stockId, transactionTypeIn, model.transactions);
+    final outSum = await _stockSum(
+        transaction.stockId, transactionTypeOut, model.transactions);
+    if (inSum - outSum < transaction.count) {
+      onSimpleMessage('가진 것보다 더 꺼내갈 수는 없죠?');
+      if (kDebugMode) {
+        print('stock count exceeded');
+      }
       return false;
     }
 
@@ -150,13 +190,16 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         model.transactions.where((e) => e.id != id), // 편집중인 항목은 빼고 계산
         model.stocks)[transaction.stockId];
 
-    if (transaction.transactionType == TransactionType.sell) {
-      final buySum = await _stockSum(
-          transaction.stockId, TransactionType.buy, transactionsExceptUpdated);
-      final sellSum = await _stockSum(
-          transaction.stockId, TransactionType.sell, transactionsExceptUpdated);
-      if (buySum - sellSum < transaction.count) {
-        _showSimpleMessage('가진 것보다 더 팔 수는 없죠.');
+    if (transactionTypeOut.contains(transaction.transactionType)) {
+      final inSum = await _stockSum(
+          transaction.stockId, transactionTypeIn, transactionsExceptUpdated);
+      final outSum = await _stockSum(
+          transaction.stockId, transactionTypeOut, transactionsExceptUpdated);
+      if (inSum - outSum < transaction.count) {
+        _showSimpleMessage('가진 것보다 더 꺼내갈 수는 없죠?');
+        if (kDebugMode) {
+          print('stock count exceeded');
+        }
         return false;
       }
 
@@ -406,9 +449,16 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
     final editingTransaction = model.editingTransaction;
     if (editingTransaction == null) return;
 
-    final itemMap = createItemMap(model.transactions, model.stocks);
-    final item = itemMap[editingTransaction.stockId];
+    final accountId = editingTransaction.accountId;
+
+    final itemMapOnAccount = createItemMap(
+        model.transactions.where((e) => e.accountId == accountId),
+        model.stocks);
+
+    final item = itemMapOnAccount[editingTransaction.stockId];
     if (item == null) return;
+
+    final itemOnAccount = ItemOnAccount(item, accountId);
 
     const splitFactor = 5;
 
@@ -416,7 +466,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         context: context,
         builder: (context) => AlertDialog(
               title: const Text('액면분할'),
-              content: Text('\'${item.stockName}\' 종목을 $splitFactor배 액면분할합니다.'),
+              content: Text(
+                  '본 계좌의 \'${item.stockName}\' 종목을 $splitFactor배 액면분할합니다.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, 'Cancel'),
@@ -426,10 +477,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
                   onPressed: () async {
                     Navigator.pop(context, 'OK');
 
-                    final accountId = editingTransaction.accountId;
-
-                    await splitStock(
-                        item, accountId, model, splitFactor, false);
+                    await splitStock(itemOnAccount, model, splitFactor, false);
                   },
                   child: const Text('실행'),
                 ),

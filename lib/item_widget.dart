@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'fetch_util.dart';
 import 'database.dart';
@@ -7,9 +6,10 @@ import 'package:provider/provider.dart';
 import 'lonely_model.dart';
 import 'number_format_util.dart';
 
-class Item {
-  Item(this.stockId);
+const unknownPercentStr = '---%';
+const unknownPriceStr = '---';
 
+class Item {
   final String stockId;
   String stockName = '';
   int count = 0;
@@ -20,11 +20,20 @@ class Item {
   int accumSellCount = 0;
   int accumEarn = 0;
 
+  Item(this.stockId);
+
   // Item 보여지는 순서는 여기서 관리하지 말고 Stock.inventoryOrder 이용한다.
 
   double avgPrice() => count > 0 ? accumPrice / count : 0;
 
   double diffPrice(int closePrice) => (closePrice - avgPrice()) * count;
+}
+
+class ItemOnAccount {
+  final Item item;
+  final int? accountId;
+
+  ItemOnAccount(this.item, this.accountId);
 }
 
 class KrStock {
@@ -112,7 +121,8 @@ class _ItemWidgetState extends State<ItemWidget> {
 
     _model = context.read<LonelyModel>();
 
-    _stockStream = onceAndPeriodic(const Duration(seconds: 5), () {
+    _stockStream =
+        onceAndPeriodic(Duration(seconds: widget.item.count > 0 ? 5 : 50), () {
       final fetchFuture = fetchStockInfo(widget.item.stockId);
       saveToModel(fetchFuture);
       return fetchFuture;
@@ -137,16 +147,18 @@ class _ItemWidgetState extends State<ItemWidget> {
     final currentBalanceStr = (stock != null && stock.closePrice != null)
         ? priceDataToDisplayTruncated(
             stockId, (stock.closePrice! * widget.item.count).toDouble())
-        : '---';
+        : unknownPriceStr;
 
-    final percentStr = (stock != null && stock.closePrice != null)
+    final percentStr = (stock != null &&
+            stock.closePrice != null &&
+            item.count > 0)
         ? '${formatThousandsStr(((stock.closePrice! / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
-        : '---%';
+        : unknownPercentStr;
 
     final diffPriceStr = (stock != null && stock.closePrice != null)
         ? priceDataToDisplayTruncated(
             stockId, item.diffPrice(stock.closePrice!))
-        : '---';
+        : unknownPriceStr;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -189,13 +201,15 @@ class _ItemWidgetState extends State<ItemWidget> {
           children: [
             Text(
               percentStr,
-              style: DefaultTextStyle.of(context)
-                  .style
-                  .apply(fontWeightDelta: 0)
-                  .apply(
-                      color: percentStr[0] == '-'
-                          ? Colors.blueAccent
-                          : Colors.redAccent),
+              style: percentStr != unknownPercentStr
+                  ? DefaultTextStyle.of(context)
+                      .style
+                      .apply(fontWeightDelta: 0)
+                      .apply(
+                          color: percentStr[0] == '-'
+                              ? Colors.blueAccent
+                              : Colors.redAccent)
+                  : null,
             ),
             if (widget.isBalanceVisible) ...[
               Text(diffPriceStr),
