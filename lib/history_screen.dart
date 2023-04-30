@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lonely/paginated_transaction_history_widget.dart';
 import 'package:provider/provider.dart';
 import 'lonely_model.dart';
 import 'new_transaction_widget.dart';

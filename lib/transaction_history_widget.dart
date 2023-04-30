@@ -18,7 +18,7 @@ class TransactionHistoryWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _TransactionHistoryState();
 }
 
-const transactionIconMap = {
+const _transactionIconMap = {
   TransactionType.buy: '🔸',
   TransactionType.sell: '🔹',
   TransactionType.splitIn: '⤵️️',
@@ -37,7 +37,7 @@ List<DataCell> _dataCellListFromTransaction(
           accountName,
           overflow: TextOverflow.ellipsis,
         ))),
-    DataCell(Text('${transactionIconMap[t.transactionType]}$stockName')),
+    DataCell(Text('${_transactionIconMap[t.transactionType]}$stockName')),
     DataCell(Text(priceDataToDisplay(t.stockId, t.price))),
     DataCell(Text(formatThousands(t.count))),
     DataCell(Text(t.transactionType == TransactionType.sell
@@ -157,46 +157,48 @@ class _TransactionHistoryState extends State<TransactionHistoryWidget> {
             .map((e) => _dataRowFromTransaction(e, model))
             .toList();
 
-        return FittedBox(
-          child: DataTable(
-            showCheckboxColumn: false,
-            headingRowHeight: 30,
-            dataRowHeight: 30,
-            columnSpacing: 30,
-            columns: const [
-              DataColumn(
-                label: Text(
-                  '날짜',
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return DataTable(
+              showCheckboxColumn: false,
+              headingRowHeight: 30,
+              dataRowHeight: 30,
+              columnSpacing: 30,
+              columns: const [
+                DataColumn(
+                  label: Text(
+                    '날짜',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '계좌',
+                DataColumn(
+                  label: Text(
+                    '계좌',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '종목명',
+                DataColumn(
+                  label: Text(
+                    '종목명',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '단가',
+                DataColumn(
+                  label: Text(
+                    '단가',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '수량',
+                DataColumn(
+                  label: Text(
+                    '수량',
+                  ),
                 ),
-              ),
-              DataColumn(
-                label: Text(
-                  '수익',
+                DataColumn(
+                  label: Text(
+                    '수익',
+                  ),
                 ),
-              ),
-            ],
-            rows: dataRowList,
-          ),
+              ],
+              rows: dataRowList,
+            );
+          },
         );
       },
     );

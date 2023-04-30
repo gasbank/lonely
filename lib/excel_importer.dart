@@ -35,11 +35,16 @@ class Importer {
   Future<void> execute(
     int accountId,
     StockTxtLoader stockTxtLoader,
-    Future<void> Function(Transaction) onNewTransaction,
-    Future<void> Function(String stockId, int splitFactor) onSplitStock,
-    Future<void> Function(String stockId, int count) onTransferStock,
+    Future<void> Function(double progress, Transaction transaction)
+        onNewTransaction,
+    Future<void> Function(double progress, String stockId, int splitFactor)
+        onSplitStock,
+    Future<void> Function(double progress, String stockId, int count)
+        onTransferStock,
   ) async {
     final missingStockIdNames = <String>{};
+
+    final maxRows = _sheet.maxRows;
 
     for (var i = 2; i < _sheet.rows.length; i++) {
       final row = _sheet.rows[i];
@@ -107,7 +112,8 @@ class Importer {
             final nextCountInt =
                 int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
 
-            await onSplitStock(stockId, (nextCountInt / countInt).round());
+            await onSplitStock(
+                i / maxRows, stockId, (nextCountInt / countInt).round());
 
             i++; // 다음 행 건너뛰기
           } else if (transactionType == '매수' ||
@@ -115,6 +121,7 @@ class Importer {
               transactionType == '매도' ||
               transactionType.endsWith('주식매도')) {
             await onNewTransaction(
+              i / maxRows,
               Transaction(
                 stockId: stockId ?? stockName,
                 price: priceInt,
@@ -128,9 +135,9 @@ class Importer {
               ),
             );
           } else if (transactionType == '타사입고') {
-            await onTransferStock(stockId, countInt);
+            await onTransferStock(i / maxRows, stockId, countInt);
           } else if (transactionType == '타사출고') {
-            await onTransferStock(stockId, -countInt);
+            await onTransferStock(i / maxRows, stockId, -countInt);
           }
         }
       } else if (transactionType == '액면분할입고') {

@@ -11,9 +11,14 @@ import 'item_widget.dart';
 import 'new_transaction_widget.dart';
 import 'lonely_model.dart';
 
-class SettingsWidget extends StatelessWidget {
+class SettingsWidget extends StatefulWidget {
   const SettingsWidget({super.key});
 
+  @override
+  State<SettingsWidget> createState() => _SettingsWidgetState();
+}
+
+class _SettingsWidgetState extends State<SettingsWidget> {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -34,7 +39,31 @@ class SettingsWidget extends StatelessWidget {
                       child: const Text('매매 기록 불러오기'),
                     ),
                     OutlinedButton(
-                      onPressed: () async => await onImportSsXlsx(model),
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) {
+                            return Center(
+                              child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: const [
+                                    CircularProgressIndicator(),
+                                    Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Text(
+                                        '삼성증권 XLSX 불러오는 중...',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ]),
+                            );
+                          },
+                        );
+                        onImportSsXlsx(model)
+                            .then((value) => Navigator.pop(context));
+                      },
                       child: const Text('삼성증권 XLSX 불러오기'),
                     ),
                   ],
@@ -87,8 +116,8 @@ class SettingsWidget extends StatelessWidget {
   }
 
   Future<void> onImportSsXlsx(LonelyModel model) async {
-    final result =
-        await FilePicker.platform.pickFiles(allowedExtensions: ['xlsx']);
+    final result = await FilePicker.platform
+        .pickFiles(allowedExtensions: ['xlsx'], type: FileType.custom);
 
     if (result != null) {
       final file = File(result.files.single.path!);
@@ -106,10 +135,10 @@ class SettingsWidget extends StatelessWidget {
       await importer.execute(
         accountId,
         model.stockTxtLoader,
-        (transaction) async {
+        (progress, transaction) async {
           await registerNewTransaction(transaction, model, (_) {}, true);
         },
-        (stockId, splitFactor) async {
+        (progress, stockId, splitFactor) async {
           // 매 호출 시마다 model.transactions 바뀌기 때문에,
           // 더 넓은 범위에서 한번만 계산해선 안된다.
           final itemMapOnAccount = createItemMap(
@@ -126,7 +155,7 @@ class SettingsWidget extends StatelessWidget {
 
           await splitStock(itemOnAccount, model, splitFactor, true);
         },
-        (stockId, count) async {
+        (progress, stockId, count) async {
           // 매 호출 시마다 model.transactions 바뀌기 때문에,
           // 더 넓은 범위에서 한번만 계산해선 안된다.
 
@@ -151,8 +180,8 @@ class SettingsWidget extends StatelessWidget {
   }
 
   Future<void> onImportDatabase(LonelyModel model) async {
-    final result =
-        await FilePicker.platform.pickFiles(allowedExtensions: ['db']);
+    final result = await FilePicker.platform
+        .pickFiles(allowedExtensions: ['db'], type: FileType.custom);
 
     if (result != null) {
       final file = File(result.files.single.path!);
