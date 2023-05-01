@@ -27,82 +27,105 @@ const _transactionIconMap = {
   TransactionType.transferOut: '↗️',
 };
 
+Widget _dataCellText(String text, double width, TextStyle textStyle) {
+  return SizedBox(
+    width: width,
+    child: Text(
+      text,
+      style: textStyle,
+      overflow: TextOverflow.ellipsis,
+    ),
+  );
+}
+
+const widthRatios = [0.15, 0.10, 0.25, 0.20, 0.10, 0.20];
+const columnTexts = ['날짜', '계좌', '종목명', '단가', '수량', '수익'];
+
 List<DataCell> _dataCellListFromTransaction(
-    Transaction t, String stockName, String accountName) {
+  double maxWidth,
+  Transaction t,
+  String stockName,
+  String accountName,
+  TextStyle textStyle,
+) {
   return <DataCell>[
-    DataCell(Text(t.dateTime.toIso8601String().substring(2, 10))),
-    DataCell(ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 40),
-        child: Text(
-          accountName,
-          overflow: TextOverflow.ellipsis,
-        ))),
-    DataCell(Text('${_transactionIconMap[t.transactionType]}$stockName')),
-    DataCell(Text(priceDataToDisplay(t.stockId, t.price))),
-    DataCell(Text(formatThousands(t.count))),
-    DataCell(Text(t.transactionType == TransactionType.sell
-        ? (t.earn != null ? priceDataToDisplay(t.stockId, t.earn!) : '???')
-        : '')),
+    DataCell(_dataCellText(
+      t.dateTime.toIso8601String().substring(2, 10),
+      maxWidth * widthRatios[0],
+      textStyle,
+    )),
+    DataCell(_dataCellText(
+      accountName,
+      maxWidth * widthRatios[1],
+      textStyle,
+    )),
+    DataCell(_dataCellText(
+      '${_transactionIconMap[t.transactionType]}$stockName',
+      maxWidth * widthRatios[2],
+      textStyle,
+    )),
+    DataCell(_dataCellText(
+      priceDataToDisplay(t.stockId, t.price),
+      maxWidth * widthRatios[3],
+      textStyle,
+    )),
+    DataCell(_dataCellText(
+      formatThousands(t.count),
+      maxWidth * widthRatios[4],
+      textStyle,
+    )),
+    DataCell(_dataCellText(
+      t.transactionType == TransactionType.sell
+          ? (t.earn != null ? priceDataToDisplay(t.stockId, t.earn!) : '???')
+          : '',
+      maxWidth * widthRatios[5],
+      textStyle,
+    )),
   ];
 }
 
 class _PaginatedTransactionHistoryWidgetState
     extends State<PaginatedTransactionHistoryWidget> {
-  late final _TransactionDataTableSource _transactionDataTableSource;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _transactionDataTableSource = _TransactionDataTableSource(
-      context.read<LonelyModel>().transactions.reversed.toList(),
-      context,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
-        return PaginatedDataTable(
-          showCheckboxColumn: false,
-          headingRowHeight: 30,
-          dataRowHeight: 30,
-          columnSpacing: 30,
-          rowsPerPage: 40,
-          columns: const [
-            DataColumn(
-              label: Text(
-                '날짜',
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final textStyle =
+                DefaultTextStyle.of(context).style.apply(fontSizeFactor: 0.8);
+
+            final maxWidth = constraints.maxWidth;
+            final maxHeight = constraints.maxHeight;
+            const rowHeight = 22.0;
+            final rowsPerPage = (maxHeight / rowHeight - 1).floor();
+
+            return PaginatedDataTable(
+              showCheckboxColumn: false,
+              headingRowHeight: rowHeight,
+              dataRowHeight: rowHeight,
+              columnSpacing: 0,
+              horizontalMargin: 0,
+              rowsPerPage: rowsPerPage,
+              columns: [
+                for (var i = 0; i < columnTexts.length; i++) ...[
+                  DataColumn(
+                    label: _dataCellText(
+                      columnTexts[i],
+                      maxWidth * widthRatios[i],
+                      textStyle,
+                    ),
+                  ),
+                ],
+              ],
+              source: _TransactionDataTableSource(
+                model.transactions.reversed.toList(),
+                context,
+                constraints.maxWidth,
+                textStyle,
               ),
-            ),
-            DataColumn(
-              label: Text(
-                '계좌',
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                '종목명',
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                '단가',
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                '수량',
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                '수익',
-              ),
-            ),
-          ],
-          source: _transactionDataTableSource,
+            );
+          },
         );
       },
     );
@@ -112,8 +135,11 @@ class _PaginatedTransactionHistoryWidgetState
 class _TransactionDataTableSource extends DataTableSource {
   final List<Transaction> transactions;
   final BuildContext context;
+  final double maxWidth;
+  final TextStyle textStyle;
 
-  _TransactionDataTableSource(this.transactions, this.context);
+  _TransactionDataTableSource(
+      this.transactions, this.context, this.maxWidth, this.textStyle);
 
   @override
   DataRow? getRow(int index) {
@@ -124,8 +150,8 @@ class _TransactionDataTableSource extends DataTableSource {
 
     return DataRow.byIndex(
       index: index,
-      cells: _dataCellListFromTransaction(
-          tx, stock?.name ?? '? ${tx.stockId} ?', account.name),
+      cells: _dataCellListFromTransaction(maxWidth, tx,
+          stock?.name ?? '? ${tx.stockId} ?', account.name, textStyle),
     );
   }
 
