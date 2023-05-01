@@ -27,23 +27,8 @@ class _NewHistoryState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        Consumer<LonelyModel>(
-          builder: (context, model, child) {
-            return NewTransactionWidget(
-              stockIdController: _stockIdController,
-              priceController: _priceController,
-              countController: _countController,
-              editingTransaction: model.editingTransaction,
-              stockIdEnabled: true,
-            );
-          },
-        ),
-        TransactionHistoryWidget(
-          stockIdController: _stockIdController,
-        ),
-      ],
+    return PaginatedTransactionHistoryWidget(
+      stockIdController: _stockIdController,
     );
   }
 }
