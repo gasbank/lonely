@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'fetch_util.dart';
 import 'package:provider/provider.dart';
@@ -27,22 +28,26 @@ const _transactionIconMap = {
   TransactionType.transferOut: '↗️',
 };
 
-Widget _dataCellText(String text, double width, TextStyle textStyle) {
-  return SizedBox(
-    width: width,
-    child: Text(
-      text,
-      style: textStyle,
-      overflow: TextOverflow.ellipsis,
-    ),
+Widget _dataCellText(String text, TextStyle textStyle) {
+  return Text(
+    text,
+    style: textStyle,
+    overflow: TextOverflow.ellipsis,
   );
 }
 
 const widthRatios = [0.15, 0.10, 0.25, 0.20, 0.10, 0.20];
 const columnTexts = ['날짜', '계좌', '종목명', '단가', '수량', '수익'];
+const columnSizes = [
+  ColumnSize.M,
+  ColumnSize.S,
+  ColumnSize.L,
+  ColumnSize.M,
+  ColumnSize.M,
+  ColumnSize.M
+];
 
 List<DataCell> _dataCellListFromTransaction(
-  double maxWidth,
   Transaction t,
   String stockName,
   String accountName,
@@ -51,34 +56,28 @@ List<DataCell> _dataCellListFromTransaction(
   return <DataCell>[
     DataCell(_dataCellText(
       t.dateTime.toIso8601String().substring(2, 10),
-      maxWidth * widthRatios[0],
       textStyle,
     )),
     DataCell(_dataCellText(
       accountName,
-      maxWidth * widthRatios[1],
       textStyle,
     )),
     DataCell(_dataCellText(
       '${_transactionIconMap[t.transactionType]}$stockName',
-      maxWidth * widthRatios[2],
       textStyle,
     )),
     DataCell(_dataCellText(
       priceDataToDisplay(t.stockId, t.price),
-      maxWidth * widthRatios[3],
       textStyle,
     )),
     DataCell(_dataCellText(
       formatThousands(t.count),
-      maxWidth * widthRatios[4],
       textStyle,
     )),
     DataCell(_dataCellText(
       t.transactionType == TransactionType.sell
           ? (t.earn != null ? priceDataToDisplay(t.stockId, t.earn!) : '???')
           : '',
-      maxWidth * widthRatios[5],
       textStyle,
     )),
   ];
@@ -88,44 +87,39 @@ class _PaginatedTransactionHistoryWidgetState
     extends State<PaginatedTransactionHistoryWidget> {
   @override
   Widget build(BuildContext context) {
+    final textStyle =
+        DefaultTextStyle.of(context).style.apply(fontSizeFactor: 0.75);
+
+    const rowHeight = 20.0;
+
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final textStyle =
-                DefaultTextStyle.of(context).style.apply(fontSizeFactor: 0.8);
-
-            final maxWidth = constraints.maxWidth;
-            final maxHeight = constraints.maxHeight;
-            const rowHeight = 22.0;
-            final rowsPerPage = (maxHeight / rowHeight - 1).floor();
-
-            return PaginatedDataTable(
-              showCheckboxColumn: false,
-              headingRowHeight: rowHeight,
-              dataRowHeight: rowHeight,
-              columnSpacing: 0,
-              horizontalMargin: 0,
-              rowsPerPage: rowsPerPage,
-              columns: [
-                for (var i = 0; i < columnTexts.length; i++) ...[
-                  DataColumn(
-                    label: _dataCellText(
-                      columnTexts[i],
-                      maxWidth * widthRatios[i],
-                      textStyle,
-                    ),
-                  ),
-                ],
-              ],
-              source: _TransactionDataTableSource(
-                model.transactions.reversed.toList(),
-                context,
-                constraints.maxWidth,
-                textStyle,
+        return PaginatedDataTable2(
+          showCheckboxColumn: false,
+          headingRowHeight: rowHeight,
+          dataRowHeight: rowHeight,
+          columnSpacing: 0,
+          horizontalMargin: 5,
+          autoRowsToHeight: true,
+          showFirstLastButtons: true,
+          smRatio: 0.5,
+          lmRatio: 1.8,
+          columns: [
+            for (var i = 0; i < columnTexts.length; i++) ...[
+              DataColumn2(
+                size: columnSizes[i],
+                label: _dataCellText(
+                  columnTexts[i],
+                  textStyle,
+                ),
               ),
-            );
-          },
+            ],
+          ],
+          source: _TransactionDataTableSource(
+            model.transactions.reversed.toList(),
+            context,
+            textStyle,
+          ),
         );
       },
     );
@@ -135,11 +129,9 @@ class _PaginatedTransactionHistoryWidgetState
 class _TransactionDataTableSource extends DataTableSource {
   final List<Transaction> transactions;
   final BuildContext context;
-  final double maxWidth;
   final TextStyle textStyle;
 
-  _TransactionDataTableSource(
-      this.transactions, this.context, this.maxWidth, this.textStyle);
+  _TransactionDataTableSource(this.transactions, this.context, this.textStyle);
 
   @override
   DataRow? getRow(int index) {
@@ -150,8 +142,8 @@ class _TransactionDataTableSource extends DataTableSource {
 
     return DataRow.byIndex(
       index: index,
-      cells: _dataCellListFromTransaction(maxWidth, tx,
-          stock?.name ?? '? ${tx.stockId} ?', account.name, textStyle),
+      cells: _dataCellListFromTransaction(
+          tx, stock?.name ?? '? ${tx.stockId} ?', account.name, textStyle),
     );
   }
 

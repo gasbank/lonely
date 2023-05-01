@@ -44,17 +44,20 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                           context: context,
                           barrierDismissible: false,
                           builder: (context) {
+                            const indicatorColor = Colors.white;
                             return Center(
                               child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: const [
-                                    CircularProgressIndicator(),
+                                    CircularProgressIndicator(
+                                      color: indicatorColor,
+                                    ),
                                     Padding(
                                       padding: EdgeInsets.all(16.0),
                                       child: Text(
                                         '삼성증권 XLSX 불러오는 중...',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(color: indicatorColor),
                                       ),
                                     ),
                                   ]),
