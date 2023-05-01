@@ -355,12 +355,12 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             children: [
               buildAccountDropdown(),
               if (widget.stockIdEnabled) ...[
-                buildTextField("종목코드", widget.stockIdController,
+                buildTextField('종목코드', widget.stockIdController,
                     TextInputAction.next, widget.stockIdEnabled, false),
               ],
-              buildTextField("단가", widget.priceController, TextInputAction.next,
+              buildTextField('단가', widget.priceController, TextInputAction.next,
                   true, true),
-              buildTextField("수량", widget.countController, TextInputAction.done,
+              buildTextField('수량', widget.countController, TextInputAction.done,
                   true, true),
             ],
           ),
@@ -404,14 +404,14 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             (model.accounts.isNotEmpty ? model.accounts.first.id : null);
         return DropdownButton<int>(
           items: [
-            // const DropdownMenuItem(value: 0, child: Text("---")),
-            // const DropdownMenuItem(value: 1, child: Text("🔸계좌1")),
-            // const DropdownMenuItem(value: 2, child: Text("🔹계좌2")),
-            // const DropdownMenuItem(value: 3, child: Text("🔥️계좌3")),
-            // const DropdownMenuItem(value: 4, child: Text("✨계좌4")),
-            // const DropdownMenuItem(value: 5, child: Text("🍉계좌5")),
-            // const DropdownMenuItem(value: 6, child: Text("❤️계좌6")),
-            // const DropdownMenuItem(value: 7, child: Text("🎈계좌7")),
+            // const DropdownMenuItem(value: 0, child: Text('---')),
+            // const DropdownMenuItem(value: 1, child: Text('🔸계좌1')),
+            // const DropdownMenuItem(value: 2, child: Text('🔹계좌2')),
+            // const DropdownMenuItem(value: 3, child: Text('🔥️계좌3')),
+            // const DropdownMenuItem(value: 4, child: Text('✨계좌4')),
+            // const DropdownMenuItem(value: 5, child: Text('🍉계좌5')),
+            // const DropdownMenuItem(value: 6, child: Text('❤️계좌6')),
+            // const DropdownMenuItem(value: 7, child: Text('🎈계좌7')),
             for (var account in model.accounts) ...[
               DropdownMenuItem(value: account.id, child: Text(account.name)),
             ]

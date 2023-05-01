@@ -97,53 +97,53 @@ class Importer {
             int.tryParse(count.toString().replaceAll(',', '')) ?? 0;
 
         if (kDebugMode) {
-          print(
-              '${dateTime.toString().substring(0, 10)},${transactionType.substring(transactionType.length - 2)},$stockId,$stockName,${price.toString().replaceAll(',', '')},${count.toString().replaceAll(',', '')},${accumCount.toString().replaceAll(',', '')}');
+          // print(
+          //     '${dateTime.toString().substring(0, 10)},${transactionType.substring(transactionType.length - 2)},$stockId,$stockName,${price.toString().replaceAll(',', '')},${count.toString().replaceAll(',', '')},${accumCount.toString().replaceAll(',', '')}');
+        }
 
-          if (transactionType == '액면분할출고') {
-            // 출고 후 입고를 전량 매도 후 전량 매수로 처리한다. (이익 0)
-            final nextRow = _sheet.rows[i + 1];
-            if (stockName != getColStr(nextRow, '종목명') ||
-                '액면분할입고' != getColStr(nextRow, '거래명')) {
-              throw Exception('inconsistent data');
-            }
-
-            final nextCount = getColStr(nextRow, '거래수량');
-            final nextCountInt =
-                int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
-
-            await onSplitStock(
-                i / maxRows, stockId, (nextCountInt / countInt).round());
-
-            i++; // 다음 행 건너뛰기
-          } else if (transactionType == '매수' ||
-              transactionType.endsWith('주식매수') ||
-              transactionType == '매도' ||
-              transactionType.endsWith('주식매도')) {
-            await onNewTransaction(
-              i / maxRows,
-              Transaction(
-                stockId: stockId ?? stockName,
-                price: priceInt,
-                count: countInt,
-                transactionType: (transactionType == '매수' ||
-                        transactionType.endsWith('주식매수'))
-                    ? TransactionType.buy
-                    : TransactionType.sell,
-                dateTime: dateTime,
-                accountId: accountId,
-              ),
-            );
-          } else if (transactionType == '타사입고') {
-            await onTransferStock(i / maxRows, stockId, countInt);
-          } else if (transactionType == '타사출고') {
-            await onTransferStock(i / maxRows, stockId, -countInt);
+        if (transactionType == '액면분할출고') {
+          // 출고 후 입고를 전량 매도 후 전량 매수로 처리한다. (이익 0)
+          final nextRow = _sheet.rows[i + 1];
+          if (stockName != getColStr(nextRow, '종목명') ||
+              '액면분할입고' != getColStr(nextRow, '거래명')) {
+            throw Exception('inconsistent data 1');
           }
+
+          final nextCount = getColStr(nextRow, '거래수량');
+          final nextCountInt =
+              int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
+
+          await onSplitStock(
+              i / maxRows, stockId, (nextCountInt / countInt).round());
+
+          i++; // 다음 행 건너뛰기
+        } else if (transactionType == '매수' ||
+            transactionType.endsWith('주식매수') ||
+            transactionType == '매도' ||
+            transactionType.endsWith('주식매도')) {
+          await onNewTransaction(
+            i / maxRows,
+            Transaction(
+              stockId: stockId ?? stockName,
+              price: priceInt,
+              count: countInt,
+              transactionType:
+                  (transactionType == '매수' || transactionType.endsWith('주식매수'))
+                      ? TransactionType.buy
+                      : TransactionType.sell,
+              dateTime: dateTime,
+              accountId: accountId,
+            ),
+          );
+        } else if (transactionType == '타사입고') {
+          await onTransferStock(i / maxRows, stockId, countInt);
+        } else if (transactionType == '타사출고') {
+          await onTransferStock(i / maxRows, stockId, -countInt);
         }
       } else if (transactionType == '액면분할입고') {
         // 액면분할입고는 반드시 액면분할출고가 처리될 때 같이 처리되었어야 했다...
         // 여기에 왔다면 엑셀 파일 이상한 것이다.
-        throw Exception('inconsistent data');
+        throw Exception('inconsistent data 2');
       }
     }
 

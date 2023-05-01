@@ -185,17 +185,22 @@ class LonelyDatabase {
   }
 
   Future<void> closeAndReloadDatabase(File? newDbFile) async {
-    final db = await _database;
-    if (db.isOpen) {
-      await db.close();
-      final dbPath = await getDbPath();
-      if (newDbFile != null) {
-        await newDbFile.copy(dbPath);
-      } else {
-        await File(dbPath).delete();
+    try {
+      final db = await _database;
+      if (db.isOpen) {
+        await db.close();
       }
-      _database = _initDatabase();
+    } on Exception catch (e) {
+      print(e);
     }
+
+    final dbPath = await getDbPath();
+    if (newDbFile != null) {
+      await newDbFile.copy(dbPath);
+    } else {
+      await File(dbPath).delete();
+    }
+    _database = _initDatabase();
   }
 
   Future<int> insertTransaction(Map<String, Object?> values) async {

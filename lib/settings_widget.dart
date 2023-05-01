@@ -39,34 +39,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                       child: const Text('매매 기록 불러오기'),
                     ),
                     OutlinedButton(
-                      onPressed: () async {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) {
-                            const indicatorColor = Colors.white;
-                            return Center(
-                              child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: const [
-                                    CircularProgressIndicator(
-                                      color: indicatorColor,
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.all(16.0),
-                                      child: Text(
-                                        '삼성증권 XLSX 불러오는 중...',
-                                        style: TextStyle(color: indicatorColor),
-                                      ),
-                                    ),
-                                  ]),
-                            );
-                          },
-                        );
-                        onImportSsXlsx(model)
-                            .then((value) => Navigator.pop(context));
-                      },
+                      onPressed: () => onImportSs(context, model),
                       child: const Text('삼성증권 XLSX 불러오기'),
                     ),
                   ],
@@ -94,6 +67,68 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     );
   }
 
+  void onImportSs(BuildContext context, LonelyModel model) {
+    Function(String)? onSetState;
+
+    onImportSsXlsx(model, (progress) {
+      if (onSetState != null) {
+        onSetState!('삼성증권 XLSX 불러오는 중... ${(100 * progress).toStringAsFixed(1)}%');
+      }
+    }).then((value) => Navigator.pop(context), onError: (err) {
+      if (onSetState != null) {
+        if (err != null) {
+          onSetState!(err.toString());
+        } else {
+          onSetState!('Unknown error A occurred.');
+        }
+      }
+    }).catchError((err) {
+      if (onSetState != null) {
+        if (err != null) {
+          onSetState!(err.toString());
+        } else {
+          onSetState!('Unknown error B occurred.');
+        }
+      }
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        String progressText = '삼성증권 XLSX 불러오는 중...';
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            const indicatorColor = Colors.white;
+            onSetState = (progress) {
+              setState(() {
+                progressText = progress;
+              });
+            };
+            return Center(
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(
+                      color: indicatorColor,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        progressText,
+                        style: const TextStyle(color: indicatorColor),
+                      ),
+                    ),
+                  ]),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void onClearAllData(BuildContext context, LonelyModel model) {
     showDialog(
         context: context,
@@ -118,7 +153,10 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         barrierDismissible: true);
   }
 
-  Future<void> onImportSsXlsx(LonelyModel model) async {
+  Future<void> onImportSsXlsx(
+    LonelyModel model,
+    Function(double progress) onProgress,
+  ) async {
     final result = await FilePicker.platform
         .pickFiles(allowedExtensions: ['xlsx'], type: FileType.custom);
 
@@ -140,6 +178,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         model.stockTxtLoader,
         (progress, transaction) async {
           await registerNewTransaction(transaction, model, (_) {}, true);
+          onProgress(progress);
         },
         (progress, stockId, splitFactor) async {
           // 매 호출 시마다 model.transactions 바뀌기 때문에,
@@ -157,6 +196,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           final itemOnAccount = ItemOnAccount(item, accountId);
 
           await splitStock(itemOnAccount, model, splitFactor, true);
+
+          onProgress(progress);
         },
         (progress, stockId, count) async {
           // 매 호출 시마다 model.transactions 바뀌기 때문에,
@@ -175,6 +216,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           final itemOnAccount = ItemOnAccount(item, accountId);
 
           await transferStock(itemOnAccount, count, model, true);
+
+          onProgress(progress);
         },
       );
     } else {
@@ -183,8 +226,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
   }
 
   Future<void> onImportDatabase(LonelyModel model) async {
-    final result = await FilePicker.platform
-        .pickFiles(allowedExtensions: ['db'], type: FileType.custom);
+    final result = await FilePicker.platform.pickFiles();
 
     if (result != null) {
       final file = File(result.files.single.path!);

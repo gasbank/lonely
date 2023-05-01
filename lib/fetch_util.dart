@@ -20,8 +20,8 @@ const stockIdAlternatives = {
 };
 
 // 사용자가 입력한 값을 저장 상태로 변환
-// KR: "12345" -> 12345
-// EN: "12345" -> 123450000
+// KR: '12345' -> 12345
+// EN: '12345' -> 123450000
 int priceInputToData(String stockId, String priceStr) {
   return (krExp.hasMatch(stockId)
           ? int.tryParse(priceStr)
@@ -31,8 +31,8 @@ int priceInputToData(String stockId, String priceStr) {
 
 // 앞에 $ 기호를 붙인다.
 // 음수 부호하고 같이 있으면 음수 부호가 우선한다.
-// "1,000" -> "$1,000"
-// "-1" -> "-$1"
+// '1,000' -> '$1,000'
+// '-1' -> '-$1'
 String prependCurrencySymbol(String symbol, String priceStr) {
   if (symbol.isEmpty) {
     return priceStr;
@@ -50,8 +50,8 @@ String prependCurrencySymbol(String symbol, String priceStr) {
 }
 
 // 저장 상태의 값을 보기 예쁜 문자열로 변환
-// KR: 123456789 -> "123,456,789"
-// EN: 123456789 -> "$12,345.6789"
+// KR: 123456789 -> '123,456,789'
+// EN: 123456789 -> '$12,345.6789'
 String priceDataToDisplay(String stockId, int price) {
   stockId = stockIdAlternatives[stockId] ?? stockId;
 
@@ -61,8 +61,8 @@ String priceDataToDisplay(String stockId, int price) {
 }
 
 // 저장 상태의 값을 입력(편집)하기 편한 문자열로 변환
-// KR: 123456789 -> "123456789"
-// EN: 123456789 -> "12345.6789"
+// KR: 123456789 -> '123456789'
+// EN: 123456789 -> '12345.6789'
 String priceDataToInput(String stockId, int price) {
   stockId = stockIdAlternatives[stockId] ?? stockId;
 
@@ -72,8 +72,8 @@ String priceDataToInput(String stockId, int price) {
 
 // 저장 상태의 값을 보기 예쁜 문자열로 변환하되, 달러면 소수점 둘째자리까지
 // (보유하고 있는 평가금액 나타낼 때 씀)
-// KR: 12345.6789 -> "12,346"
-// EN: 12345.6789 -> "$1.23"
+// KR: 12345.6789 -> '12,346'
+// EN: 12345.6789 -> '$1.23'
 String priceDataToDisplayTruncated(String stockId, double price) {
   stockId = stockIdAlternatives[stockId] ?? stockId;
 
@@ -177,7 +177,7 @@ Future<KrStock?> _fetchKrStockY(String stockId) async {
 }
 
 Future<KrStock?> _fetchKrStockD(String stockId) async {
-  // "000000" ~ "999999"
+  // '000000' ~ '999999'
   if (stockId.length != 6) {
     return null;
   }

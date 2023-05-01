@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'database.dart';
 import 'excel_importer.dart';
 import 'fetch_util.dart';
@@ -56,10 +57,14 @@ class LonelyModel extends ChangeNotifier {
   }
 
   Future<void> _loadAll() async {
-    await _loadAccounts();
-    await _loadStocks();
-    await _loadTransactions();
-    await _stockTxtLoader.load();
+    try {
+      await _loadAccounts();
+      await _loadStocks();
+      await _loadTransactions();
+      await _stockTxtLoader.load();
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future<void> closeAndReplaceDatabase(File? newDb) async {
@@ -87,7 +92,6 @@ class LonelyModel extends ChangeNotifier {
   }
 
   Stock? getStock(String stockId) {
-
     stockId = stockIdAlternatives[stockId] ?? stockId;
 
     return _stocks[stockId];
