@@ -111,6 +111,19 @@ class ItemWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _ItemWidgetState();
 }
 
+Color colorFor(String text) {
+  var hash = 0;
+  for (var i = 0; i < text.length; i++) {
+    hash = text.codeUnitAt(i) + ((hash << 5) - hash);
+  }
+  final finalHash = hash.abs() % (256 * 256 * 256);
+  final red = ((finalHash & 0xFF0000) >> 16);
+  final blue = ((finalHash & 0xFF00) >> 8);
+  final green = ((finalHash & 0xFF));
+  final color = Color.fromRGBO(red, green, blue, 1);
+  return color;
+}
+
 class _ItemWidgetState extends State<ItemWidget> {
   late final Stream<KrStock?> _stockStream;
   late final LonelyModel _model;
@@ -142,7 +155,10 @@ class _ItemWidgetState extends State<ItemWidget> {
 
   Widget buildWidget(Item item, LonelyModel model) {
     final stockId = stockIdAlternatives[item.stockId] ?? item.stockId;
+
     final stock = model.stocks[stockId];
+
+    final stockName = stock?.name ?? '---';
 
     final currentBalanceStr = (stock != null && stock.closePrice != null)
         ? priceDataToDisplayTruncated(
@@ -161,13 +177,25 @@ class _ItemWidgetState extends State<ItemWidget> {
         : unknownPriceStr;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: widget.isBalanceVisible
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.center,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                CircleAvatar(
+                  backgroundColor: colorFor(stockId),
+                  child: Text(
+                    stockName,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(
+                  width: 4,
+                ),
                 Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
@@ -197,7 +225,9 @@ class _ItemWidgetState extends State<ItemWidget> {
         ),
         const Spacer(),
         Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: widget.isBalanceVisible
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.center,
           children: [
             Text(
               percentStr,
