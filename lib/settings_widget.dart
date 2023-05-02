@@ -206,7 +206,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           await registerNewTransaction(transaction, model, (_) {}, true);
           onProgress(progress);
         },
-        (progress, stockId, splitFactor) async {
+        (progress, dateTime, stockId, splitFactor) async {
           // 매 호출 시마다 model.transactions 바뀌기 때문에,
           // 더 넓은 범위에서 한번만 계산해선 안된다.
           final itemMapOnAccount = createItemMap(
@@ -221,11 +221,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
           final itemOnAccount = ItemOnAccount(item, accountId);
 
-          await splitStock(itemOnAccount, model, splitFactor, true);
+          await splitStock(dateTime, itemOnAccount, model, splitFactor, true);
 
           onProgress(progress);
         },
-        (progress, stockId, count) async {
+        (progress, dateTime, stockId, count) async {
           // 매 호출 시마다 model.transactions 바뀌기 때문에,
           // 더 넓은 범위에서 한번만 계산해선 안된다.
 
@@ -241,7 +241,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
           final itemOnAccount = ItemOnAccount(item, accountId);
 
-          await transferStock(itemOnAccount, count, model, true);
+          await transferStock(dateTime, itemOnAccount, count, model, true);
 
           onProgress(progress);
         },

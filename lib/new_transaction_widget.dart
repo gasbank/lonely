@@ -41,6 +41,7 @@ Future<int> _stockSum(String stockId, Set<TransactionType> transactionType,
 }
 
 Future<void> transferStock(
+  DateTime dateTime,
   ItemOnAccount itemOnAccount,
   int count, // 음수 지원
   LonelyModel model,
@@ -57,7 +58,6 @@ Future<void> transferStock(
   }
 
   final avgPrice = (item.accumPrice / item.count).round();
-  final now = DateTime.now();
 
   await registerNewTransaction(
     Transaction(
@@ -67,7 +67,7 @@ Future<void> transferStock(
         transactionType: count > 0
             ? TransactionType.transferIn
             : TransactionType.transferOut,
-        dateTime: now,
+        dateTime: dateTime,
         accountId: itemOnAccount.accountId),
     model,
     (_) {},
@@ -76,6 +76,7 @@ Future<void> transferStock(
 }
 
 Future<void> splitStock(
+  DateTime dateTime,
   ItemOnAccount itemOnAccount,
   LonelyModel model,
   int splitFactor,
@@ -83,7 +84,6 @@ Future<void> splitStock(
 ) async {
   final item = itemOnAccount.item;
   final avgPrice = (item.accumPrice / item.count).round();
-  final now = DateTime.now();
 
   await registerNewTransaction(
     Transaction(
@@ -91,7 +91,7 @@ Future<void> splitStock(
         price: avgPrice,
         count: item.count,
         transactionType: TransactionType.splitOut,
-        dateTime: now,
+        dateTime: dateTime,
         accountId: itemOnAccount.accountId),
     model,
     (_) {},
@@ -104,7 +104,7 @@ Future<void> splitStock(
         price: (avgPrice / splitFactor).round(),
         count: item.count * splitFactor,
         transactionType: TransactionType.splitIn,
-        dateTime: now,
+        dateTime: dateTime,
         accountId: itemOnAccount.accountId),
     model,
     (_) {},
@@ -477,7 +477,13 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
                   onPressed: () async {
                     Navigator.pop(context, 'OK');
 
-                    await splitStock(itemOnAccount, model, splitFactor, false);
+                    await splitStock(
+                      DateTime.now(),
+                      itemOnAccount,
+                      model,
+                      splitFactor,
+                      false,
+                    );
                   },
                   child: const Text('실행'),
                 ),

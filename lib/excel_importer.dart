@@ -35,11 +35,24 @@ class Importer {
   Future<int> execute(
     int accountId,
     StockTxtLoader stockTxtLoader,
-    Future<void> Function(double progress, Transaction transaction)
+    Future<void> Function(
+      double progress,
+      Transaction transaction,
+    )
         onNewTransaction,
-    Future<void> Function(double progress, String stockId, int splitFactor)
+    Future<void> Function(
+      double progress,
+      DateTime dateTime,
+      String stockId,
+      int splitFactor,
+    )
         onSplitStock,
-    Future<void> Function(double progress, String stockId, int count)
+    Future<void> Function(
+      double progress,
+      DateTime dateTime,
+      String stockId,
+      int count,
+    )
         onTransferStock,
   ) async {
     final missingStockIdNames = <String>{};
@@ -74,8 +87,6 @@ class Importer {
       // }
 
       final dateTime = DateTime.tryParse(dateTimeStr)!;
-
-
 
       if (transactionType == '매수' ||
           transactionType == '매도' ||
@@ -118,7 +129,7 @@ class Importer {
               int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
 
           await onSplitStock(
-              i / maxRows, stockId, (nextCountInt / countInt).round());
+              i / maxRows, dateTime, stockId, (nextCountInt / countInt).round());
 
           i++; // 다음 행 건너뛰기
 
@@ -144,10 +155,10 @@ class Importer {
           );
           insertedCount++;
         } else if (transactionType == '타사입고') {
-          await onTransferStock(i / maxRows, stockId, countInt);
+          await onTransferStock(i / maxRows, dateTime, stockId, countInt);
           insertedCount++;
         } else if (transactionType == '타사출고') {
-          await onTransferStock(i / maxRows, stockId, -countInt);
+          await onTransferStock(i / maxRows, dateTime, stockId, -countInt);
           insertedCount++;
         }
       } else if (transactionType == '액면분할입고') {

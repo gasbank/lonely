@@ -41,7 +41,7 @@ const widthRatios = [0.15, 0.10, 0.25, 0.20, 0.10, 0.20];
 const columnTexts = ['날짜', '계좌', '종목명', '단가', '수량', '수익'];
 const columnSizes = [
   ColumnSize.M,
-  ColumnSize.S,
+  ColumnSize.M,
   ColumnSize.L,
   ColumnSize.M,
   ColumnSize.M,
