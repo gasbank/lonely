@@ -310,4 +310,12 @@ class LonelyDatabase {
   Future<int> updateTransaction(int id, Map<String, dynamic> values) async {
     return _update(transactionsTable, id, values);
   }
+
+  Future<int> removeTransactionWhereNullAccountId() async {
+    final db = await _database;
+    return await db.delete(
+      transactionsTable,
+      where: 'accountId IS NULL',
+    );
+  }
 }

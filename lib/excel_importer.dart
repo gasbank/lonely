@@ -32,7 +32,7 @@ class Importer {
     }
   }
 
-  Future<void> execute(
+  Future<int> execute(
     int accountId,
     StockTxtLoader stockTxtLoader,
     Future<void> Function(double progress, Transaction transaction)
@@ -45,6 +45,8 @@ class Importer {
     final missingStockIdNames = <String>{};
 
     final maxRows = _sheet.maxRows;
+
+    var insertedCount = 0;
 
     for (var i = 2; i < _sheet.rows.length; i++) {
       final row = _sheet.rows[i];
@@ -72,6 +74,8 @@ class Importer {
       // }
 
       final dateTime = DateTime.tryParse(dateTimeStr)!;
+
+
 
       if (transactionType == '매수' ||
           transactionType == '매도' ||
@@ -117,6 +121,9 @@ class Importer {
               i / maxRows, stockId, (nextCountInt / countInt).round());
 
           i++; // 다음 행 건너뛰기
+
+          insertedCount++;
+          insertedCount++;
         } else if (transactionType == '매수' ||
             transactionType.endsWith('주식매수') ||
             transactionType == '매도' ||
@@ -135,10 +142,13 @@ class Importer {
               accountId: accountId,
             ),
           );
+          insertedCount++;
         } else if (transactionType == '타사입고') {
           await onTransferStock(i / maxRows, stockId, countInt);
+          insertedCount++;
         } else if (transactionType == '타사출고') {
           await onTransferStock(i / maxRows, stockId, -countInt);
+          insertedCount++;
         }
       } else if (transactionType == '액면분할입고') {
         // 액면분할입고는 반드시 액면분할출고가 처리될 때 같이 처리되었어야 했다...
@@ -160,6 +170,8 @@ class Importer {
         print('=== Stock ID 조회 불가 종목명 (끝) ===');
       }
     }
+
+    return insertedCount;
   }
 
   String? getColStr(List<Data?> row, String colName) {

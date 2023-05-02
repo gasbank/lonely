@@ -254,4 +254,12 @@ class LonelyModel extends ChangeNotifier {
     _selectedScreenIndex = index;
     notifyListeners();
   }
+
+  Future<int?> removeTransactionWhereNullAccountId() async {
+    _transactions.removeWhere((e) => e.accountId == null);
+    final count = await _db.removeTransactionWhereNullAccountId();
+    notifyListeners();
+
+    return count;
+  }
 }

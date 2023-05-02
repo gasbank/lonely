@@ -42,6 +42,15 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                       onPressed: () => onImportSs(context, model),
                       child: const Text('삼성증권 XLSX 불러오기'),
                     ),
+                    OutlinedButton(
+                      onPressed: () async =>
+                          await onRemoveTransactionWhereNullAccountId(
+                              context, model),
+                      child: const Text(
+                        '삭제된 계좌와 관련된 매매 기록 모두 삭제',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -72,9 +81,14 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
     onImportSsXlsx(model, (progress) {
       if (onSetState != null) {
-        onSetState!('삼성증권 XLSX 불러오는 중... ${(100 * progress).toStringAsFixed(1)}%');
+        onSetState!(
+            '삼성증권 XLSX 불러오는 중... ${(100 * progress).toStringAsFixed(1)}%');
       }
-    }).then((value) => Navigator.pop(context), onError: (err) {
+    }).then((value) {
+      Navigator.pop(context);
+
+      _showSimpleText('$value개 매매 내역이 추가됐습니다.');
+    }, onError: (err) {
       if (onSetState != null) {
         if (err != null) {
           onSetState!(err.toString());
@@ -153,7 +167,15 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         barrierDismissible: true);
   }
 
-  Future<void> onImportSsXlsx(
+  void _showSimpleText(String msg) {
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+    ));
+  }
+
+  Future<int> onImportSsXlsx(
     LonelyModel model,
     Function(double progress) onProgress,
   ) async {
@@ -167,13 +189,17 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       }
 
       // XLSX 파일 하나 당 하나의 계좌인 것으로 가정
-      const accountId = 1;
+      final accountId = await model.addAccount('삼성 XLSX');
+      if (accountId == null) {
+        _showSimpleText('먼저 \'삼성증권 XLSX\' 계좌명을 변경하세요.');
+        return 0;
+      }
 
       final importer = Importer();
 
       await importer.loadSheet(file);
 
-      await importer.execute(
+      final insertedCount = await importer.execute(
         accountId,
         model.stockTxtLoader,
         (progress, transaction) async {
@@ -220,8 +246,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           onProgress(progress);
         },
       );
+
+      return insertedCount;
     } else {
       // User canceled the picker
+      return 0;
     }
   }
 
@@ -241,5 +270,33 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
   Future<void> onExportDatabase() async {
     Share.shareXFiles([XFile(await getDbPath())]);
+  }
+
+  Future<void> onRemoveTransactionWhereNullAccountId(
+    BuildContext context,
+    LonelyModel model,
+  ) async {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('경고'),
+              content: const Text('삭제된 계좌와 관련된 매매 기록이 모두 삭제됩니다.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, 'Cancel'),
+                  child: const Text('취소'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context, 'OK');
+                    final count =
+                        await model.removeTransactionWhereNullAccountId();
+                    _showSimpleText('매매 기록 $count개 삭제되었습니다.');
+                  },
+                  child: const Text('모두 삭제'),
+                ),
+              ],
+            ),
+        barrierDismissible: true);
   }
 }
