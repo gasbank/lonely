@@ -191,6 +191,7 @@ class _ItemWidgetState extends State<ItemWidget> {
                   child: Text(
                     stockName,
                     overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 10),
                   ),
                 ),
                 const SizedBox(
