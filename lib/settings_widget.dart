@@ -78,16 +78,17 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
   void onImportSs(BuildContext context, LonelyModel model) {
     Function(String)? onSetState;
-
-    onImportSsXlsx(model, (progress) {
+    const importAccountName = '삼성증권 XLSX';
+    onImportSsXlsx(model, importAccountName, (progress) {
       if (onSetState != null) {
         onSetState!(
-            '삼성증권 XLSX 불러오는 중... ${(100 * progress).toStringAsFixed(1)}%');
+            '$importAccountName 불러오는 중... ${(100 * progress).toStringAsFixed(1)}%');
       }
-    }).then((value) {
+    }).then((importedCount) {
       Navigator.pop(context);
-
-      _showSimpleText('$value개 매매 내역이 추가됐습니다.');
+      if (importedCount != null) {
+        _showSimpleText('$importedCount개 매매 내역이 추가됐습니다.');
+      }
     }, onError: (err) {
       if (onSetState != null) {
         if (err != null) {
@@ -175,10 +176,18 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     ));
   }
 
-  Future<int> onImportSsXlsx(
+  Future<int?> onImportSsXlsx(
     LonelyModel model,
+    String importAccountName,
     Function(double progress) onProgress,
   ) async {
+    // XLSX 파일 하나 당 하나의 계좌인 것으로 가정
+    final accountId = await model.addAccount(importAccountName);
+    if (accountId == null) {
+      _showSimpleText('먼저 \'$importAccountName\' 계좌명을 변경하세요.');
+      return null;
+    }
+
     final result = await FilePicker.platform
         .pickFiles(allowedExtensions: ['xlsx'], type: FileType.custom);
 
@@ -186,13 +195,6 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       final file = File(result.files.single.path!);
       if (kDebugMode) {
         print(file.path);
-      }
-
-      // XLSX 파일 하나 당 하나의 계좌인 것으로 가정
-      final accountId = await model.addAccount('삼성 XLSX');
-      if (accountId == null) {
-        _showSimpleText('먼저 \'삼성증권 XLSX\' 계좌명을 변경하세요.');
-        return 0;
       }
 
       final importer = Importer();
