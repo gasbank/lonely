@@ -17,8 +17,10 @@ class MyHomePage extends StatefulWidget {
 Widget _createPage(String title, Widget widget) {
   return PageWidget(
     child: Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: widget,
+      //appBar: AppBar(title: Text(title)),
+      body: SafeArea(
+        child: widget,
+      ),
     ),
   );
 }
@@ -37,7 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _pages = <Widget>[
       _createPage('포트폴리오', const PortfolioScreen()),
-      _createPage('매매', const HistoryScreen()),
+      _createPage('기록', const HistoryScreen()),
       _createPage('계좌', const AccountListWidget()),
       _createPage('설정', const SettingsWidget()),
     ];
@@ -77,11 +79,11 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.reorder),
-                label: '매매 기록',
+                label: '기록',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.account_balance),
-                label: '계좌 관리',
+                label: '계좌',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.settings),
