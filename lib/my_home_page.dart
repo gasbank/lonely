@@ -37,8 +37,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _pages = <Widget>[
       _createPage('포트폴리오', const PortfolioScreen()),
-      _createPage('매매 기록오', const HistoryScreen()),
-      _createPage('계좌 목록', const AccountListWidget()),
+      _createPage('매매', const HistoryScreen()),
+      _createPage('계좌', const AccountListWidget()),
       _createPage('설정', const SettingsWidget()),
     ];
 
@@ -104,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
 class PageWidget extends StatefulWidget {
   final Widget child;
 
-  PageWidget({super.key, required this.child});
+  const PageWidget({super.key, required this.child});
 
   @override
   State<StatefulWidget> createState() => _PageWidgetState();
