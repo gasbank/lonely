@@ -112,6 +112,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
+
               child: Row(
                 children: [
                   AccountFilterWidget(
@@ -218,7 +219,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
         });
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 16),
         child: Column(
           children: [
             ItemWidget(
