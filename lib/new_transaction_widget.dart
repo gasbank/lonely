@@ -112,8 +112,12 @@ Future<void> splitStock(
   );
 }
 
-Future<bool> registerNewTransaction(Transaction transaction, LonelyModel model,
-    void Function(String) onSimpleMessage, bool isBatch) async {
+Future<bool> registerNewTransaction(
+  Transaction transaction,
+  LonelyModel model,
+  void Function(String) onSimpleMessage,
+  bool isBatch,
+) async {
   // if (kDebugMode) {
   //   print('new transaction entry!');
   //   print(transaction);
@@ -151,10 +155,10 @@ Future<bool> registerNewTransaction(Transaction transaction, LonelyModel model,
 
     if (krStockValue != null) {
       if ((await model.setStock(Stock(
-              id: 0,
-              stockId: krStockValue.itemCode,
-              name: stockName,
-              closePrice: krStockValue.closePrice))) >
+            id: 0,
+            stockId: krStockValue.itemCode,
+            name: stockName,
+          ))) >
           0) {
         onSimpleMessage('$stockName 종목 첫 매매 축하~~');
       }
@@ -218,13 +222,15 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
 
     if (krStockValue != null) {
       if ((await model.setStock(Stock(
-              id: 0,
-              stockId: krStockValue.itemCode,
-              name: stockName,
-              closePrice: krStockValue.closePrice))) >
+            id: 0,
+            stockId: krStockValue.itemCode,
+            name: stockName,
+          ))) >
           0) {
         _showSimpleMessage('$stockName 종목 첫 매매 축하~~');
       }
+
+
     }
 
     FocusManager.instance.primaryFocus?.unfocus();

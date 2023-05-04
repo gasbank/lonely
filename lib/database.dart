@@ -15,15 +15,14 @@ class Stock {
   int? id;
   final String stockId;
   final String name;
-  int? closePrice;
   int? inventoryOrder;
 
-  Stock(
-      {required this.id,
-      required this.stockId,
-      required this.name,
-      this.closePrice,
-      this.inventoryOrder});
+  Stock({
+    required this.id,
+    required this.stockId,
+    required this.name,
+    this.inventoryOrder,
+  });
 
   factory Stock.fromMap(Map<String, dynamic> map) {
     return Stock(

@@ -5,6 +5,7 @@ import 'database.dart';
 import 'package:provider/provider.dart';
 import 'lonely_model.dart';
 import 'number_format_util.dart';
+import 'price_model.dart';
 
 const unknownPercentStr = '---%';
 const unknownPriceStr = '---';
@@ -87,11 +88,10 @@ Future<int?> writeKrStockToDb(
       s.stockName.isNotEmpty &&
       (await database.queryStockName(s.itemCode)) == null) {
     return await database.insertStock(Stock(
-            id: 0,
-            stockId: s.itemCode,
-            name: s.stockName,
-            closePrice: s.closePrice)
-        .toMap());
+      id: 0,
+      stockId: s.itemCode,
+      name: s.stockName,
+    ).toMap());
   }
 
   return null;
@@ -100,11 +100,15 @@ Future<int?> writeKrStockToDb(
 class ItemWidget extends StatefulWidget {
   final Item item;
   final bool isBalanceVisible;
+  final LonelyModel model;
+  final PriceModel priceModel;
 
   const ItemWidget({
     super.key,
     required this.item,
     required this.isBalanceVisible,
+    required this.model,
+    required this.priceModel,
   });
 
   @override
@@ -126,13 +130,10 @@ Color colorFor(String text) {
 
 class _ItemWidgetState extends State<ItemWidget> {
   late final Stream<KrStock?> _stockStream;
-  late final LonelyModel _model;
 
   @override
   void initState() {
     super.initState();
-
-    _model = context.read<LonelyModel>();
 
     _stockStream =
         onceAndPeriodic(Duration(seconds: widget.item.count > 0 ? 5 : 50), () {
@@ -145,11 +146,15 @@ class _ItemWidgetState extends State<ItemWidget> {
   void saveToModel(Future<KrStock?> fetchFuture) async {
     final krStock = await fetchFuture;
     if (krStock != null) {
-      _model.setStock(Stock(
-          id: 0,
-          stockId: krStock.itemCode,
-          name: krStock.stockName,
-          closePrice: krStock.closePrice));
+      widget.model.setStock(Stock(
+        id: 0,
+        stockId: krStock.itemCode,
+        name: krStock.stockName,
+      ));
+      widget.priceModel.setPrice(
+        krStock.itemCode,
+        krStock.closePrice,
+      );
     }
   }
 
@@ -157,23 +162,24 @@ class _ItemWidgetState extends State<ItemWidget> {
     final stockId = stockIdAlternatives[item.stockId] ?? item.stockId;
 
     final stock = model.stocks[stockId];
+    final stockPrice = widget.priceModel.prices[stockId];
 
     final stockName = stock?.name ?? '---';
 
-    final currentBalanceStr = (stock != null && stock.closePrice != null)
+    final currentBalanceStr = (stock != null && stockPrice?.price != null)
         ? priceDataToDisplayTruncated(
-            stockId, (stock.closePrice! * widget.item.count).toDouble())
+            stockId, (stockPrice!.price! * widget.item.count).toDouble())
         : unknownPriceStr;
 
     final percentStr = (stock != null &&
-            stock.closePrice != null &&
+            stockPrice?.price != null &&
             item.count > 0)
-        ? '${formatThousandsStr(((stock.closePrice! / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
+        ? '${formatThousandsStr(((stockPrice!.price! / item.avgPrice() - 1) * 100).toStringAsFixed(2))}%'
         : unknownPercentStr;
 
-    final diffPriceStr = (stock != null && stock.closePrice != null)
+    final diffPriceStr = (stock != null && stockPrice?.price != null)
         ? priceDataToDisplayTruncated(
-            stockId, item.diffPrice(stock.closePrice!))
+            stockId, item.diffPrice(stockPrice!.price!))
         : unknownPriceStr;
 
     return Row(

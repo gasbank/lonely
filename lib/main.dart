@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely/price_model.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -30,8 +31,12 @@ class MyApp extends StatelessWidget {
     // Provider()가 MaterialApp()을 감싸야 된다고 카더라...
     // https://github.com/flutter/flutter/issues/88570
     // 그래서 최상위까지 기어올라왔다...
-    return ChangeNotifierProvider(
-      create: (context) => LonelyModel(),
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => LonelyModel()),
+        ChangeNotifierProvider(create: (context) => PriceModel()),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Lonely',

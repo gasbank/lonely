@@ -1,7 +1,6 @@
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'database.dart';
 import 'excel_importer.dart';
 import 'fetch_util.dart';
@@ -36,11 +35,11 @@ class LonelyModel extends ChangeNotifier {
 
   Transaction? _editingTransaction;
 
-  Map<String, Stock> get stocks => UnmodifiableMapView(_stocks);
+  UnmodifiableMapView<String, Stock> get stocks => UnmodifiableMapView(_stocks);
 
-  List<Account> get accounts => UnmodifiableListView(_accounts);
+  UnmodifiableListView<Account> get accounts => UnmodifiableListView(_accounts);
 
-  List<Transaction> get transactions => UnmodifiableListView(_transactions);
+  UnmodifiableListView<Transaction> get transactions => UnmodifiableListView(_transactions);
 
   Transaction? get editingTransaction => _editingTransaction;
 
@@ -80,13 +79,12 @@ class LonelyModel extends ChangeNotifier {
 
     final oldStock = _stocks[s.stockId];
     if (oldStock != null) {
-      // 기존 항목 있다면 가격만 업데이트
-      oldStock.closePrice = s.closePrice;
+      // 달라지는 것 없음 (아마도?)
     } else {
       // 첫 항목이면 새로 등록
       _stocks[s.stockId] = s;
+      notifyListeners();
     }
-    notifyListeners();
 
     return s.id ?? 0;
   }

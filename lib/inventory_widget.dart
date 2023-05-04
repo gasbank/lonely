@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'database.dart';
 import 'item_widget.dart';
 import 'lonely_model.dart';
+import 'price_model.dart';
 import 'transaction.dart';
 
 class InventoryWidget extends StatefulWidget {
@@ -91,8 +92,8 @@ class _InventoryWidgetState extends State<InventoryWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LonelyModel>(
-      builder: (context, model, child) {
+    return Consumer2<LonelyModel, PriceModel>(
+      builder: (context, model, priceModel, child) {
         final transactions = _selectedAccounts.isNotEmpty
             ? model.transactions
                 .where((e) => _selectedAccounts.contains(e.accountId))
@@ -112,7 +113,6 @@ class _InventoryWidgetState extends State<InventoryWidget> {
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
-
               child: Row(
                 children: [
                   AccountFilterWidget(
@@ -183,9 +183,9 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                         ? ReorderableDragStartListener(
                             key: Key(orderedItems[i].stockId),
                             index: i,
-                            child: buildItemWidget(orderedItems[i]),
+                            child: buildItemWidget(orderedItems[i], model, priceModel),
                           )
-                        : buildItemWidget(orderedItems[i])
+                        : buildItemWidget(orderedItems[i], model, priceModel)
                   ]
                 ],
               ),
@@ -196,7 +196,11 @@ class _InventoryWidgetState extends State<InventoryWidget> {
     );
   }
 
-  InkWell buildItemWidget(Item item) {
+  InkWell buildItemWidget(
+    Item item,
+    LonelyModel model,
+    PriceModel priceModel,
+  ) {
     if (_selectedItems.contains(item.stockId)) {
       _stockIdController.text = item.stockId;
     }
@@ -225,6 +229,8 @@ class _InventoryWidgetState extends State<InventoryWidget> {
             ItemWidget(
               item: item,
               isBalanceVisible: _isBalanceVisible,
+              model: model,
+              priceModel: priceModel,
             ),
             // 선택된 종목은 그 상태에서 바로 매매 항목 추가할 수 있도록 한다.
             if (_selectedItems.contains(item.stockId)) ...[

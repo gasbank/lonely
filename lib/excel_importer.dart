@@ -128,8 +128,8 @@ class Importer {
           final nextCountInt =
               int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
 
-          await onSplitStock(
-              i / maxRows, dateTime, stockId, (nextCountInt / countInt).round());
+          await onSplitStock(i / maxRows, dateTime, stockId ?? stockName,
+              (nextCountInt / countInt).round());
 
           i++; // 다음 행 건너뛰기
 
@@ -155,10 +155,10 @@ class Importer {
           );
           insertedCount++;
         } else if (transactionType == '타사입고') {
-          await onTransferStock(i / maxRows, dateTime, stockId, countInt);
+          await onTransferStock(i / maxRows, dateTime, stockId ?? stockName, countInt);
           insertedCount++;
         } else if (transactionType == '타사출고') {
-          await onTransferStock(i / maxRows, dateTime, stockId, -countInt);
+          await onTransferStock(i / maxRows, dateTime, stockId ?? stockName, -countInt);
           insertedCount++;
         }
       } else if (transactionType == '액면분할입고') {
@@ -206,9 +206,11 @@ class StockImporter {
   final _nameToIdMap = <String, String>{};
   late final Sheet _sheet;
 
-  get idToName => UnmodifiableMapView(_idToNameMap);
+  UnmodifiableMapView<String, String> get idToName =>
+      UnmodifiableMapView(_idToNameMap);
 
-  get nameToId => UnmodifiableMapView(_nameToIdMap);
+  UnmodifiableMapView<String, String> get nameToId =>
+      UnmodifiableMapView(_nameToIdMap);
 
   StockImporter(String file) {
     var bytes = File(file).readAsBytesSync();
@@ -254,9 +256,9 @@ class StockTxtLoader {
   final _idToNameMap = <String, String>{};
   final _nameToIdMap = <String, String>{};
 
-  get idToName => UnmodifiableMapView(_idToNameMap);
+  UnmodifiableMapView<String, String> get idToName => UnmodifiableMapView(_idToNameMap);
 
-  get nameToId => UnmodifiableMapView(_nameToIdMap);
+  UnmodifiableMapView<String, String> get nameToId => UnmodifiableMapView(_nameToIdMap);
 
   Future<void> load() async {
     final stockTxtStr = await rootBundle.loadString('assets/Stock.txt');
