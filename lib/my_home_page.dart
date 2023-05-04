@@ -14,8 +14,18 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+Widget _createPage(String title, Widget widget) {
+  return PageWidget(
+    child: Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: widget,
+    ),
+  );
+}
+
 class _MyHomePageState extends State<MyHomePage> {
-  late final List<Widget> _widgetOptions;
+  late final List<Widget> _pages;
+  late final PageController _pageController;
 
   @override
   void initState() {
@@ -25,24 +35,22 @@ class _MyHomePageState extends State<MyHomePage> {
       print('initState(): MyHomePage');
     }
 
-    _widgetOptions = <Widget>[
-      Scaffold(
-        appBar: AppBar(title: const Text('포트폴리오')),
-        body: const PortfolioScreen(),
-      ),
-      Scaffold(
-        appBar: AppBar(title: const Text('매매 기록')),
-        body: const HistoryScreen(),
-      ),
-      Scaffold(
-        appBar: AppBar(title: const Text('계좌 목록')),
-        body: const AccountListWidget(),
-      ),
-      Scaffold(
-        appBar: AppBar(title: const Text('설정')),
-        body: const SettingsWidget(),
-      ),
+    _pages = <Widget>[
+      _createPage('포트폴리오', const PortfolioScreen()),
+      _createPage('매매 기록오', const HistoryScreen()),
+      _createPage('계좌 목록', const AccountListWidget()),
+      _createPage('설정', const SettingsWidget()),
     ];
+
+    _pageController = PageController(
+        initialPage: context.read<LonelyModel>().selectedScreenIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+
+    super.dispose();
   }
 
   @override
@@ -50,11 +58,10 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-        child: Consumer<LonelyModel>(
-          builder: (context, model, child) {
-            return Center(
-                child: _widgetOptions.elementAt(model.selectedScreenIndex));
-          },
+        child: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: _pages,
         ),
       ),
       bottomNavigationBar: Consumer<LonelyModel>(
@@ -83,10 +90,34 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
             currentIndex: model.selectedScreenIndex,
             selectedItemColor: Theme.of(context).colorScheme.primaryContainer,
-            onTap: model.setSelectedScreenIndex,
+            onTap: (selectedPageIndex) {
+              model.setSelectedScreenIndex(selectedPageIndex);
+              _pageController.jumpToPage(selectedPageIndex);
+            },
           );
         },
       ),
     );
+  }
+}
+
+class PageWidget extends StatefulWidget {
+  final Widget child;
+
+  PageWidget({super.key, required this.child});
+
+  @override
+  State<StatefulWidget> createState() => _PageWidgetState();
+}
+
+class _PageWidgetState extends State<PageWidget>
+    with AutomaticKeepAliveClientMixin<PageWidget> {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
