@@ -25,7 +25,7 @@ class Importer {
 
       final headerRow = _sheet.rows[1];
       for (final colInfo in headerRow.where((e) => e != null).map((e) =>
-          ColumnInfo(colIndex: e!.colIndex, colName: e.value.toString()))) {
+          ColumnInfo(colIndex: e!.columnIndex, colName: e.value.toString()))) {
         _colMap[colInfo.colName] = colInfo.colIndex;
       }
       break;
@@ -38,22 +38,19 @@ class Importer {
     Future<void> Function(
       double progress,
       Transaction transaction,
-    )
-        onNewTransaction,
+    ) onNewTransaction,
     Future<void> Function(
       double progress,
       DateTime dateTime,
       String stockId,
       int splitFactor,
-    )
-        onSplitStock,
+    ) onSplitStock,
     Future<void> Function(
       double progress,
       DateTime dateTime,
       String stockId,
       int count,
-    )
-        onTransferStock,
+    ) onTransferStock,
   ) async {
     final missingStockIdNames = <String>{};
 
@@ -155,10 +152,12 @@ class Importer {
           );
           insertedCount++;
         } else if (transactionType == '타사입고') {
-          await onTransferStock(i / maxRows, dateTime, stockId ?? stockName, countInt);
+          await onTransferStock(
+              i / maxRows, dateTime, stockId ?? stockName, countInt);
           insertedCount++;
         } else if (transactionType == '타사출고') {
-          await onTransferStock(i / maxRows, dateTime, stockId ?? stockName, -countInt);
+          await onTransferStock(
+              i / maxRows, dateTime, stockId ?? stockName, -countInt);
           insertedCount++;
         }
       } else if (transactionType == '액면분할입고') {
@@ -225,7 +224,7 @@ class StockImporter {
 
       final headerRow = _sheet.rows[0];
       for (final colInfo in headerRow.where((e) => e != null).map((e) =>
-          ColumnInfo(colIndex: e!.colIndex, colName: e.value.toString()))) {
+          ColumnInfo(colIndex: e!.columnIndex, colName: e.value.toString()))) {
         _colMap[colInfo.colName] = colInfo.colIndex;
       }
       break;
@@ -256,9 +255,11 @@ class StockTxtLoader {
   final _idToNameMap = <String, String>{};
   final _nameToIdMap = <String, String>{};
 
-  UnmodifiableMapView<String, String> get idToName => UnmodifiableMapView(_idToNameMap);
+  UnmodifiableMapView<String, String> get idToName =>
+      UnmodifiableMapView(_idToNameMap);
 
-  UnmodifiableMapView<String, String> get nameToId => UnmodifiableMapView(_nameToIdMap);
+  UnmodifiableMapView<String, String> get nameToId =>
+      UnmodifiableMapView(_nameToIdMap);
 
   Future<void> load() async {
     final stockTxtStr = await rootBundle.loadString('assets/Stock.txt');

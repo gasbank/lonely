@@ -1,10 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import 'database.dart';
 import 'inventory_widget.dart';
-import 'lonely_model.dart';
 
 class PortfolioScreen extends StatefulWidget {
   const PortfolioScreen({super.key});

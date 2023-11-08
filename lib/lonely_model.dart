@@ -39,7 +39,8 @@ class LonelyModel extends ChangeNotifier {
 
   UnmodifiableListView<Account> get accounts => UnmodifiableListView(_accounts);
 
-  UnmodifiableListView<Transaction> get transactions => UnmodifiableListView(_transactions);
+  UnmodifiableListView<Transaction> get transactions =>
+      UnmodifiableListView(_transactions);
 
   Transaction? get editingTransaction => _editingTransaction;
 
@@ -62,7 +63,9 @@ class LonelyModel extends ChangeNotifier {
       await _loadTransactions();
       await _stockTxtLoader.load();
     } catch (e) {
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
     }
   }
 

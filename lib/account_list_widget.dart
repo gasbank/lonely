@@ -119,7 +119,7 @@ class _AccountListWidgetState extends State<AccountListWidget> {
                 return FittedBox(
                   child: DataTable(
                     headingRowHeight: 40,
-                    dataRowHeight: 40,
+                    dataRowMinHeight: 40,
                     showCheckboxColumn: false,
                     columns: const [
                       DataColumn(label: Text('계좌명')),

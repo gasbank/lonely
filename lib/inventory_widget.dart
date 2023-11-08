@@ -183,7 +183,8 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                         ? ReorderableDragStartListener(
                             key: Key(orderedItems[i].stockId),
                             index: i,
-                            child: buildItemWidget(orderedItems[i], model, priceModel),
+                            child: buildItemWidget(
+                                orderedItems[i], model, priceModel),
                           )
                         : buildItemWidget(orderedItems[i], model, priceModel)
                   ]
@@ -262,11 +263,11 @@ extension MyIterable<E> on Iterable<E> {
 
 class LabeledCheckbox extends StatelessWidget {
   const LabeledCheckbox({
-    Key? key,
+    super.key,
     required this.label,
     required this.value,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   final String label;
   final bool value;
