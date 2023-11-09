@@ -229,8 +229,6 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
           0) {
         _showSimpleMessage('$stockName 종목 첫 매매 축하~~');
       }
-
-
     }
 
     FocusManager.instance.primaryFocus?.unfocus();
@@ -371,6 +369,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             ],
           ),
           Row(
+            //mainAxisAlignment: MainAxisAlignment.end,
             children: [
               if (editingTransaction == null) ...[
                 buildButton('매수', Colors.redAccent,
@@ -380,12 +379,19 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
               ] else ...[
                 buildButton('편집', Colors.black, () => onModifyPress(model)),
                 buildButton('액면분할', Colors.black, () => onSplit(model)),
-              ]
+              ],
+              _buildIconButton(const Icon(Icons.filter_alt), Colors.black,
+                  () => _onStockIdFilterPressed(model)),
             ],
           ),
         ]);
       },
     );
+  }
+
+  void _onStockIdFilterPressed(LonelyModel model) {
+    model.stockIdHistoryFilter = widget.stockIdController.text;
+    model.selectedPageIndex = 1;
   }
 
   Expanded buildButton(String text, Color color, void Function() onPressed) =>
@@ -401,6 +407,19 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
             );
           },
         ),
+      );
+
+  Widget _buildIconButton(Icon icon, Color color, void Function() onPressed) =>
+      Consumer<LonelyModel>(
+        builder: (context, model, child) {
+          return IconButton(
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.all<Color>(color),
+            ),
+            onPressed: onPressed,
+            icon: icon,
+          );
+        },
       );
 
   Consumer<Object?> buildAccountDropdown() {

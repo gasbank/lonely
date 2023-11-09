@@ -46,6 +46,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _pageController = PageController(
         initialPage: context.read<LonelyModel>().selectedScreenIndex);
+
+    context.read<LonelyModel>().pageController = _pageController;
   }
 
   @override
@@ -93,8 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
             currentIndex: model.selectedScreenIndex,
             selectedItemColor: Theme.of(context).colorScheme.primaryContainer,
             onTap: (selectedPageIndex) {
-              model.setSelectedScreenIndex(selectedPageIndex);
-              _pageController.jumpToPage(selectedPageIndex);
+              model.selectedPageIndex = selectedPageIndex;
             },
           );
         },

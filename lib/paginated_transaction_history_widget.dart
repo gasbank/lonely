@@ -204,7 +204,7 @@ class _PaginatedTransactionHistoryWidgetState
             ],
           ],
           source: _TransactionDataTableSource(
-            model.transactions.reversed.toList(),
+            model.stockIdFilteredTransactions.reversed.toList(),
             context,
             textStyle,
             (transaction, selected) =>

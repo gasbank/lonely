@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/src/widgets/page_view.dart';
 import 'database.dart';
 import 'excel_importer.dart';
 import 'fetch_util.dart';
@@ -31,7 +32,7 @@ class LonelyModel extends ChangeNotifier {
   final _stocks = <String, Stock>{};
   final _accounts = <Account>[];
   final _transactions = <Transaction>[];
-  int _selectedScreenIndex = 0;
+  int _selectedPageIndex = 0;
 
   Transaction? _editingTransaction;
 
@@ -42,15 +43,39 @@ class LonelyModel extends ChangeNotifier {
   UnmodifiableListView<Transaction> get transactions =>
       UnmodifiableListView(_transactions);
 
+  UnmodifiableListView<Transaction> get stockIdFilteredTransactions =>
+      UnmodifiableListView(stockIdHistoryFilter == null
+          ? transactions
+          : transactions
+              .where((element) => element.stockId == stockIdHistoryFilter));
+
   Transaction? get editingTransaction => _editingTransaction;
 
-  int get selectedScreenIndex => _selectedScreenIndex;
+  int get selectedScreenIndex => _selectedPageIndex;
 
   final _db = LonelyDatabase();
 
   final _stockTxtLoader = StockTxtLoader();
 
   get stockTxtLoader => _stockTxtLoader;
+
+  String? _stockIdHistoryFilter;
+
+  String? get stockIdHistoryFilter => _stockIdHistoryFilter;
+
+  PageController? _pageController;
+  set pageController(PageController pageController) {
+    _pageController = pageController;
+  }
+
+  set stockIdHistoryFilter(String? v) {
+    if (_stockIdHistoryFilter == v) {
+      _stockIdHistoryFilter = null;
+    } else {
+      _stockIdHistoryFilter = v;
+    }
+    notifyListeners();
+  }
 
   LonelyModel() {
     _loadAll();
@@ -251,8 +276,9 @@ class LonelyModel extends ChangeNotifier {
     return count;
   }
 
-  void setSelectedScreenIndex(int index) {
-    _selectedScreenIndex = index;
+  set selectedPageIndex(int index) {
+    _selectedPageIndex = index;
+    _pageController?.jumpToPage(index);
     notifyListeners();
   }
 
