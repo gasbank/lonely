@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'fetch_util.dart';
 import 'database.dart';
-import 'lonely_model.dart';
+import 'model/lonely_model.dart';
 import 'package:lonely/item_widget.dart';
 import 'package:provider/provider.dart';
 

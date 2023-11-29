@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lonely/price_model.dart';
+import 'package:lonely/model/price_model.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'lonely_model.dart';
+import 'model/lonely_model.dart';
 import 'my_home_page.dart';
 
 void main() {

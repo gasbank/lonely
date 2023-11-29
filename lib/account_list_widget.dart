@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'lonely_model.dart';
+import 'model/lonely_model.dart';
 
 class AccountListWidget extends StatefulWidget {
   const AccountListWidget({super.key});

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'fetch_util.dart';
 import 'package:provider/provider.dart';
 import 'number_format_util.dart';
-import 'lonely_model.dart';
+import 'model/lonely_model.dart';
 import 'transaction.dart';
 
 class TransactionHistoryWidget extends StatefulWidget {

@@ -7,8 +7,8 @@ import 'account_filter_widget.dart';
 import 'package:provider/provider.dart';
 import 'database.dart';
 import 'item_widget.dart';
-import 'lonely_model.dart';
-import 'price_model.dart';
+import 'model/lonely_model.dart';
+import 'model/price_model.dart';
 import 'transaction.dart';
 
 class InventoryWidget extends StatefulWidget {

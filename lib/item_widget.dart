@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'fetch_util.dart';
 import 'database.dart';
 import 'package:provider/provider.dart';
-import 'lonely_model.dart';
+import 'model/lonely_model.dart';
 import 'number_format_util.dart';
-import 'price_model.dart';
+import 'model/price_model.dart';
 
 const unknownPercentStr = '---%';
 const unknownPriceStr = '---';
