@@ -1,7 +1,9 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:lonely/model/message_manager.dart';
 import '../database.dart';
 import '../excel_importer.dart';
 import '../fetch_util.dart';
@@ -77,6 +79,8 @@ class LonelyModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  final _messageManager = MessageManager();
+
   LonelyModel() {
     _loadAll();
   }
@@ -87,6 +91,7 @@ class LonelyModel extends ChangeNotifier {
       await _loadStocks();
       await _loadTransactions();
       await _stockTxtLoader.load();
+      await _messageManager.init();
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -128,6 +133,8 @@ class LonelyModel extends ChangeNotifier {
     transaction.id = insertedDbId;
     _transactions.add(transaction);
     notifyListeners();
+
+    _messageManager.publish(jsonEncode(transaction.toMap()));
 
     return insertedDbId;
   }
