@@ -158,6 +158,25 @@ class _ItemWidgetState extends State<ItemWidget> {
     }
   }
 
+  Color darken(Color color, [double amount = .1]) {
+    assert(amount >= 0 && amount <= 1);
+
+    final hsl = HSLColor.fromColor(color);
+    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
+
+    return hslDark.toColor();
+  }
+
+  Color lighten(Color color, [double amount = .1]) {
+    assert(amount >= 0 && amount <= 1);
+
+    final hsl = HSLColor.fromColor(color);
+    final hslLight =
+        hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
+
+    return hslLight.toColor();
+  }
+
   Widget buildWidget(Item item, LonelyModel model) {
     final stockId = stockIdAlternatives[item.stockId] ?? item.stockId;
 
@@ -182,6 +201,11 @@ class _ItemWidgetState extends State<ItemWidget> {
             stockId, item.diffPrice(stockPrice!.price!))
         : unknownPriceStr;
 
+    final circleAvatarBgColor = colorFor(stockId);
+    final circleAvatarFgColor = circleAvatarBgColor.computeLuminance() > 0.5
+        ? darken(circleAvatarBgColor, .6)
+        : lighten(circleAvatarBgColor, .6);
+
     return Row(
       crossAxisAlignment: widget.isBalanceVisible
           ? CrossAxisAlignment.end
@@ -193,11 +217,11 @@ class _ItemWidgetState extends State<ItemWidget> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: colorFor(stockId),
+                  backgroundColor: circleAvatarBgColor,
                   child: Text(
                     stockName,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 10),
+                    style: TextStyle(fontSize: 10, color: circleAvatarFgColor),
                   ),
                 ),
                 const SizedBox(
