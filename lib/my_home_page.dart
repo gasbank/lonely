@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'model/lonely_model.dart';
 import 'settings_widget.dart';
 import 'package:provider/provider.dart';
@@ -29,14 +28,6 @@ Widget _createPage(String title, Widget widget) {
 class _MyHomePageState extends State<MyHomePage> {
   late final List<Widget> _pages;
   late final PageController _pageController;
-  PackageInfo _packageInfo = PackageInfo(
-    appName: 'Unknown',
-    packageName: 'Unknown',
-    version: 'Unknown',
-    buildNumber: 'Unknown',
-    buildSignature: 'Unknown',
-    installerStore: 'Unknown',
-  );
 
   @override
   void initState() {
@@ -50,22 +41,13 @@ class _MyHomePageState extends State<MyHomePage> {
       _createPage('포트폴리오', const PortfolioScreen()),
       _createPage('기록', const HistoryScreen()),
       _createPage('계좌', const AccountListWidget()),
-      _createPage('설정', SettingsWidget(_packageInfo)),
+      _createPage('설정', const SettingsWidget()),
     ];
 
     _pageController = PageController(
         initialPage: context.read<LonelyModel>().selectedScreenIndex);
 
     context.read<LonelyModel>().pageController = _pageController;
-
-    _initPackageInfo();
-  }
-
-  Future<void> _initPackageInfo() async {
-    final info = await PackageInfo.fromPlatform();
-    setState(() {
-      _packageInfo = info;
-    });
   }
 
   @override

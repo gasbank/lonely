@@ -2,20 +2,18 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'database.dart';
 import 'excel_importer.dart';
 import 'inventory_widget.dart';
 import 'item_widget.dart';
+import 'model/package_model.dart';
 import 'new_transaction_widget.dart';
 import 'model/lonely_model.dart';
 
 class SettingsWidget extends StatefulWidget {
-  final PackageInfo _packageInfo;
-
-  const SettingsWidget(this._packageInfo, {super.key});
+  const SettingsWidget({super.key});
 
   @override
   State<SettingsWidget> createState() => _SettingsWidgetState();
@@ -66,12 +64,14 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                 ),
               ),
               const Spacer(),
-              Text(
-                '${widget._packageInfo.version} (${widget._packageInfo.buildNumber})',
-                style: const TextStyle(
-                  color: Colors.grey,
-                ),
-              ),
+              Consumer<PackageModel>(builder: (_, packageModel, __) {
+                return Text(
+                  '${packageModel.info.version} (${packageModel.info.buildNumber})',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                );
+              }),
             ],
           );
         },

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely/model/package_model.dart';
 import 'package:lonely/model/price_model.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -34,8 +35,9 @@ class MyApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => LonelyModel()),
-        ChangeNotifierProvider(create: (context) => PriceModel()),
+        ChangeNotifierProvider(create: (_) => LonelyModel()),
+        ChangeNotifierProvider(create: (_) => PriceModel()),
+        ChangeNotifierProvider(create: (_) => PackageModel()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
