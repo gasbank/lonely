@@ -109,9 +109,7 @@ class _AccountListWidgetState extends State<AccountListWidget> {
                     ),
                   ),
                 ),
-                Expanded(
-                  child: _buildAddOrUpdateButton(model, scaffoldMessenger),
-                ),
+                _buildAddOrUpdateButton(model, scaffoldMessenger),
               ],
             ),
             Consumer<LonelyModel>(
@@ -141,9 +139,9 @@ class _AccountListWidgetState extends State<AccountListWidget> {
     );
   }
 
-  OutlinedButton _buildAddOrUpdateButton(
+  Widget _buildAddOrUpdateButton(
       LonelyModel model, ScaffoldMessengerState scaffoldMessenger) {
-    return OutlinedButton(
+    return TextButton(
       style: ButtonStyle(
         foregroundColor: MaterialStateProperty.all<Color>(Colors.redAccent),
       ),

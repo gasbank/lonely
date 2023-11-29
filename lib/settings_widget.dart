@@ -30,19 +30,19 @@ class _SettingsWidgetState extends State<SettingsWidget> {
               Expanded(
                 child: ListView(
                   children: [
-                    OutlinedButton(
+                    TextButton(
                       onPressed: () async => await onExportDatabase(),
                       child: const Text('매매 기록 내보내기'),
                     ),
-                    OutlinedButton(
+                    TextButton(
                       onPressed: () async => await onImportDatabase(model),
                       child: const Text('매매 기록 불러오기'),
                     ),
-                    OutlinedButton(
+                    TextButton(
                       onPressed: () => onImportSs(context, model),
                       child: const Text('삼성증권 XLSX 불러오기'),
                     ),
-                    OutlinedButton(
+                    TextButton(
                       onPressed: () async =>
                           await onRemoveTransactionWhereNullAccountId(
                               context, model),
@@ -55,7 +55,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                 ),
               ),
               const Spacer(),
-              OutlinedButton(
+              TextButton(
                 onPressed: () => onClearAllData(context, model),
                 child: const Text(
                   '매매 기록 모두 삭제',
@@ -271,7 +271,21 @@ class _SettingsWidgetState extends State<SettingsWidget> {
   }
 
   Future<void> onExportDatabase() async {
-    Share.shareXFiles([XFile(await getDbPath())]);
+    if (Platform.isWindows) {
+      final outPath = await FilePicker.platform.saveFile(
+        dialogTitle: '내보낼 데이터 위치 지정',
+        fileName: 'lonely.db',
+      );
+      if (outPath != null) {
+        if (kDebugMode) {
+          print(outPath);
+        }
+
+        await File(await getDbPath()).copy(outPath);
+      }
+    } else {
+      Share.shareXFiles([XFile(await getDbPath())]);
+    }
   }
 
   Future<void> onRemoveTransactionWhereNullAccountId(

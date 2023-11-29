@@ -398,7 +398,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       Expanded(
         child: Consumer<LonelyModel>(
           builder: (context, model, child) {
-            return OutlinedButton(
+            return TextButton(
               style: ButtonStyle(
                 foregroundColor: MaterialStateProperty.all<Color>(color),
               ),
