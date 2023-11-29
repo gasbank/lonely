@@ -1,11 +1,17 @@
+// 이 파일 내용이 바뀌면 아래 명령어 실행해서 자동 생성하는 코드도 갱신시켜야 한다.
+// dart run build_runner build --delete-conflicting-outputs
+import 'package:json_annotation/json_annotation.dart';
+
+part 'transaction.g.dart';
+
 // DB에 기록되는 값이라 순서 바뀌어서는 안된다.
 enum TransactionType {
-  buy, // 매수
-  sell, // 매도
-  splitIn, // 액면분할입고 (출고와 쌍 이루어야 한다.)
-  splitOut, // 액면분할출고 (입고와 쌍 이루어야 한다.)
-  transferIn, // 타사출고
-  transferOut, // 타사출고
+  @JsonValue(0) buy, // 매수
+  @JsonValue(1) sell, // 매도
+  @JsonValue(2) splitIn, // 액면분할입고 (출고와 쌍 이루어야 한다.)
+  @JsonValue(3) splitOut, // 액면분할출고 (입고와 쌍 이루어야 한다.)
+  @JsonValue(4) transferIn, // 타사출고
+  @JsonValue(5) transferOut, // 타사출고
 }
 
 const transactionTypeIn = <TransactionType>{
@@ -20,7 +26,11 @@ const transactionTypeOut = <TransactionType>{
   TransactionType.transferOut,
 };
 
+@JsonSerializable(includeIfNull: false)
 class Transaction {
+  factory Transaction.fromJson(Map<String, dynamic> json) => _$TransactionFromJson(json);
+  Map<String, dynamic> toJson() => _$TransactionToJson(this);
+
   int? id;
   late final String stockId;
   late final int price;

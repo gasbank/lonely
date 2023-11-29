@@ -8,6 +8,7 @@ import '../database.dart';
 import '../excel_importer.dart';
 import '../fetch_util.dart';
 import '../transaction.dart';
+import '../transaction_message.dart';
 
 class Account {
   int? id;
@@ -66,6 +67,7 @@ class LonelyModel extends ChangeNotifier {
   String? get stockIdHistoryFilter => _stockIdHistoryFilter;
 
   PageController? _pageController;
+
   set pageController(PageController pageController) {
     _pageController = pageController;
   }
@@ -91,7 +93,7 @@ class LonelyModel extends ChangeNotifier {
       await _loadStocks();
       await _loadTransactions();
       await _stockTxtLoader.load();
-      await _messageManager.init();
+      await _messageManager.init(this);
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -130,11 +132,10 @@ class LonelyModel extends ChangeNotifier {
 
   Future<int?> addTransaction(Transaction transaction) async {
     final insertedDbId = await _db.insertTransaction(transaction.toMap());
+
     transaction.id = insertedDbId;
     _transactions.add(transaction);
     notifyListeners();
-
-    _messageManager.publish(jsonEncode(transaction.toMap()));
 
     return insertedDbId;
   }
@@ -295,5 +296,13 @@ class LonelyModel extends ChangeNotifier {
     notifyListeners();
 
     return count;
+  }
+
+  void publish(TransactionMessageType type, Object payload) {
+    _messageManager.publish(jsonEncode(TransactionMessage(
+      _messageManager.actionConsumerQueueName,
+      type,
+      payload,
+    ).toJson()));
   }
 }

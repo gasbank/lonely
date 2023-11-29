@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import 'inventory_widget.dart';
 import 'transaction.dart';
+import 'transaction_message.dart';
 import 'transaction_text_field.dart';
 
 class NewTransactionWidget extends StatefulWidget {
@@ -146,7 +147,11 @@ Future<bool> registerNewTransaction(
     }
   }
 
+  // 일단 로컬 기기에 추가하고,
   await model.addTransaction(transaction);
+
+  // 다른 기기에 항목 추가된 것 알려준다.
+  model.publish(TransactionMessageType.addTransaction, transaction);
 
   if (isBatch == false) {
     final krStock = fetchStockInfo(transaction.stockId);
@@ -215,6 +220,13 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
     }
 
     await model.updateTransaction(id, transaction);
+    model.publish(
+      TransactionMessageType.updateTransaction,
+      {
+        'id': id,
+        'transaction': transaction,
+      },
+    );
 
     final krStock = fetchStockInfo(transaction.stockId);
     final krStockValue = await krStock;

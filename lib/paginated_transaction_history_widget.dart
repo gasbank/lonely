@@ -1,6 +1,7 @@
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely/transaction_message.dart';
 import 'fetch_util.dart';
 import 'package:provider/provider.dart';
 import 'number_format_util.dart';
@@ -148,6 +149,7 @@ class _PaginatedTransactionHistoryWidgetState
 
   void removeSelectedTransaction(LonelyModel model) {
     model.removeTransaction(selectedSet.toList());
+    model.publish(TransactionMessageType.removeTransaction, selectedSet.toList());
 
     if (selectedSet.contains(model.editingTransaction?.id)) {
       model.setEditingTransaction(null);
