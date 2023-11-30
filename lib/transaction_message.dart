@@ -12,7 +12,7 @@ enum TransactionMessageType {
 class TransactionMessage {
   final String senderId;
   final TransactionMessageType messageType;
-  final Object payload;
+  final dynamic payload;
 
   TransactionMessage(this.senderId, this.messageType, this.payload);
 

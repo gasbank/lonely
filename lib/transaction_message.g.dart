@@ -10,7 +10,7 @@ TransactionMessage _$TransactionMessageFromJson(Map<String, dynamic> json) =>
     TransactionMessage(
       json['senderId'] as String,
       $enumDecode(_$TransactionMessageTypeEnumMap, json['messageType']),
-      json['payload'] as Object,
+      json['payload'],
     );
 
 Map<String, dynamic> _$TransactionMessageToJson(TransactionMessage instance) =>

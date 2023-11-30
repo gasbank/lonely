@@ -50,18 +50,17 @@ class MessageManager {
       switch (msg.messageType) {
         case TransactionMessageType.addTransaction:
           lonelyModel.addTransaction(
-              Transaction.fromJson(msg.payload as Map<String, dynamic>));
+              Transaction.fromJson(msg.payload));
           break;
         case TransactionMessageType.removeTransaction:
           lonelyModel
-              .removeTransaction(List<int>.from(msg.payload as List<dynamic>));
+              .removeTransaction(List<int>.from(msg.payload));
           break;
         case TransactionMessageType.updateTransaction:
           final payloadMap = msg.payload as Map<String, dynamic>;
           lonelyModel.updateTransaction(
             payloadMap['id'],
-            Transaction.fromJson(
-                payloadMap['transaction'] as Map<String, dynamic>),
+            Transaction.fromJson(payloadMap['transaction']),
           );
       }
     });
