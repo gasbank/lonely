@@ -91,11 +91,13 @@ class LonelyModel extends ChangeNotifier {
 
   Future<void> _loadAll() async {
     try {
+      // 제일 먼저해야한다.
+      await _messageManager.init(this);
+      // 이 다음부터는 도중에 예외 발생할 수 있다.
       await _loadAccounts();
       await _loadStocks();
       await _loadTransactions();
       await _stockTxtLoader.load();
-      await _messageManager.init(this);
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -302,18 +304,18 @@ class LonelyModel extends ChangeNotifier {
 
   void publish(TransactionMessageType type, dynamic payload) {
     _messageManager.publish(jsonEncode(TransactionMessage(
-      _messageManager.actionConsumerQueueName,
+      _messageManager.privateQueueName,
       type,
       payload,
     ).toJson()));
   }
 
-  void queueShowRequestSyncPopup() {
-    _queuedContextTaskList.add(showRequestSyncPopup);
+  void queueShowRequestSyncPopup(String requesterId) {
+    _queuedContextTaskList.add((context) => showRequestSyncPopup(context, requesterId));
     notifyListeners();
   }
 
-  void showRequestSyncPopup(BuildContext context) {
+  void showRequestSyncPopup(BuildContext context, String requesterId) {
     const outlinedButtonRadius = 8.0;
     final cancelButton = Expanded(
       child: OutlinedButton(
@@ -333,6 +335,9 @@ class LonelyModel extends ChangeNotifier {
     final confirmButton = Expanded(
       child: OutlinedButton(
         onPressed: () {
+
+          _messageManager.sendDatabaseTo(requesterId);
+
           Navigator.of(context).pop();
         },
         style: OutlinedButton.styleFrom(
