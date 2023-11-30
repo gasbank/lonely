@@ -240,10 +240,10 @@ class _ItemWidgetState extends State<ItemWidget> {
                 const SizedBox(
                   width: 4,
                 ),
-                Text(stockId,
-                    style: DefaultTextStyle.of(context)
-                        .style
-                        .apply(color: Theme.of(context).colorScheme.primary)),
+                // Text(stockId,
+                //     style: DefaultTextStyle.of(context)
+                //         .style
+                //         .apply(color: Theme.of(context).colorScheme.primary)),
               ],
             ),
             if (widget.isBalanceVisible) ...[
