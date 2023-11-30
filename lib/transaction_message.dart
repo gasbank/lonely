@@ -6,6 +6,8 @@ enum TransactionMessageType {
   @JsonValue(0) addTransaction,
   @JsonValue(1) removeTransaction,
   @JsonValue(2) updateTransaction,
+  @JsonValue(3) requestSync,
+  @JsonValue(4) sync,
 }
 
 @JsonSerializable(explicitToJson: true)

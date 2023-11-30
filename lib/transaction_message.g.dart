@@ -24,4 +24,6 @@ const _$TransactionMessageTypeEnumMap = {
   TransactionMessageType.addTransaction: 0,
   TransactionMessageType.removeTransaction: 1,
   TransactionMessageType.updateTransaction: 2,
+  TransactionMessageType.requestSync: 3,
+  TransactionMessageType.sync: 4,
 };

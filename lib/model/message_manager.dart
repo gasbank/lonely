@@ -62,6 +62,11 @@ class MessageManager {
             payloadMap['id'],
             Transaction.fromJson(payloadMap['transaction']),
           );
+        case TransactionMessageType.requestSync:
+          lonelyModel.queueShowRequestSyncPopup();
+          break;
+        case TransactionMessageType.sync:
+          break;
       }
     });
   }

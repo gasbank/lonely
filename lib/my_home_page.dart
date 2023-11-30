@@ -70,6 +70,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       bottomNavigationBar: Consumer<LonelyModel>(
         builder: (context, model, child) {
+
+          Future.delayed(Duration.zero, () => model.flushContextTaskList(context));
+
           return BottomNavigationBar(
             //showSelectedLabels: false,
             //showUnselectedLabels: false,

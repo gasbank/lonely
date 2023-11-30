@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:lonely/model/message_manager.dart';
 import '../database.dart';
 import '../excel_importer.dart';
@@ -67,6 +67,8 @@ class LonelyModel extends ChangeNotifier {
   String? get stockIdHistoryFilter => _stockIdHistoryFilter;
 
   PageController? _pageController;
+
+  final Queue<void Function(BuildContext)> _queuedContextTaskList = Queue<void Function(BuildContext)>();
 
   set pageController(PageController pageController) {
     _pageController = pageController;
@@ -298,11 +300,89 @@ class LonelyModel extends ChangeNotifier {
     return count;
   }
 
-  void publish(TransactionMessageType type, Object payload) {
+  void publish(TransactionMessageType type, dynamic payload) {
     _messageManager.publish(jsonEncode(TransactionMessage(
       _messageManager.actionConsumerQueueName,
       type,
       payload,
     ).toJson()));
+  }
+
+  void queueShowRequestSyncPopup() {
+    _queuedContextTaskList.add(showRequestSyncPopup);
+    notifyListeners();
+  }
+
+  void showRequestSyncPopup(BuildContext context) {
+    const outlinedButtonRadius = 8.0;
+    final cancelButton = Expanded(
+      child: OutlinedButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        style: OutlinedButton.styleFrom(
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(outlinedButtonRadius),
+                  bottomRight: Radius.circular(outlinedButtonRadius),
+                ))),
+        child: const Text('취소'),
+      ),
+    );
+
+    final confirmButton = Expanded(
+      child: OutlinedButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        style: OutlinedButton.styleFrom(
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(outlinedButtonRadius),
+                  bottomRight: Radius.circular(outlinedButtonRadius),
+                ))),
+        child: const Text('허용'),
+      ),
+    );
+
+    AlertDialog alert = AlertDialog(
+        shape: const RoundedRectangleBorder(
+            borderRadius:
+            BorderRadius.all(Radius.circular(outlinedButtonRadius))),
+        contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+        //backgroundColor: Colors.white,
+        elevation: 0,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(32, 32, 32, 8),
+              child: Text('불러오기 요청',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge!
+                      .copyWith(fontWeight: FontWeight.bold)),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(32, 8, 32, 32),
+              child: Text('다른 기기에서 데이터 전체 불러오기 요청이 왔습니다.'),
+            ),
+            Row(
+              children: [
+                cancelButton,
+                confirmButton,
+              ],
+            )
+          ],
+        ));
+
+    showDialog(context: context, builder: (_) => alert);
+  }
+
+  void flushContextTaskList(BuildContext context) {
+    for (final f in _queuedContextTaskList) {
+      f(context);
+    }
+    _queuedContextTaskList.clear();
   }
 }

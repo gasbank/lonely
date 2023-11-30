@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely/transaction_message.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'database.dart';
@@ -42,6 +43,10 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     TextButton(
                       onPressed: () => onImportSs(context, model),
                       child: const Text('삼성증권 XLSX 불러오기'),
+                    ),
+                    TextButton(
+                      onPressed: () => onImportFromOtherDevice(context, model),
+                      child: const Text('매매 기록 불러오기 (다른 기기에서)'),
                     ),
                     TextButton(
                       onPressed: () async =>
@@ -317,5 +322,57 @@ class _SettingsWidgetState extends State<SettingsWidget> {
               ],
             ),
         barrierDismissible: true);
+  }
+
+  void onImportFromOtherDevice(BuildContext context, LonelyModel model) {
+    model.publish(TransactionMessageType.requestSync, null);
+
+    const outlinedButtonRadius = 8.0;
+    final cancelButton = Expanded(
+      child: OutlinedButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        style: OutlinedButton.styleFrom(
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(outlinedButtonRadius),
+                  bottomRight: Radius.circular(outlinedButtonRadius),
+                ))),
+        child: const Text('취소'),
+      ),
+    );
+
+    AlertDialog alert = AlertDialog(
+        shape: const RoundedRectangleBorder(
+            borderRadius:
+            BorderRadius.all(Radius.circular(outlinedButtonRadius))),
+        contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+        //backgroundColor: Colors.white,
+        elevation: 0,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(32, 32, 32, 8),
+              child: Text('불러오기',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge!
+                      .copyWith(fontWeight: FontWeight.bold)),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(32, 8, 32, 32),
+              child: Text('다른 기기의 응답 기다리는 중'),
+            ),
+            Row(
+              children: [
+                cancelButton,
+              ],
+            )
+          ],
+        ));
+
+    showDialog(context: context, builder: (_) => alert);
   }
 }
