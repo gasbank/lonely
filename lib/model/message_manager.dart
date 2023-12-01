@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -26,6 +27,7 @@ class MessageManager {
   late final Consumer _actionConsumer;
 
   bool _init = false;
+  Completer<bool>? _syncDbCompleter;
 
   String get privateQueueName => instanceId;
 
@@ -114,6 +116,18 @@ class MessageManager {
     final newDb = await File(tempPath).create();
     await newDb.writeAsBytes(bytes);
 
-    model.closeAndReplaceDatabase(newDb);
+    await model.closeAndReplaceDatabase(newDb);
+
+    _syncDbCompleter?.complete(true);
+  }
+
+  Future<bool> waitForDbSync() async {
+    _syncDbCompleter = Completer();
+
+    return _syncDbCompleter!.future;
+  }
+
+  void cancelWaitForDbSync() {
+    _syncDbCompleter?.complete(false);
   }
 }

@@ -324,14 +324,14 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         barrierDismissible: true);
   }
 
-  void onImportFromOtherDevice(BuildContext context, LonelyModel model) {
+  void onImportFromOtherDevice(BuildContext context, LonelyModel model) async {
     model.publish(TransactionMessageType.requestSync, null);
 
     const outlinedButtonRadius = 8.0;
     final cancelButton = Expanded(
       child: OutlinedButton(
         onPressed: () {
-          Navigator.of(context).pop();
+          model.cancelWaitForDbSync();
         },
         style: OutlinedButton.styleFrom(
             shape: const RoundedRectangleBorder(
@@ -373,6 +373,21 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           ],
         ));
 
-    showDialog(context: context, builder: (_) => alert);
+    final route = DialogRoute(
+      context: context,
+      builder: (_) => PopScope(
+        child: alert,
+      ),
+      barrierDismissible: false,
+    );
+
+    Navigator.of(context).push(route);
+    try {
+      await model.waitForDbSync();
+    } finally {
+      if (context.mounted) {
+        Navigator.of(context).removeRoute(route);
+      }
+    }
   }
 }
