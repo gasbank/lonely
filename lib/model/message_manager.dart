@@ -39,20 +39,31 @@ class MessageManager {
 
     // String.fromEnvironment 호출은 반드시 const가 붙어야만 제대로 작동한다. (ㄷㄷ)
     const mqHost = String.fromEnvironment('MQ_HOST');
-    final mqPort = int.parse(const String.fromEnvironment('MQ_PORT', defaultValue: '5672'));
+    final mqPort = int.parse(
+        const String.fromEnvironment('MQ_PORT', defaultValue: '5672'));
 
     final settings = ConnectionSettings(
-      host: mqHost.isNotEmpty ? mqHost : Platform.isAndroid ? '10.0.2.2' : 'localhost',
+      host: mqHost.isNotEmpty
+          ? mqHost
+          : Platform.isAndroid
+              ? '10.0.2.2'
+              : 'localhost',
       port: mqPort,
       authProvider: const PlainAuthenticator(
         String.fromEnvironment('MQ_USERNAME', defaultValue: 'guest'),
         String.fromEnvironment('MQ_PASSWORD', defaultValue: 'guest'),
       ),
       tlsContext: mqPort == 5671 ? SecurityContext.defaultContext : null,
-      virtualHost: const String.fromEnvironment('MQ_VIRTUAL_HOST', defaultValue: '/'),
+      virtualHost:
+          const String.fromEnvironment('MQ_VIRTUAL_HOST', defaultValue: '/'),
     );
 
-    _client = Client(settings: settings);
+    _client = Client(settings: settings)
+      ..errorListener((error) {
+        if (kDebugMode) {
+          print(error);
+        }
+      });
 
     _channel = await _client.channel();
 
@@ -60,10 +71,6 @@ class MessageManager {
     _singleConsumer =
         await _singleExchange.bindPrivateQueueConsumer([instanceId]);
     _singleConsumer.listen((message) {
-      if (kDebugMode) {
-        print(message);
-      }
-
       if (message.properties?.contentType == 'db') {
         importFromPayload(model, message.payload!);
         return;
