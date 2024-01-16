@@ -69,7 +69,8 @@ class LonelyModel extends ChangeNotifier {
 
   PageController? _pageController;
 
-  final Queue<void Function(BuildContext)> _queuedContextTaskList = Queue<void Function(BuildContext)>();
+  final Queue<void Function(BuildContext)> _queuedContextTaskList =
+      Queue<void Function(BuildContext)>();
 
   set pageController(PageController pageController) {
     _pageController = pageController;
@@ -94,6 +95,13 @@ class LonelyModel extends ChangeNotifier {
     try {
       // 제일 먼저해야한다.
       await _messageManager.init(this);
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+
+    try {
       // 이 다음부터는 도중에 예외 발생할 수 있다.
       await _loadAccounts();
       await _loadStocks();
@@ -312,7 +320,8 @@ class LonelyModel extends ChangeNotifier {
   }
 
   void queueShowRequestSyncPopup(String requesterId) {
-    _queuedContextTaskList.add((context) => showRequestSyncPopup(context, requesterId));
+    _queuedContextTaskList
+        .add((context) => showRequestSyncPopup(context, requesterId));
     notifyListeners();
   }
 
@@ -326,9 +335,9 @@ class LonelyModel extends ChangeNotifier {
         style: OutlinedButton.styleFrom(
             shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(outlinedButtonRadius),
-                  bottomRight: Radius.circular(outlinedButtonRadius),
-                ))),
+          bottomLeft: Radius.circular(outlinedButtonRadius),
+          bottomRight: Radius.circular(outlinedButtonRadius),
+        ))),
         child: const Text('취소'),
       ),
     );
@@ -336,7 +345,6 @@ class LonelyModel extends ChangeNotifier {
     final confirmButton = Expanded(
       child: OutlinedButton(
         onPressed: () {
-
           _messageManager.sendDatabaseTo(requesterId);
 
           Navigator.of(context).pop();
@@ -344,9 +352,9 @@ class LonelyModel extends ChangeNotifier {
         style: OutlinedButton.styleFrom(
             shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(outlinedButtonRadius),
-                  bottomRight: Radius.circular(outlinedButtonRadius),
-                ))),
+          bottomLeft: Radius.circular(outlinedButtonRadius),
+          bottomRight: Radius.circular(outlinedButtonRadius),
+        ))),
         child: const Text('허용'),
       ),
     );
@@ -354,7 +362,7 @@ class LonelyModel extends ChangeNotifier {
     AlertDialog alert = AlertDialog(
         shape: const RoundedRectangleBorder(
             borderRadius:
-            BorderRadius.all(Radius.circular(outlinedButtonRadius))),
+                BorderRadius.all(Radius.circular(outlinedButtonRadius))),
         contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
         //backgroundColor: Colors.white,
         elevation: 0,
