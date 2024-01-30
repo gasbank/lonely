@@ -56,6 +56,12 @@ class MessageManager {
       tlsContext: mqPort == 5671 ? SecurityContext.defaultContext : null,
       virtualHost:
           const String.fromEnvironment('MQ_VIRTUAL_HOST', defaultValue: '/'),
+      onBadCertificate: (cert) {
+        if (kDebugMode) {
+          print(cert);
+        }
+        return false;
+      },
     );
 
     _client = Client(settings: settings)
@@ -64,6 +70,8 @@ class MessageManager {
           print(error);
         }
       });
+
+    await _client.connect();
 
     _channel = await _client.channel();
 

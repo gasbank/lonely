@@ -325,7 +325,26 @@ class _SettingsWidgetState extends State<SettingsWidget> {
   }
 
   void onImportFromOtherDevice(BuildContext context, LonelyModel model) async {
-    model.publish(TransactionMessageType.requestSync, null);
+    try {
+      model.publish(TransactionMessageType.requestSync, null);
+    } on Exception catch (e) {
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: const Text('오류'),
+                content: Text(e.toString()),
+                actions: [
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('확인'),
+                  ),
+                ],
+              ),
+          barrierDismissible: false);
+      return;
+    }
 
     const outlinedButtonRadius = 8.0;
     final cancelButton = Expanded(
@@ -336,9 +355,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         style: OutlinedButton.styleFrom(
             shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(outlinedButtonRadius),
-                  bottomRight: Radius.circular(outlinedButtonRadius),
-                ))),
+          bottomLeft: Radius.circular(outlinedButtonRadius),
+          bottomRight: Radius.circular(outlinedButtonRadius),
+        ))),
         child: const Text('취소'),
       ),
     );
@@ -346,7 +365,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     AlertDialog alert = AlertDialog(
         shape: const RoundedRectangleBorder(
             borderRadius:
-            BorderRadius.all(Radius.circular(outlinedButtonRadius))),
+                BorderRadius.all(Radius.circular(outlinedButtonRadius))),
         contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
         //backgroundColor: Colors.white,
         elevation: 0,

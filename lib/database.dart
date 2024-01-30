@@ -176,19 +176,29 @@ Future<String> getDbPath() async {
 }
 
 class LonelyDatabase {
+  bool _isInit = false;
   late Future<Database> _database;
 
-  LonelyDatabase() {
+  void initDatabaseIfFirstTime() {
+    if (_isInit) {
+      return;
+    }
+
+    _isInit = true;
+
     _database = _initDatabase();
   }
 
-  Future<void> closeAndReloadDatabase(File? newDbFile) async {
+  Future<List<Object>> closeAndReloadDatabase(File? newDbFile) async {
+    final errorList = <Object>[];
+
     try {
       final db = await _database;
       if (db.isOpen) {
         await db.close();
       }
     } on Exception catch (e) {
+      errorList.add(e);
       if (kDebugMode) {
         print(e);
       }
@@ -201,6 +211,8 @@ class LonelyDatabase {
       await File(dbPath).delete();
     }
     _database = _initDatabase();
+
+    return errorList;
   }
 
   Future<int> insertTransaction(Map<String, Object?> values) async {

@@ -70,8 +70,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       bottomNavigationBar: Consumer<LonelyModel>(
         builder: (context, model, child) {
-
-          Future.delayed(Duration.zero, () => model.flushContextTaskList(context));
+          Future.delayed(
+              Duration.zero, () => model.flushContextTaskList(context));
+          Future.delayed(Duration.zero, () => _loadModel(context));
 
           return BottomNavigationBar(
             //showSelectedLabels: false,
@@ -104,6 +105,29 @@ class _MyHomePageState extends State<MyHomePage> {
         },
       ),
     );
+  }
+
+  void _loadModel(BuildContext context) async {
+    final errorList = await context.read<LonelyModel>().loadAll();
+    if (context.mounted) {
+      for (final error in errorList) {
+        showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+                  title: const Text('오류'),
+                  content: Text(error.toString()),
+                  actions: [
+                    TextButton(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('확인'),
+                    ),
+                  ],
+                ),
+            barrierDismissible: false);
+      }
+    }
   }
 }
 

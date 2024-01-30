@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely/model/message_manager.dart';
+
 import '../database.dart';
 import '../excel_importer.dart';
 import '../fetch_util.dart';
@@ -69,6 +71,8 @@ class LonelyModel extends ChangeNotifier {
 
   PageController? _pageController;
 
+  bool _isLoadTried = false;
+
   final Queue<void Function(BuildContext)> _queuedContextTaskList =
       Queue<void Function(BuildContext)>();
 
@@ -87,36 +91,49 @@ class LonelyModel extends ChangeNotifier {
 
   final _messageManager = MessageManager();
 
-  LonelyModel() {
-    _loadAll();
-  }
+  Future<List<Object>> loadAll() async {
+    final errorList = <Object>[];
 
-  Future<void> _loadAll() async {
-    try {
-      // 제일 먼저해야한다.
-      await _messageManager.init(this);
-    } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
+    if (_isLoadTried) {
+      return errorList;
     }
 
+    _isLoadTried = true;
+
+    _db.initDatabaseIfFirstTime();
+
     try {
-      // 이 다음부터는 도중에 예외 발생할 수 있다.
       await _loadAccounts();
       await _loadStocks();
       await _loadTransactions();
       await _stockTxtLoader.load();
     } catch (e) {
+      errorList.add(e);
       if (kDebugMode) {
         print(e);
       }
     }
+
+    // RabbitMQ 연결
+    try {
+      await (_messageManager.init(this)).timeout(const Duration(seconds: 2),
+          onTimeout: () {
+        throw ('messageManager init failed');
+      });
+    } catch (e) {
+      errorList.add(e);
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+
+    return errorList;
   }
 
   Future<void> closeAndReplaceDatabase(File? newDb) async {
     await _db.closeAndReloadDatabase(newDb);
-    await _loadAll();
+    _isLoadTried = false;
+    await loadAll();
   }
 
   Future<int> setStock(Stock s) async {
