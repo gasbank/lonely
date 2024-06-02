@@ -97,7 +97,10 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       if (importedCount != null) {
         _showSimpleText('$importedCount개 매매 내역이 추가됐습니다.');
       }
-    }, onError: (err) {
+    }, onError: (err, stackTrace) {
+      if (kDebugMode) {
+        print(stackTrace);
+      }
       if (onSetState != null) {
         if (err != null) {
           onSetState!(err.toString());

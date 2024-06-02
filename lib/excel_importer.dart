@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:lonely/account_list_widget.dart';
 import 'package:lonely/fetch_util.dart';
 import 'package:lonely/transaction.dart';
 
@@ -58,8 +59,29 @@ class Importer {
 
     var insertedCount = 0;
 
-    for (var i = 2; i < _sheet.rows.length; i++) {
-      final row = _sheet.rows[i];
+    // 과거 내역이 먼저 나올 수도 있고, (A)
+    // 최근 내역이 먼저 나올 수도 있다. (B)
+    // 거래 내역을 일괄 등록하는 방식이므로, (A) 방식이 더 자연스럽다.
+    // 처음과 마지막 거래 내역 날짜를 보고 순서 뒤집어야 할지 말지 판단하자.
+
+    final firstRowDateTimeStr = getColStr(_sheet.rows[2], '거래일자');
+    final lastRowDateTimeStr = getColStr(_sheet.rows[maxRows - 1], '거래일자');
+
+    final rows = _sheet.rows.sublist(2).sortedBy((e) => getColStr(e, '거래일자')!).stableSortedBy((e) {
+      final transactionType = getColStr(e, '거래명')!;
+      switch (transactionType) {
+        case '매수': return 0;
+        case '무상입고': return 1;
+        case '매도': return 2;
+        default: return 3;
+      }
+    });
+
+    //final rowsIterator = firstRowDateTimeStr!.compareTo(lastRowDateTimeStr!) < 0 ? rows : rows.reversed;
+    final rowsList = rows.toList();
+
+    for (var i = 0; i < rowsList.length; i++) {
+      final row = rowsList[i];
 
       final dateTimeStr = getColStr(row, '거래일자');
 
@@ -115,7 +137,7 @@ class Importer {
 
         if (transactionType == '액면분할출고') {
           // 출고 후 입고를 전량 매도 후 전량 매수로 처리한다. (이익 0)
-          final nextRow = _sheet.rows[i + 1];
+          final nextRow = rowsList[i + 1];
           if (stockName != getColStr(nextRow, '종목명') ||
               '액면분할입고' != getColStr(nextRow, '거래명')) {
             throw Exception('inconsistent data 1');

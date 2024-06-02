@@ -17,7 +17,7 @@ class MessageManager {
   late final Client _client;
   late final Channel _channel;
   late final Exchange _singleExchange;
-  late final Exchange _actionExchange;
+  Exchange? _actionExchange;
   late final Consumer _singleConsumer;
   late final Consumer _actionConsumer;
 
@@ -86,7 +86,7 @@ class MessageManager {
     });
 
     _actionExchange = await _channel.exchange('action', ExchangeType.FANOUT);
-    _actionConsumer = await _actionExchange.bindPrivateQueueConsumer(null);
+    _actionConsumer = await _actionExchange!.bindPrivateQueueConsumer(null);
     _actionConsumer.listen((message) {
       final msg =
           TransactionMessage.fromJson(jsonDecode(message.payloadAsString));
@@ -123,7 +123,7 @@ class MessageManager {
   }
 
   void publish(String message) {
-    _actionExchange.publish(message, null);
+    _actionExchange?.publish(message, null);
   }
 
   void sendDatabaseTo(String requesterId) async {
