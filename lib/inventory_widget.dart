@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lonely/number_format_util.dart';
 import 'fetch_util.dart';
 import 'new_transaction_widget.dart';
 import 'account_filter_widget.dart';
@@ -14,8 +15,13 @@ import 'transaction.dart';
 
 class InventoryWidget extends StatefulWidget {
   final Function(String) onStockSelected;
+  final PriceModel priceModel;
 
-  InventoryWidget({super.key, required this.onStockSelected}) {
+  InventoryWidget({
+    super.key,
+    required this.onStockSelected,
+    required this.priceModel,
+  }) {
     if (kDebugMode) {
       print('InventoryWidget()');
     }
@@ -101,6 +107,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
 
     _usdKrwStream = onceAndPeriodic(Duration(seconds: 5), () async {
       final fetchFuture = fetchStockInfo('FX_USDKRW');
+      saveToModel(fetchFuture);
       return fetchFuture;
     });
   }
@@ -128,25 +135,28 @@ class _InventoryWidgetState extends State<InventoryWidget> {
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
+              child: AccountFilterWidget(
+                accounts: model.accounts,
+                selects: model.accounts
+                    .map((e) => _selectedAccounts.contains(e.id))
+                    .toList(),
+                onSelected: (index) {
+                  setState(() {
+                    if (_selectedAccounts
+                        .contains(model.accounts[index].id)) {
+                      _selectedAccounts.remove(model.accounts[index].id);
+                    } else {
+                      _selectedAccounts.clear();
+                      _selectedAccounts.add(model.accounts[index].id!);
+                    }
+                  });
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  AccountFilterWidget(
-                    accounts: model.accounts,
-                    selects: model.accounts
-                        .map((e) => _selectedAccounts.contains(e.id))
-                        .toList(),
-                    onSelected: (index) {
-                      setState(() {
-                        if (_selectedAccounts
-                            .contains(model.accounts[index].id)) {
-                          _selectedAccounts.remove(model.accounts[index].id);
-                        } else {
-                          _selectedAccounts.clear();
-                          _selectedAccounts.add(model.accounts[index].id!);
-                        }
-                      });
-                    },
-                  ),
                   const Spacer(),
                   LabeledCheckbox(
                     label: '주식수',
@@ -178,6 +188,8 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                 ],
               ),
             ),
+            _buildSummary(orderedItems, model, priceModel),
+            _buildUsdKrw(),
             Expanded(
               child: ReorderableListView(
                 buildDefaultDragHandles: buildDefaultDragHandles,
@@ -202,7 +214,6 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                   });
                 },
                 children: [
-                  buildUsdKrw(),
                   for (var i = 0; i < orderedItems.length; i++) ...[
                     allowReorder && !buildDefaultDragHandles
                         ? ReorderableDragStartListener(
@@ -222,16 +233,20 @@ class _InventoryWidgetState extends State<InventoryWidget> {
     );
   }
 
-  StreamBuilder<KrStock?> buildUsdKrw() {
+  StreamBuilder<KrStock?> _buildUsdKrw() {
     return StreamBuilder<KrStock?>(
         key: Key('FX_USDKRW'),
         stream: _usdKrwStream,
         builder: (_, snapshot) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 16),
-            child: Text(
-              '${snapshot.data?.closePriceDividedBy10000() ?? '?'}원/\$',
-              textAlign: TextAlign.right,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  '${snapshot.data?.closePriceDividedBy10000() ?? '?'}원/\$',
+                ),
+              ],
             ),
           );
         });
@@ -288,6 +303,93 @@ class _InventoryWidgetState extends State<InventoryWidget> {
         ),
       ),
     );
+  }
+
+  Widget _buildSummary(
+      List<Item> orderedItems, LonelyModel model, PriceModel priceModel) {
+    double? totalBalanceInKrw = 0;
+    double? totalDiffPriceInKrw = 0;
+
+    for (var i = 0; i < orderedItems.length; i++) {
+      final item = orderedItems[i];
+      final stockPrice = priceModel.prices[item.stockId];
+
+      if (stockPrice != null) {
+        double? balance = (stockPrice.price! * item.count).toDouble();
+        double? diffPrice = item.diffPrice(stockPrice.price!);
+
+        if (!isKoreanStock(item.stockId)) {
+          if (priceModel.getUsdKrw() != null) {
+            balance = balance / 10000.0 * priceModel.getUsdKrw()!;
+            diffPrice = diffPrice / 10000.0 * priceModel.getUsdKrw()!;
+          } else {
+            totalBalanceInKrw = null;
+            totalDiffPriceInKrw = null;
+            break;
+          }
+        }
+
+        if (totalBalanceInKrw != null) {
+          totalBalanceInKrw += balance;
+        }
+
+        if (totalDiffPriceInKrw != null) {
+          totalDiffPriceInKrw += diffPrice;
+        }
+      }
+    }
+
+    double? totalPercent;
+    if (totalBalanceInKrw != null && totalDiffPriceInKrw != null) {
+      totalPercent =
+          totalDiffPriceInKrw / (totalBalanceInKrw - totalDiffPriceInKrw) * 100;
+    }
+
+    final percentStr = totalPercent?.toStringAsFixed(2) ?? '?';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Column(
+            key: Key('Summary'),
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (_isBalanceVisible) ...[
+                Text(
+                  '평가액 ${formatThousandsStr(totalBalanceInKrw?.round().toString() ?? '?')}원',
+                ),
+                Text(
+                  '평가손익 ${formatThousandsStr(totalDiffPriceInKrw?.round().toString() ?? '?')}원',
+                ),
+              ],
+              Text(
+                '평가손익 $percentStr%',
+                style: percentStr != unknownPercentStr
+                    ? DefaultTextStyle.of(context)
+                    .style
+                    .apply(fontWeightDelta: 0)
+                    .apply(
+                    color: percentStr[0] == '-'
+                        ? Colors.blueAccent
+                        : Colors.redAccent)
+                    : null,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void saveToModel(Future<KrStock?> fetchFuture) async {
+    final krStock = await fetchFuture;
+    if (krStock != null) {
+      widget.priceModel.setUsdKrw(krStock.closePrice / 10000.0);
+    } else {
+      widget.priceModel.setUsdKrw(null);
+    }
   }
 }
 

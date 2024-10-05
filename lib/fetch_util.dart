@@ -70,6 +70,11 @@ String priceDataToInput(String stockId, int price) {
   return isKr ? price.toString() : (price / fracMultiplier).toString();
 }
 
+bool isKoreanStock(String stockId) {
+  stockId = stockIdAlternatives[stockId] ?? stockId;
+  return krExp.hasMatch(stockId);
+}
+
 // 저장 상태의 값을 보기 예쁜 문자열로 변환하되, 달러면 소수점 둘째자리까지
 // (보유하고 있는 평가금액 나타낼 때 씀)
 // KR: 12345.6789 -> '12,346'
