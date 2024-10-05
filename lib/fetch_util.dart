@@ -96,12 +96,57 @@ Future<KrStock?> fetchStockInfo(String stockId) async {
 
   stockId = stockIdAlternatives[stockId] ?? stockId;
 
-  if (krExp.hasMatch(stockId)) {
+  if (stockId == 'FX_USDKRW') {
+    return _fetchForeignCurrency(stockId);
+  } else if (krExp.hasMatch(stockId)) {
     return Random().nextInt(2) == 0
         ? _fetchKrStockD(stockId)
         : _fetchKrStockN(stockId);
   } else {
     return _fetchKrStockY(stockId);
+  }
+}
+
+Future<KrStock?> _fetchForeignCurrency(String stockId) async {
+  if (stockId.isEmpty) {
+    return null;
+  }
+
+  try {
+    final response = await http.get(
+      Uri.parse(
+          'https://m.stock.naver.com/front-api/marketIndex/productDetail?category=exchange&reutersCode=$stockId'),
+    );
+    if (response.statusCode == 200) {
+      try {
+        return KrStock.fromJsonNFX(jsonDecode(response.body));
+      } on FormatException {
+        return null;
+      }
+    } else if ((response.statusCode == 409)) {
+      // Conflict
+      return null;
+    } else if ((response.statusCode == 502)) {
+      // Bad Gateway
+      return null;
+    } else {
+      throw Exception('failed to http get');
+    }
+  } on SocketException catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
+    return null;
+  } on http.ClientException catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
+    return null;
+  } on Exception catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
+    return null;
   }
 }
 

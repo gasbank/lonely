@@ -34,7 +34,6 @@ Map<String, Item> createItemMap(
   final itemMap = <String, Item>{};
 
   for (var e in transactionList) {
-
     final stockId = stockIdAlternatives[e.stockId] ?? e.stockId;
 
     if (stockId.isEmpty || e.count <= 0 || e.price <= 0) {
@@ -93,6 +92,17 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   final _countController = TextEditingController();
   bool _isBalanceVisible = false;
   bool _isOldItemVisible = false;
+  late final Stream<KrStock?> _usdKrwStream;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _usdKrwStream = onceAndPeriodic(Duration(seconds: 5), () async {
+      final fetchFuture = fetchStockInfo('FX_USDKRW');
+      return fetchFuture;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +148,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                   ),
                   const Spacer(),
                   LabeledCheckbox(
-                    label: '과거종목',
+                    label: '과거',
                     value: _isOldItemVisible,
                     onChanged: (newValue) {
                       setState(() {
@@ -182,6 +192,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                   });
                 },
                 children: [
+                  buildUsdKrw(),
                   for (var i = 0; i < orderedItems.length; i++) ...[
                     allowReorder && !buildDefaultDragHandles
                         ? ReorderableDragStartListener(
@@ -199,6 +210,21 @@ class _InventoryWidgetState extends State<InventoryWidget> {
         );
       },
     );
+  }
+
+  StreamBuilder<KrStock?> buildUsdKrw() {
+    return StreamBuilder<KrStock?>(
+        key: Key('FX_USDKRW'),
+        stream: _usdKrwStream,
+        builder: (_, snapshot) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 16),
+            child: Text(
+              '${snapshot.data?.closePriceDividedBy10000() ?? '?'}원/\$',
+              textAlign: TextAlign.right,
+            ),
+          );
+        });
   }
 
   InkWell buildItemWidget(

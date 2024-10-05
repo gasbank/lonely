@@ -47,6 +47,10 @@ class KrStock {
       required this.stockName,
       required this.closePrice});
 
+  String closePriceDividedBy10000() {
+    return (closePrice / 10000).toString();
+  }
+
   factory KrStock.fromJsonN(Map<String, dynamic> json) {
     final closePrice =
         int.tryParse((json['closePrice'] as String).replaceAll(',', ''))!;
@@ -78,23 +82,41 @@ class KrStock {
         stockName: meta['symbol'] as String,
         closePrice: (closePrice * 10000).round());
   }
-}
 
-Future<int?> writeKrStockToDb(
-    Future<KrStock?> stock, LonelyDatabase database) async {
-  final s = await stock;
+  factory KrStock.fromJsonNFX(Map<String, dynamic> json) {
+    final reutersCode = json['result']['reutersCode'];
+    final priceNode = json['result']['calcPrice'];
+    if (priceNode == null) {
+      throw const FormatException('result/calcPrice not found');
+    }
 
-  if (s != null &&
-      s.stockName.isNotEmpty &&
-      (await database.queryStockName(s.itemCode)) == null) {
-    return await database.insertStock(Stock(
-      id: 0,
-      stockId: s.itemCode,
-      name: s.stockName,
-    ).toMap());
+    final closePrice = double.tryParse(priceNode);
+    if (closePrice != null) {
+      return KrStock(
+          itemCode: reutersCode as String,
+          stockName: reutersCode,
+          closePrice: (closePrice * 10000).round());
+    } else {
+      throw const FormatException('closePrice parse failed');
+    }
   }
 
-  return null;
+  Future<int?> writeKrStockToDb(
+      Future<KrStock?> stock, LonelyDatabase database) async {
+    final s = await stock;
+
+    if (s != null &&
+        s.stockName.isNotEmpty &&
+        (await database.queryStockName(s.itemCode)) == null) {
+      return await database.insertStock(Stock(
+        id: 0,
+        stockId: s.itemCode,
+        name: s.stockName,
+      ).toMap());
+    }
+
+    return null;
+  }
 }
 
 class ItemWidget extends StatefulWidget {
