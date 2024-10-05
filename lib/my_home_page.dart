@@ -111,21 +111,35 @@ class _MyHomePageState extends State<MyHomePage> {
     final errorList = await context.read<LonelyModel>().loadAll();
     if (context.mounted) {
       for (final error in errorList) {
-        showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-                  title: const Text('오류'),
-                  content: Text(error.toString()),
-                  actions: [
-                    TextButton(
-                      onPressed: () async {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('확인'),
-                    ),
-                  ],
-                ),
-            barrierDismissible: false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            // 스낵바
+            content: Text(
+              error.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.teal,
+            duration: const Duration(seconds: 2),
+
+          ),
+        );
+
+        // showDialog(
+        //     context: context,
+        //     builder: (context) => AlertDialog(
+        //           title: const Text('오류'),
+        //           content: Text(error.toString()),
+        //           actions: [
+        //             TextButton(
+        //               onPressed: () async {
+        //                 Navigator.pop(context);
+        //               },
+        //               child: const Text('확인'),
+        //             ),
+        //           ],
+        //         ),
+        //     barrierDismissible: false);
       }
     }
   }
