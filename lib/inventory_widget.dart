@@ -90,8 +90,9 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   final _stockIdController = TextEditingController();
   final _priceController = TextEditingController();
   final _countController = TextEditingController();
-  bool _isBalanceVisible = false;
-  bool _isOldItemVisible = false;
+  bool _isBalanceVisible = false; // 금액 표시 여부
+  bool _isOldItemVisible = false; // 과거 항목 표시 여부 (예전 거래했으나 현재 0주 소지한 종목 포함)
+  bool _isStockCountVisible = true; // 주식수 표시 여부
   late final Stream<KrStock?> _usdKrwStream;
 
   @override
@@ -147,6 +148,15 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                     },
                   ),
                   const Spacer(),
+                  LabeledCheckbox(
+                    label: '주식수',
+                    value: _isStockCountVisible,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _isStockCountVisible = newValue;
+                      });
+                    },
+                  ),
                   LabeledCheckbox(
                     label: '과거',
                     value: _isOldItemVisible,
@@ -260,6 +270,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
             ItemWidget(
               item: item,
               isBalanceVisible: _isBalanceVisible,
+              isStockCountVisible: _isStockCountVisible,
               model: model,
               priceModel: priceModel,
             ),

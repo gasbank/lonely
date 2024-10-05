@@ -124,6 +124,7 @@ class ItemWidget extends StatefulWidget {
   final bool isBalanceVisible;
   final LonelyModel model;
   final PriceModel priceModel;
+  final bool isStockCountVisible;
 
   const ItemWidget({
     super.key,
@@ -131,6 +132,7 @@ class ItemWidget extends StatefulWidget {
     required this.isBalanceVisible,
     required this.model,
     required this.priceModel,
+    required this.isStockCountVisible,
   });
 
   @override
@@ -228,6 +230,11 @@ class _ItemWidgetState extends State<ItemWidget> {
         ? darken(circleAvatarBgColor, .6)
         : lighten(circleAvatarBgColor, .6);
 
+    var itemTitle = stock?.name ?? '---';
+    if (widget.isStockCountVisible) {
+      itemTitle += ' ${formatThousands(widget.item.count)}주';
+    }
+
     return Row(
       crossAxisAlignment: widget.isBalanceVisible
           ? CrossAxisAlignment.end
@@ -251,13 +258,12 @@ class _ItemWidgetState extends State<ItemWidget> {
                 ),
                 Container(
                   padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      borderRadius: BorderRadius.circular(4)),
-                  child: Text(
-                      '${stock?.name ?? '---'} ${formatThousands(widget.item.count)}주'),
+                  // decoration: BoxDecoration(
+                  //     border: Border.all(
+                  //       color: Theme.of(context).colorScheme.primary,
+                  //     ),
+                  //     borderRadius: BorderRadius.circular(4)),
+                  child: Text(itemTitle),
                 ),
                 const SizedBox(
                   width: 4,
