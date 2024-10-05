@@ -64,8 +64,8 @@ class Importer {
     // 거래 내역을 일괄 등록하는 방식이므로, (A) 방식이 더 자연스럽다.
     // 처음과 마지막 거래 내역 날짜를 보고 순서 뒤집어야 할지 말지 판단하자.
 
-    final firstRowDateTimeStr = getColStr(_sheet.rows[2], '거래일자');
-    final lastRowDateTimeStr = getColStr(_sheet.rows[maxRows - 1], '거래일자');
+    //final firstRowDateTimeStr = getColStr(_sheet.rows[2], '거래일자');
+    //final lastRowDateTimeStr = getColStr(_sheet.rows[maxRows - 1], '거래일자');
 
     final rows = _sheet.rows.sublist(2).sortedBy((e) => getColStr(e, '거래일자')!).stableSortedBy((e) {
       final transactionType = getColStr(e, '거래명')!;

@@ -143,7 +143,7 @@ class _AccountListWidgetState extends State<AccountListWidget> {
       LonelyModel model, ScaffoldMessengerState scaffoldMessenger) {
     return TextButton(
       style: ButtonStyle(
-        foregroundColor: MaterialStateProperty.all<Color>(Colors.redAccent),
+        foregroundColor: WidgetStateProperty.all<Color>(Colors.redAccent),
       ),
       onPressed: () async {
         if (_accountNameController.text.isNotEmpty) {

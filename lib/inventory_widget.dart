@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'fetch_util.dart';
 import 'new_transaction_widget.dart';
 import 'account_filter_widget.dart';
 import 'package:provider/provider.dart';
@@ -33,17 +34,20 @@ Map<String, Item> createItemMap(
   final itemMap = <String, Item>{};
 
   for (var e in transactionList) {
-    if (e.stockId.isEmpty || e.count <= 0 || e.price <= 0) {
+
+    final stockId = stockIdAlternatives[e.stockId] ?? e.stockId;
+
+    if (stockId.isEmpty || e.count <= 0 || e.price <= 0) {
       if (kDebugMode) {
         print('invalid transaction');
       }
       continue;
     }
 
-    final item = itemMap[e.stockId] ?? Item(e.stockId);
+    final item = itemMap[stockId] ?? Item(stockId);
 
     if (item.stockName.isEmpty) {
-      item.stockName = stockMap[e.stockId]?.name ?? '';
+      item.stockName = stockMap[stockId]?.name ?? '';
     }
 
     switch (e.transactionType) {
@@ -76,7 +80,7 @@ Map<String, Item> createItemMap(
         throw Exception('unknown transaction type');
     }
 
-    itemMap[e.stockId] = item;
+    itemMap[stockId] = item;
   }
   return itemMap;
 }
@@ -162,7 +166,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                     final movingItem = orderedItems[oldIndex];
                     if (kDebugMode) {
                       print(
-                          'Moving ${movingItem.stockName} from index $oldIndex to $newIndex');
+                          'Moving ${movingItem.stockId} from index $oldIndex to $newIndex');
                     }
                     orderedItems.removeAt(oldIndex);
                     if (oldIndex > newIndex) {

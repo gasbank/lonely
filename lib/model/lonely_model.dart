@@ -281,6 +281,9 @@ class LonelyModel extends ChangeNotifier {
   Future<int> updateStocksInventoryOrder(
       String stockId, int inventoryOrder) async {
     _stocks[stockId]?.inventoryOrder = inventoryOrder;
+    if (kDebugMode) {
+      print('$stockId inventoryOrder=$inventoryOrder');
+    }
     return await _db.updateStocksInventoryOrder(stockId, inventoryOrder);
   }
 

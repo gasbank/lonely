@@ -412,7 +412,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
           builder: (context, model, child) {
             return TextButton(
               style: ButtonStyle(
-                foregroundColor: MaterialStateProperty.all<Color>(color),
+                foregroundColor: WidgetStateProperty.all<Color>(color),
               ),
               onPressed: onPressed,
               child: Text(text),
@@ -426,7 +426,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         builder: (context, model, child) {
           return IconButton(
             style: ButtonStyle(
-              foregroundColor: MaterialStateProperty.all<Color>(color),
+              foregroundColor: WidgetStateProperty.all<Color>(color),
             ),
             onPressed: onPressed,
             icon: icon,

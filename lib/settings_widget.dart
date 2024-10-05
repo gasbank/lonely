@@ -93,7 +93,10 @@ class _SettingsWidgetState extends State<SettingsWidget> {
             '$importAccountName 불러오는 중... ${(100 * progress).toStringAsFixed(1)}%');
       }
     }).then((importedCount) {
-      Navigator.pop(context);
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
       if (importedCount != null) {
         _showSimpleText('$importedCount개 매매 내역이 추가됐습니다.');
       }
