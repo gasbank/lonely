@@ -42,7 +42,7 @@ Map<String, Item> createItemMap(
   for (var e in transactionList) {
     final stockId = stockIdAlternatives[e.stockId] ?? e.stockId;
 
-    if (stockId.isEmpty || e.count <= 0 || e.price <= 0) {
+    if (stockId.isEmpty || e.count < 0 || e.price < 0) {
       if (kDebugMode) {
         print('invalid transaction');
       }

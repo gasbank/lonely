@@ -58,7 +58,7 @@ Future<void> transferStock(
     throw Exception('계좌에 있는 것보다 더 꺼낼 수는 없다~');
   }
 
-  final avgPrice = (item.accumPrice / item.count).round();
+  final avgPrice = item.count != 0 ? (item.accumPrice / item.count).round() : 0;
 
   await registerNewTransaction(
     Transaction(
@@ -179,9 +179,13 @@ Future<bool> registerNewTransaction(
     }
 
     if (item != null) {
-      transaction.earn = ((transaction.price - item.accumPrice / item.count) *
-              transaction.count)
-          .round();
+      if (item.count != 0) {
+        transaction.earn = ((transaction.price - item.accumPrice / item.count) *
+            transaction.count)
+            .round();
+      } else {
+        transaction.earn = null;
+      }
     }
   }
 
