@@ -17,6 +17,12 @@ const stockIdAlternatives = {
   'KODEX K-신재생에너지액티브': '385510',
   'USD Global X Robotics & AI ETF': 'BOTZ',
   'KCC': '002380',
+  'KODEX 200TR': '278530',
+  'KODEX 미국S&P500TR': '379800',
+  'KODEX 미국나스닥100TR': '379810',
+  'CG인바이츠': '083790',
+  '베노티앤알': '206400',
+  '피씨엘 17R': '241820',
 };
 
 // 사용자가 입력한 값을 저장 상태로 변환
@@ -98,7 +104,6 @@ double priceDataToRealScale(String stockId, double price) {
 }
 
 Future<KrStock?> fetchStockInfo(String stockId) async {
-
   stockId = stockIdAlternatives[stockId] ?? stockId;
 
   if (stockId == 'FX_USDKRW') {
@@ -135,7 +140,8 @@ Future<KrStock?> _fetchForeignCurrency(String stockId) async {
       // Bad Gateway
       return null;
     } else {
-      throw Exception('failed to http get');
+      throw Exception(
+          'failed to http get (status code=${response.statusCode}): ${response.request?.url}');
     }
   } on SocketException catch (e) {
     if (kDebugMode) {
@@ -164,11 +170,12 @@ Future<KrStock?> _fetchKrStockN(String stockId) async {
     final response = await http
         .get(Uri.parse('https://m.stock.naver.com/api/stock/$stockId/basic'));
     if (response.statusCode == 200) {
-      return KrStock.fromJsonN(jsonDecode(response.body));
+      return KrStock.fromJsonN(json.decode(utf8.decode(response.bodyBytes)));
     } else if ((response.statusCode == 409)) {
       return null;
     } else {
-      throw Exception('failed to http get');
+      throw Exception(
+          'failed to http get (status code=${response.statusCode}): ${response.request?.url}');
     }
   } on SocketException catch (e) {
     if (kDebugMode) {
@@ -195,7 +202,7 @@ Future<KrStock?> _fetchKrStockY(String stockId) async {
     );
     if (response.statusCode == 200) {
       try {
-        return KrStock.fromJsonY(jsonDecode(response.body));
+        return KrStock.fromJsonY(json.decode(utf8.decode(response.bodyBytes)));
       } on FormatException {
         return null;
       }
@@ -206,7 +213,8 @@ Future<KrStock?> _fetchKrStockY(String stockId) async {
       // Bad Gateway
       return null;
     } else {
-      throw Exception('failed to http get');
+      throw Exception(
+          'failed to http get (status code=${response.statusCode}): ${response.request?.url}');
     }
   } on SocketException catch (e) {
     if (kDebugMode) {
@@ -237,10 +245,11 @@ Future<KrStock?> _fetchKrStockD(String stockId) async {
         Uri.parse(
             'https://finance.daum.net/api/quotes/A$stockId?changeStatistics=true&chartSlideImage=true&isMobile=true'),
         headers: {
-          'referer': 'https://m.finance.daum.net/',
+          'Referer': 'https://m.finance.daum.net/',
+          'Content-Type': 'application/json; charset=utf-8',
         });
     if (response.statusCode == 200) {
-      return KrStock.fromJsonD(jsonDecode(response.body));
+      return KrStock.fromJsonD(json.decode(utf8.decode(response.bodyBytes)));
     } else if ((response.statusCode == 409)) {
       // Conflict
       return null;
@@ -248,7 +257,8 @@ Future<KrStock?> _fetchKrStockD(String stockId) async {
       // Bad Gateway
       return null;
     } else {
-      throw Exception('failed to http get');
+      throw Exception(
+          'failed to http get (status code=${response.statusCode}): ${response.request?.url}');
     }
   } on SocketException catch (e) {
     if (kDebugMode) {

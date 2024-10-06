@@ -113,6 +113,43 @@ Future<void> splitStock(
   );
 }
 
+Future<void> mergeStock(
+  DateTime dateTime,
+  ItemOnAccount itemOnAccount,
+  LonelyModel model,
+  int mergeFactor,
+  bool isBatch,
+) async {
+  final item = itemOnAccount.item;
+  final avgPrice = (item.accumPrice / item.count).round();
+
+  await registerNewTransaction(
+    Transaction(
+        stockId: item.stockId,
+        price: avgPrice,
+        count: item.count,
+        transactionType: TransactionType.splitOut,
+        dateTime: dateTime,
+        accountId: itemOnAccount.accountId),
+    model,
+    (_) {},
+    isBatch,
+  );
+  // 일괄 매수
+  await registerNewTransaction(
+    Transaction(
+        stockId: item.stockId,
+        price: (avgPrice * mergeFactor).round(),
+        count: (item.count / mergeFactor).floor(),
+        transactionType: TransactionType.splitIn,
+        dateTime: dateTime,
+        accountId: itemOnAccount.accountId),
+    model,
+    (_) {},
+    isBatch,
+  );
+}
+
 Future<bool> registerNewTransaction(
   Transaction transaction,
   LonelyModel model,
@@ -135,7 +172,8 @@ Future<bool> registerNewTransaction(
     if (inSum - outSum < transaction.count) {
       onSimpleMessage('가진 것보다 더 꺼내갈 수는 없죠?');
       if (kDebugMode) {
-        print('stock count exceeded');
+        print(
+            'stock count exceeded; stock id = ${transaction.stockId}, date = ${transaction.dateTime} current count = ${inSum - outSum}, but try to out ${transaction.count}');
       }
       return false;
     }
@@ -207,7 +245,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
       if (inSum - outSum < transaction.count) {
         _showSimpleMessage('가진 것보다 더 꺼내갈 수는 없죠?');
         if (kDebugMode) {
-          print('stock count exceeded');
+          print(
+              'stock count exceeded; current count = ${inSum - outSum}, but try to out ${transaction.count}');
         }
         return false;
       }

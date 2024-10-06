@@ -218,11 +218,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       final insertedCount = await importer.execute(
         accountId,
         model.stockTxtLoader,
-        (progress, transaction) async {
+        onNewTransaction: (progress, transaction) async {
           await registerNewTransaction(transaction, model, (_) {}, true);
           onProgress(progress);
         },
-        (progress, dateTime, stockId, splitFactor) async {
+        onSplitStock: (progress, dateTime, stockId, splitFactor) async {
           // 매 호출 시마다 model.transactions 바뀌기 때문에,
           // 더 넓은 범위에서 한번만 계산해선 안된다.
           final itemMapOnAccount = createItemMap(
@@ -241,7 +241,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
           onProgress(progress);
         },
-        (progress, dateTime, stockId, count) async {
+        onTransferStock: (progress, dateTime, stockId, count) async {
           // 매 호출 시마다 model.transactions 바뀌기 때문에,
           // 더 넓은 범위에서 한번만 계산해선 안된다.
 
@@ -258,6 +258,26 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           final itemOnAccount = ItemOnAccount(item, accountId);
 
           await transferStock(dateTime, itemOnAccount, count, model, true);
+
+          onProgress(progress);
+        },
+        onMergeStock: (double progress, DateTime dateTime, String stockId,
+            int mergeFactor) async {
+          // 매 호출 시마다 model.transactions 바뀌기 때문에,
+          // 더 넓은 범위에서 한번만 계산해선 안된다.
+          final itemMapOnAccount = createItemMap(
+              model.transactions.where((e) => e.accountId == accountId),
+              model.stocks);
+
+          final item = itemMapOnAccount[stockId];
+          if (item == null) {
+            //throw Exception('cannot split with null item');
+            return;
+          }
+
+          final itemOnAccount = ItemOnAccount(item, accountId);
+
+          await mergeStock(dateTime, itemOnAccount, model, mergeFactor, true);
 
           onProgress(progress);
         },

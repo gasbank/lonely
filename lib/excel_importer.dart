@@ -35,39 +35,56 @@ class Importer {
 
   Future<int> execute(
     int accountId,
-    StockTxtLoader stockTxtLoader,
-    Future<void> Function(
+    StockTxtLoader stockTxtLoader, {
+    required Future<void> Function(
       double progress,
       Transaction transaction,
     ) onNewTransaction,
-    Future<void> Function(
+    required Future<void> Function(
       double progress,
       DateTime dateTime,
       String stockId,
       int splitFactor,
     ) onSplitStock,
-    Future<void> Function(
+    required Future<void> Function(
+      double progress,
+      DateTime dateTime,
+      String stockId,
+      int mergeFactor,
+    ) onMergeStock,
+    required Future<void> Function(
       double progress,
       DateTime dateTime,
       String stockId,
       int count,
     ) onTransferStock,
-  ) async {
+  }) async {
     final missingStockIdNames = <String>{};
 
     final maxRows = _sheet.maxRows;
 
     var insertedCount = 0;
 
+    // 처음 두 행은 거래 내역이 아니다.
+    var rows = _sheet.rows.sublist(2);
+
     // 과거 내역이 먼저 나올 수도 있고, (A)
     // 최근 내역이 먼저 나올 수도 있다. (B)
     // 거래 내역을 일괄 등록하는 방식이므로, (A) 방식이 더 자연스럽다.
     // 처음과 마지막 거래 내역 날짜를 보고 순서 뒤집어야 할지 말지 판단하자.
 
-    //final firstRowDateTimeStr = getColStr(_sheet.rows[2], '거래일자');
-    //final lastRowDateTimeStr = getColStr(_sheet.rows[maxRows - 1], '거래일자');
+    final firstRowDateTimeStr = getColStr(rows[0], '거래일자')!;
+    final lastRowDateTimeStr = getColStr(rows[rows.length - 1], '거래일자')!;
 
-    final rows = _sheet.rows.sublist(2).sortedBy((e) => getColStr(e, '거래일자')!).stableSortedBy((e) {
+    // 과거 거래가 먼저 나오도록 순서 뒤집는다.
+    if (firstRowDateTimeStr.compareTo(lastRowDateTimeStr) > 0) {
+      rows = rows.reversed.toList();
+    }
+
+    // 항상 주식이 늘어나는 항목이 먼저 나오도록하고, 그 다음에 줄어드는 게 나오도록 한다.
+    // (엑셀 파일에서 거래 일자가 같으면 실제 거래 순서는 뒤집힌 상태로 있을 수 있기 때문)
+    // 거래번호라는 컬럼을 참고해보려고 했더니 이것도 실제 거래 순서와는 무관하다...
+    rows = rows.stableSortedBy((e) {
       final transactionType = getColStr(e, '거래명')!;
       switch (transactionType) {
         case '매수': return 0;
@@ -75,7 +92,7 @@ class Importer {
         case '매도': return 2;
         default: return 3;
       }
-    });
+    }).toList();
 
     //final rowsIterator = firstRowDateTimeStr!.compareTo(lastRowDateTimeStr!) < 0 ? rows : rows.reversed;
     final rowsList = rows.toList();
@@ -107,13 +124,25 @@ class Importer {
 
       final dateTime = DateTime.tryParse(dateTimeStr)!;
 
+      // 현금과 관련된 것은 모두 무시한다. 거래명이 '입금'으로 끝나는 것들이다.
+      final ignoredTransactionTypes = [
+        '이체입금',
+        '이용료입금',
+        '대체입금',
+        '오픈이체입금',
+        '배당금입금',
+        '단수주입금'
+      ];
+
       if (transactionType == '매수' ||
           transactionType == '매도' ||
           transactionType.endsWith('주식매수') ||
           transactionType.endsWith('주식매도') ||
           transactionType == '액면분할출고' ||
+          transactionType == '액면병합출고' ||
           transactionType == '타사출고' ||
-          transactionType == '타사입고') {
+          transactionType == '타사입고' ||
+          transactionType == '무상입고') {
         final stockId = stockTxtLoader.nameToId[stockName];
         if (stockId == null) {
           missingStockIdNames.add(stockName);
@@ -140,7 +169,7 @@ class Importer {
           final nextRow = rowsList[i + 1];
           if (stockName != getColStr(nextRow, '종목명') ||
               '액면분할입고' != getColStr(nextRow, '거래명')) {
-            throw Exception('inconsistent data 1');
+            throw Exception('inconsistent data 1a');
           }
 
           final nextCount = getColStr(nextRow, '거래수량');
@@ -149,6 +178,25 @@ class Importer {
 
           await onSplitStock(i / maxRows, dateTime, stockId ?? stockName,
               (nextCountInt / countInt).round());
+
+          i++; // 다음 행 건너뛰기
+
+          insertedCount++;
+          insertedCount++;
+        } else if (transactionType == '액면병합출고') {
+          // 출고 후 입고를 전량 매도 후 전량 매수로 처리한다. (이익 0)
+          final nextRow = rowsList[i + 1];
+          if (stockName != getColStr(nextRow, '종목명') ||
+              '액면병합입고' != getColStr(nextRow, '거래명')) {
+            throw Exception('inconsistent data 1b');
+          }
+
+          final nextCount = getColStr(nextRow, '거래수량');
+          final nextCountInt =
+              int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
+
+          await onMergeStock(i / maxRows, dateTime, stockId ?? stockName,
+              (countInt / nextCountInt).floor());
 
           i++; // 다음 행 건너뛰기
 
@@ -173,7 +221,7 @@ class Importer {
             ),
           );
           insertedCount++;
-        } else if (transactionType == '타사입고') {
+        } else if (transactionType == '타사입고' || transactionType == '무상입고') {
           await onTransferStock(
               i / maxRows, dateTime, stockId ?? stockName, countInt);
           insertedCount++;
@@ -185,7 +233,17 @@ class Importer {
       } else if (transactionType == '액면분할입고') {
         // 액면분할입고는 반드시 액면분할출고가 처리될 때 같이 처리되었어야 했다...
         // 여기에 왔다면 엑셀 파일 이상한 것이다.
-        throw Exception('inconsistent data 2');
+        throw Exception('inconsistent data 2a');
+      } else if (transactionType == '액면병합입고') {
+        // 액면병합입고는 반드시 액면병합출고가 처리될 때 같이 처리되었어야 했다...
+        // 여기에 왔다면 엑셀 파일 이상한 것이다.
+        throw Exception('inconsistent data 2b');
+      } else if (ignoredTransactionTypes.contains(transactionType)) {
+        // 무시해도 되는 항목
+      } else {
+        if (kDebugMode) {
+          print('Unhandled type of transaction: $transactionType');
+        }
       }
     }
 

@@ -100,23 +100,6 @@ class KrStock {
       throw const FormatException('closePrice parse failed');
     }
   }
-
-  Future<int?> writeKrStockToDb(
-      Future<KrStock?> stock, LonelyDatabase database) async {
-    final s = await stock;
-
-    if (s != null &&
-        s.stockName.isNotEmpty &&
-        (await database.queryStockName(s.itemCode)) == null) {
-      return await database.insertStock(Stock(
-        id: 0,
-        stockId: s.itemCode,
-        name: s.stockName,
-      ).toMap());
-    }
-
-    return null;
-  }
 }
 
 class ItemWidget extends StatefulWidget {

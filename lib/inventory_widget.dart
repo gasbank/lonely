@@ -142,8 +142,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                     .toList(),
                 onSelected: (index) {
                   setState(() {
-                    if (_selectedAccounts
-                        .contains(model.accounts[index].id)) {
+                    if (_selectedAccounts.contains(model.accounts[index].id)) {
                       _selectedAccounts.remove(model.accounts[index].id);
                     } else {
                       _selectedAccounts.clear();
@@ -341,8 +340,14 @@ class _InventoryWidgetState extends State<InventoryWidget> {
 
     double? totalPercent;
     if (totalBalanceInKrw != null && totalDiffPriceInKrw != null) {
-      totalPercent =
-          totalDiffPriceInKrw / (totalBalanceInKrw - totalDiffPriceInKrw) * 100;
+      // 가격 변화가 없을 경우의 평가액
+      final totalOriginalBalance = totalBalanceInKrw - totalDiffPriceInKrw;
+
+      totalPercent = totalOriginalBalance != 0
+          ? totalDiffPriceInKrw /
+              (totalBalanceInKrw - totalDiffPriceInKrw) *
+              100
+          : 0;
     }
 
     final percentStr = totalPercent?.toStringAsFixed(2) ?? '?';
@@ -368,12 +373,12 @@ class _InventoryWidgetState extends State<InventoryWidget> {
                 '평가손익 $percentStr%',
                 style: percentStr != unknownPercentStr
                     ? DefaultTextStyle.of(context)
-                    .style
-                    .apply(fontWeightDelta: 0)
-                    .apply(
-                    color: percentStr[0] == '-'
-                        ? Colors.blueAccent
-                        : Colors.redAccent)
+                        .style
+                        .apply(fontWeightDelta: 0)
+                        .apply(
+                            color: percentStr[0] == '-'
+                                ? Colors.blueAccent
+                                : Colors.redAccent)
                     : null,
               ),
             ],
