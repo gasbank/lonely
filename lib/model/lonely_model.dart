@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely/model/message_manager.dart';
@@ -49,11 +50,12 @@ class LonelyModel extends ChangeNotifier {
   UnmodifiableListView<Transaction> get transactions =>
       UnmodifiableListView(_transactions);
 
-  UnmodifiableListView<Transaction> get stockIdFilteredTransactions =>
-      UnmodifiableListView(stockIdHistoryFilter == null
-          ? transactions
-          : transactions
-              .where((element) => element.stockId == stockIdHistoryFilter));
+  UnmodifiableListView<Transaction> get stockIdFilteredTransactions {
+    return UnmodifiableListView(stockIdHistoryFilter == null
+        ? transactions
+        : transactions
+            .where((element) => element.stockId == stockIdHistoryFilter));
+  }
 
   Transaction? get editingTransaction => _editingTransaction;
 
@@ -316,6 +318,8 @@ class LonelyModel extends ChangeNotifier {
 
     return count;
   }
+
+  int get selectedPageIndex => _selectedPageIndex;
 
   set selectedPageIndex(int index) {
     _selectedPageIndex = index;

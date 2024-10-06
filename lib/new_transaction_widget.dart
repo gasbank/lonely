@@ -181,7 +181,7 @@ Future<bool> registerNewTransaction(
     if (item != null) {
       if (item.count != 0) {
         transaction.earn = ((transaction.price - item.accumPrice / item.count) *
-            transaction.count)
+                transaction.count)
             .round();
       } else {
         transaction.earn = null;
@@ -445,8 +445,54 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   }
 
   void _onStockIdFilterPressed(LonelyModel model) {
-    model.stockIdHistoryFilter = widget.stockIdController.text;
-    model.selectedPageIndex = 1;
+    const historyPageIndex = 1;
+
+    if (widget.stockIdController.text.isEmpty) {
+      if (model.stockIdHistoryFilter != null) {
+        model.stockIdHistoryFilter = null;
+        showSnackbar('필터를 끕니다.');
+      }
+    } else if (model.stockIdHistoryFilter != widget.stockIdController.text) {
+      String? alternativeFilter;
+
+      // 미국 주식은 SPY로 검색하면 안되고, USD SPDR S&P 500 Trust ETF 처럼
+      // 풀네임으로 검색해야된다.
+      if (isKoreanStock(widget.stockIdController.text) == false) {
+        for (final e in stockIdAlternatives.entries) {
+          if (e.value == widget.stockIdController.text) {
+            alternativeFilter = e.key;
+            break;
+          }
+        }
+      }
+
+      model.stockIdHistoryFilter = alternativeFilter ?? widget.stockIdController.text;
+      showSnackbar('${widget.stockIdController.text} 종목으로 필터링합니다.');
+    } else if (model.selectedPageIndex == historyPageIndex) {
+      // 기록 탭에서는 동일한 항목으로 다시 필터링하려고 하는 행위를
+      // 필터를 끄는 행위로 인식한다.
+      model.stockIdHistoryFilter = null;
+      showSnackbar('필터를 끕니다.');
+    }
+
+    model.selectedPageIndex = historyPageIndex; // 기록 페이지(탭)으로 넘어간다.
+  }
+
+  void showSnackbar(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        // 스낵바
+        content: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.teal,
+        duration: const Duration(seconds: 1),
+
+      ),
+    );
   }
 
   Expanded buildButton(String text, Color color, void Function() onPressed) =>
