@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:data_table_2/data_table_2.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lonely/model/package_model.dart';
@@ -10,6 +11,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'model/lonely_model.dart';
 import 'my_home_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() {
   if (kIsWeb) {
@@ -21,9 +24,49 @@ void main() {
     sqfliteFfiInit();
   }
 
+  initFirebase();
+
   dataTableShowLogs = false;
 
   runApp(const MyApp());
+}
+
+void initFirebase() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  FirebaseMessaging.instance.onTokenRefresh
+      .listen((fcmToken) {
+        if (kDebugMode) {
+          print('FCM token refreshed 1: $fcmToken');
+        }
+  })
+      .onError((err) {
+    if (kDebugMode) {
+      print('FCM token refresh error!: $err');
+    }
+  });
+
+  final notificationSettings = await FirebaseMessaging.instance.requestPermission(provisional: true);
+
+  if (Platform.isIOS) {
+    final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+    if (apnsToken != null) {
+      print('FCM APNS token acquired: $apnsToken');
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (kDebugMode) {
+        print('FCM token acquired 2: $fcmToken');
+      }
+    }
+  } else {
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+    if (kDebugMode) {
+      print('FCM token acquired 3: $fcmToken');
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
