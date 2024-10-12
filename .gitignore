@@ -42,3 +42,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# 아래 파일은 flutterfire configure 커맨드를 실행하면 생성된다.
+/android/app/google-services.json
+/firebase.json
+/ios/Runner/GoogleService-Info.plist
+/lib/firebase_options.dart
+/macos/Runner/GoogleService-Info.plist
