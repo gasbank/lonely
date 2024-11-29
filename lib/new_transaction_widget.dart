@@ -33,9 +33,23 @@ class NewTransactionWidget extends StatefulWidget {
 
 Future<int> _stockSum(String stockId, Set<TransactionType> transactionType,
     Iterable<Transaction> transactions) async {
+  // 'USD SPDR S&P 500 Trust ETF'와 'SPY'는 동일한 것으로 치자
+  String? stockIdAlternative;
+  for (final e in stockIdAlternatives.entries) {
+    if (e.value == stockId) {
+      stockIdAlternative = e.key;
+      break;
+    }
+    if (e.key == stockId) {
+      stockIdAlternative = e.value;
+      break;
+    }
+  }
+
   final sum = transactions
       .where((e) =>
-          e.stockId == stockId && transactionType.contains(e.transactionType))
+          (e.stockId == stockId || e.stockId == stockIdAlternative) &&
+          transactionType.contains(e.transactionType))
       .map((e) => e.count)
       .fold(0, (a, b) => a + b);
   return sum;
@@ -173,8 +187,9 @@ Future<bool> registerNewTransaction(
       onSimpleMessage('가진 것보다 더 꺼내갈 수는 없죠?');
       if (kDebugMode) {
         print(
-            'stock count exceeded; stock id = ${transaction.stockId}, date = ${transaction.dateTime} current count = ${inSum - outSum}, but try to out ${transaction.count}');
+            'stock count exceeded; stock id = ${transaction.stockId}, date = ${transaction.dateTime} inSum=$inSum outSum=$outSum current count = ${inSum - outSum}, but try to out ${transaction.count}');
       }
+
       return false;
     }
 
@@ -466,7 +481,8 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         }
       }
 
-      model.stockIdHistoryFilter = alternativeFilter ?? widget.stockIdController.text;
+      model.stockIdHistoryFilter =
+          alternativeFilter ?? widget.stockIdController.text;
       showSnackbar('${widget.stockIdController.text} 종목으로 필터링합니다.');
     } else if (model.selectedPageIndex == historyPageIndex) {
       // 기록 탭에서는 동일한 항목으로 다시 필터링하려고 하는 행위를
@@ -490,7 +506,6 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         ),
         backgroundColor: Colors.teal,
         duration: const Duration(seconds: 1),
-
       ),
     );
   }
