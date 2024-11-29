@@ -78,7 +78,7 @@ List<DataCell> _dataCellListFromTransaction(
     )),
     DataCell(_dataCellText(
       t.transactionType == TransactionType.sell
-          ? (t.earn != null ? priceDataToDisplay(t.stockId, t.earn!) : '???')
+          ? (t.earn != null ? priceDataToDisplayTruncatedInt(t.stockId, t.earn!) : '???')
           : '',
       textStyle,
     )),

@@ -66,6 +66,20 @@ String priceDataToDisplay(String stockId, int price) {
       formatThousandsStr(priceDataToInput(stockId, price)));
 }
 
+// 저장 상태의 값을 보기 예쁜 문자열로 변환하되 달러의 경우 소수점 셋째 자리에서 반올림
+// KR: 123456789 -> '123,456,789'
+// EN: 123456789 -> 123456800 -> '$12,345.80'
+String priceDataToDisplayTruncatedInt(String stockId, int price) {
+  stockId = stockIdAlternatives[stockId] ?? stockId;
+
+  final isKr = krExp.hasMatch(stockId);
+  if (isKr == false) {
+    price = (price / 100).round() * 100;
+  }
+
+  return priceDataToDisplay(stockId, price);
+}
+
 // 저장 상태의 값을 입력(편집)하기 편한 문자열로 변환
 // KR: 123456789 -> '123456789'
 // EN: 123456789 -> '12345.6789'
