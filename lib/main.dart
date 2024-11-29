@@ -72,7 +72,7 @@ void initFirebase() async {
         print('FCM token acquired 2: $fcmToken');
       }
     }
-  } else {
+  } else if (Platform.isAndroid) {
     final fcmToken = await FirebaseMessaging.instance.getToken();
     if (kDebugMode) {
       print('FCM token acquired 3: $fcmToken');
