@@ -12,9 +12,17 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'model/lonely_model.dart';
 import 'my_home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
+// 모바일 클라우드 알림 기능을 위해 Firebase Cloud Messaging을 쓴다.
 // 아래 파일이 없다는 오류가 난다면 Firebase CLI, FlutterFire CLI 이용해서 초기 설정해야한다.
 // 상세 절차는 아래 링크를 참조한다.
 // https://firebase.google.com/docs/flutter/setup
+//
+// 기본적으로 아래 세 명령어가 필요하다.
+//
+// 1. npm install -g firebase-tools
+// 2. firebase login
+// 3. dart pub global activate flutterfire_cli
+// 4. flutterfire configure
 import 'firebase_options.dart';
 
 void main() {
