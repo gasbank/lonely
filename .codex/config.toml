@@ -1,0 +1,5 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+plan_mode_reasoning_effort = "xhigh"
