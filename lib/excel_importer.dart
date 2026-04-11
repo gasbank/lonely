@@ -12,6 +12,8 @@ int transactionTypeToOrderValue(String type) {
   switch (type) {
     case "매도":
       return 999;
+    case "매도_NXT":
+      return 999;
     case "액면병합출고":
       return 0;
     case "액면병합입고":
@@ -162,7 +164,9 @@ class Importer {
       ];
 
       if (transactionType == '매수' ||
+          transactionType == '매수_NXT' ||
           transactionType == '매도' ||
+          transactionType == '매도_NXT' ||
           transactionType.endsWith('주식매수') ||
           transactionType.endsWith('주식매도') ||
           transactionType == '액면분할출고' || // 액면분할입고를 연이어 처리
@@ -254,8 +258,10 @@ class Importer {
           insertedCount++;
           insertedCount++;
         } else if (transactionType == '매수' ||
+            transactionType == '매수_NXT' ||
             transactionType.endsWith('주식매수') ||
             transactionType == '매도' ||
+            transactionType == '매도_NXT' ||
             transactionType.endsWith('주식매도')) {
           await onNewTransaction(
             i / maxRows,
@@ -264,7 +270,7 @@ class Importer {
               price: priceInt,
               count: countInt,
               transactionType:
-              (transactionType == '매수' || transactionType.endsWith('주식매수'))
+              (transactionType == '매수' || transactionType == '매수_NXT' || transactionType.endsWith('주식매수'))
                   ? TransactionType.buy
                   : TransactionType.sell,
               dateTime: dateTime,
