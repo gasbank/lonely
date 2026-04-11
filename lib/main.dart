@@ -12,20 +12,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'model/lonely_model.dart';
 import 'my_home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
-// 모바일 클라우드 알림 기능을 위해 Firebase Cloud Messaging을 쓴다.
-// 아래 파일이 없다는 오류가 난다면 Firebase CLI, FlutterFire CLI 이용해서 초기 설정해야한다.
-// 상세 절차는 아래 링크를 참조한다.
-// https://firebase.google.com/docs/flutter/setup
-//
-// 기본적으로 아래 세 명령어가 필요하다.
-//
-// 1. npm install -g firebase-tools
-// 2. firebase login
-// 3. dart pub global activate flutterfire_cli
-// 4. flutterfire configure
-import 'firebase_options.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   if (kIsWeb) {
     // 웹에서는 sqflite 못쓴다.
     throw Exception('Web is not supported');
@@ -35,49 +25,70 @@ void main() {
     sqfliteFfiInit();
   }
 
-  initFirebase();
+  await initFirebase();
 
   dataTableShowLogs = false;
 
   runApp(const MyApp());
 }
 
-void initFirebase() async {
-  WidgetsFlutterBinding.ensureInitialized();
+Future<void> initFirebase() async {
+  if (!_supportsFirebaseCore()) {
+    return;
+  }
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
 
-  FirebaseMessaging.instance.onTokenRefresh
-      .listen((fcmToken) {
-        if (kDebugMode) {
-          print('FCM token refreshed 1: $fcmToken');
-        }
-  })
-      .onError((err) {
+  if (!_supportsFirebaseMessaging()) {
+    return;
+  }
+
+  FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) {
     if (kDebugMode) {
-      print('FCM token refresh error!: $err');
+      debugPrint('FCM token refreshed 1: $fcmToken');
+    }
+  }).onError((err) {
+    if (kDebugMode) {
+      debugPrint('FCM token refresh error!: $err');
     }
   });
 
-  final notificationSettings = await FirebaseMessaging.instance.requestPermission(provisional: true);
+  final notificationSettings =
+      await FirebaseMessaging.instance.requestPermission(
+    provisional: true,
+  );
+  if (kDebugMode) {
+    debugPrint(
+      'Notification permission status: '
+      '${notificationSettings.authorizationStatus}',
+    );
+  }
 
-  if (Platform.isIOS) {
+  if (Platform.isIOS || Platform.isMacOS) {
     final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
     if (apnsToken != null) {
-      print('FCM APNS token acquired: $apnsToken');
+      if (kDebugMode) {
+        debugPrint('FCM APNS token acquired: $apnsToken');
+      }
       final fcmToken = await FirebaseMessaging.instance.getToken();
       if (kDebugMode) {
-        print('FCM token acquired 2: $fcmToken');
+        debugPrint('FCM token acquired 2: $fcmToken');
       }
     }
   } else if (Platform.isAndroid) {
     final fcmToken = await FirebaseMessaging.instance.getToken();
     if (kDebugMode) {
-      print('FCM token acquired 3: $fcmToken');
+      debugPrint('FCM token acquired 3: $fcmToken');
     }
   }
+}
+
+bool _supportsFirebaseCore() {
+  return Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
+}
+
+bool _supportsFirebaseMessaging() {
+  return Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
 }
 
 class MyApp extends StatelessWidget {

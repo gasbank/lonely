@@ -62,7 +62,9 @@ class KrStock {
 
   factory KrStock.fromJsonD(Map<String, dynamic> json) {
     // tradePrice: 1000.0일 때도 있고 1000일 때도 있더라~
-    final closePrice = json['tradePrice'].toDouble().round();
+
+    // 과거 정상 거래를 했는데, 현 시점에서 상장 폐지된 종목이라면 json['tradePrice'] 없다.
+    final closePrice = json['tradePrice']?.toDouble().round() ?? 0;
     return KrStock(
         itemCode: (json['symbolCode'] as String).substring(1),
         stockName: json['name'],
