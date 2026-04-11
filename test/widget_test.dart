@@ -1,30 +1,102 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lonely/database.dart';
+import 'package:lonely/model/lonely_model.dart';
 
-import 'package:lonely/main.dart';
+class FakeLonelyDatabase extends LonelyDatabase {
+  final _accounts = <Map<String, dynamic>>[];
+  int _nextAccountId = 1;
+
+  Map<String, int?> get accountOrderByName {
+    return {
+      for (final account in _accounts)
+        account['name'] as String: account['accountOrder'] as int?,
+    };
+  }
+
+  @override
+  Future<int> insertAccount(Map<String, Object?> values) async {
+    final insertedId = _nextAccountId++;
+    _accounts.add({
+      'id': insertedId,
+      ...values,
+    });
+    return insertedId;
+  }
+
+  @override
+  Future<int> updateAccount(int id, Map<String, Object?> values) async {
+    final index = _accounts.indexWhere((account) => account['id'] == id);
+    if (index < 0) {
+      return 0;
+    }
+
+    _accounts[index] = {
+      ..._accounts[index],
+      ...values,
+    };
+    return 1;
+  }
+
+  @override
+  Future<void> updateAccountsOrder(Map<int, int> accountOrderById) async {
+    for (final entry in accountOrderById.entries) {
+      final index =
+          _accounts.indexWhere((account) => account['id'] == entry.key);
+      if (index >= 0) {
+        _accounts[index]['accountOrder'] = entry.value;
+      }
+    }
+  }
+
+  @override
+  Future<List<int>> removeAccount(List<int> idList) async {
+    final removedBefore = _accounts.length;
+    _accounts.removeWhere((account) => idList.contains(account['id']));
+    return [removedBefore - _accounts.length, 0];
+  }
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('LonelyModel account order', () {
+    test('reorderAccounts persists normalized order', () async {
+      final fakeDatabase = FakeLonelyDatabase();
+      final model = LonelyModel(database: fakeDatabase);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      await model.addAccount('A');
+      await model.addAccount('B');
+      await model.addAccount('C');
+      await model.reorderAccounts(0, 3);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(
+        model.accounts.map((account) => account.name).toList(),
+        ['B', 'C', 'A'],
+      );
+      expect(fakeDatabase.accountOrderByName, {
+        'A': 2,
+        'B': 0,
+        'C': 1,
+      });
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('updateAccount keeps order and removeAccount compacts it', () async {
+      final fakeDatabase = FakeLonelyDatabase();
+      final model = LonelyModel(database: fakeDatabase);
+
+      final alphaId = await model.addAccount('Alpha');
+      await model.addAccount('Beta');
+      await model.addAccount('Gamma');
+      await model.reorderAccounts(2, 0);
+      await model.updateAccount(alphaId!, 'Alpha Renamed');
+      await model.removeAccount([model.accounts[2].id!]);
+
+      expect(
+        model.accounts.map((account) => account.name).toList(),
+        ['Gamma', 'Alpha Renamed'],
+      );
+      expect(fakeDatabase.accountOrderByName, {
+        'Alpha Renamed': 1,
+        'Gamma': 0,
+      });
+    });
   });
 }

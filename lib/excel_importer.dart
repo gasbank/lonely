@@ -56,36 +56,35 @@ class Importer {
     if (rowIndex != null) {
       rowIndex++; // 0-based이므로 1 증가시켜서 보여주자.
     }
-    return '${rowIndex ?? '?'}행 ${getColStr(row, '거래일자')} / ${getColStr(
-        row, '거래명')} / 거래수량: ${getColStr(row, '거래수량')} / ${getColStr(
-        row, '종목명')}';
+    return '${rowIndex ?? '?'}행 ${getColStr(row, '거래일자')} / ${getColStr(row, '거래명')} / 거래수량: ${getColStr(row, '거래수량')} / ${getColStr(row, '종목명')}';
   }
 
-  Future<int> execute(int accountId,
-      StockTxtLoader stockTxtLoader, {
-        required Future<void> Function(
-            double progress,
-            Transaction transaction,
-            ) onNewTransaction,
-        required Future<void> Function(
-            double progress,
-            DateTime dateTime,
-            String stockId,
-            int splitFactor,
-            ) onSplitStock,
-        required Future<void> Function(
-            double progress,
-            DateTime dateTime,
-            String stockId,
-            int mergeFactor,
-            ) onMergeStock,
-        required Future<void> Function(
-            double progress,
-            DateTime dateTime,
-            String stockId,
-            int count,
-            ) onTransferStock,
-      }) async {
+  Future<int> execute(
+    int accountId,
+    StockTxtLoader stockTxtLoader, {
+    required Future<void> Function(
+      double progress,
+      Transaction transaction,
+    ) onNewTransaction,
+    required Future<void> Function(
+      double progress,
+      DateTime dateTime,
+      String stockId,
+      int splitFactor,
+    ) onSplitStock,
+    required Future<void> Function(
+      double progress,
+      DateTime dateTime,
+      String stockId,
+      int mergeFactor,
+    ) onMergeStock,
+    required Future<void> Function(
+      double progress,
+      DateTime dateTime,
+      String stockId,
+      int count,
+    ) onTransferStock,
+  }) async {
     final missingStockIdNames = <String>{};
 
     final maxRows = _sheet.maxRows;
@@ -160,24 +159,31 @@ class Importer {
         '대체입금',
         '오픈이체입금',
         '배당금입금',
-        '단수주입금'
+        '단수주입금',
+      ];
+      // RP 상품 무시
+      final ignoredStockNames = [
+        'USD 외화수시RP',
+        'USD 외화약정RP',
       ];
 
-      if (transactionType == '매수' ||
-          transactionType == '매수_NXT' ||
-          transactionType == '매도' ||
-          transactionType == '매도_NXT' ||
-          transactionType.endsWith('주식매수') ||
-          transactionType.endsWith('주식매도') ||
-          transactionType == '액면분할출고' || // 액면분할입고를 연이어 처리
-          transactionType == '액면병합출고' || // 액면병합입고를 연이어 처리
-          transactionType == '타사출고' ||
-          transactionType == '타사입고' ||
-          transactionType == '무상입고' ||
-          transactionType == '신주인수권입고' ||
-          transactionType == '신주인수권출고' ||
-          transactionType == '감자출고' // 감자입고를 연이어 처리
-      ) {
+      if (ignoredStockNames.contains(stockName)) {
+        // 무시해도 되는 '종목명'
+      } else if (transactionType == '매수' ||
+              transactionType == '매수_NXT' ||
+              transactionType == '매도' ||
+              transactionType == '매도_NXT' ||
+              transactionType.endsWith('주식매수') ||
+              transactionType.endsWith('주식매도') ||
+              transactionType == '액면분할출고' || // 액면분할입고를 연이어 처리
+              transactionType == '액면병합출고' || // 액면병합입고를 연이어 처리
+              transactionType == '타사출고' ||
+              transactionType == '타사입고' ||
+              transactionType == '무상입고' ||
+              transactionType == '신주인수권입고' ||
+              transactionType == '신주인수권출고' ||
+              transactionType == '감자출고' // 감자입고를 연이어 처리
+          ) {
         final stockId = stockTxtLoader.nameToId[stockName];
         if (stockId == null) {
           missingStockIdNames.add(stockName);
@@ -188,7 +194,7 @@ class Importer {
         final priceTxt = price.toString().replaceAll(',', '');
 
         final priceInt = ((double.tryParse(priceTxt) ?? 0) *
-            (currencyCode.toString() == 'USD' ? fracMultiplier : 1))
+                (currencyCode.toString() == 'USD' ? fracMultiplier : 1))
             .round();
 
         final countInt =
@@ -269,8 +275,9 @@ class Importer {
               stockId: stockId ?? stockName,
               price: priceInt,
               count: countInt,
-              transactionType:
-              (transactionType == '매수' || transactionType == '매수_NXT' || transactionType.endsWith('주식매수'))
+              transactionType: (transactionType == '매수' ||
+                      transactionType == '매수_NXT' ||
+                      transactionType.endsWith('주식매수'))
                   ? TransactionType.buy
                   : TransactionType.sell,
               dateTime: dateTime,
@@ -302,7 +309,7 @@ class Importer {
         // 여기에 왔다면 엑셀 파일 이상한 것이다.
         throw Exception('inconsistent data 2b: ${rowToDebugString(row)}');
       } else if (ignoredTransactionTypes.contains(transactionType)) {
-        // 무시해도 되는 항목
+        // 무시해도 되는 '거래명'
       } else {
         if (kDebugMode) {
           print('Unhandled type of transaction b: ${rowToDebugString(row)}');

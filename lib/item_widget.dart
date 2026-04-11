@@ -215,7 +215,7 @@ class _ItemWidgetState extends State<ItemWidget> {
         ? darken(circleAvatarBgColor, .6)
         : lighten(circleAvatarBgColor, .6);
 
-    var itemTitle = stock?.name ?? '---';
+    var itemTitle = stock?.name ?? '? $stockId ?';
     if (widget.isStockCountVisible) {
       itemTitle += ' ${formatThousands(widget.item.count)}주';
     }

@@ -16,20 +16,26 @@ import '../transaction_message.dart';
 class Account {
   int? id;
   final String name;
+  int? accountOrder;
 
-  Account({required this.name, this.id});
+  Account({required this.name, this.id, this.accountOrder});
 
   factory Account.empty() {
-    return Account(id: null, name: '');
+    return Account(id: null, name: '', accountOrder: null);
   }
 
   factory Account.fromMap(Map<String, dynamic> map) {
-    return Account(id: map['id'], name: map['name']);
+    return Account(
+      id: map['id'],
+      name: map['name'],
+      accountOrder: map['accountOrder'],
+    );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'name': name,
+      'accountOrder': accountOrder,
     };
   }
 }
@@ -60,7 +66,7 @@ class LonelyModel extends ChangeNotifier {
 
   int get selectedScreenIndex => _selectedPageIndex;
 
-  final _db = LonelyDatabase();
+  final LonelyDatabase _db;
 
   final _stockTxtLoader = StockTxtLoader();
 
@@ -76,6 +82,8 @@ class LonelyModel extends ChangeNotifier {
 
   final Queue<void Function(BuildContext)> _queuedContextTaskList =
       Queue<void Function(BuildContext)>();
+
+  LonelyModel({LonelyDatabase? database}) : _db = database ?? LonelyDatabase();
 
   set pageController(PageController pageController) {
     _pageController = pageController;
@@ -184,7 +192,7 @@ class LonelyModel extends ChangeNotifier {
       return null;
     }
 
-    final account = Account(name: name);
+    final account = Account(name: name, accountOrder: _nextAccountOrder());
     account.id = await _addAccountToDb(account);
     _accounts.add(account);
     notifyListeners();
@@ -192,14 +200,15 @@ class LonelyModel extends ChangeNotifier {
     return account.id;
   }
 
-  bool _isDuplicatedAccountName(String name) {
-    final account =
-        _accounts.singleWhere((e) => e.name == name, orElse: Account.empty);
+  bool _isDuplicatedAccountName(String name, {int? excludedId}) {
+    final account = _accounts.singleWhere(
+        (e) => e.name == name && e.id != excludedId,
+        orElse: Account.empty);
     return account.id != null && account.id! > 0;
   }
 
   Future<int> updateAccount(int updateDbId, String name) async {
-    if (_isDuplicatedAccountName(name)) {
+    if (_isDuplicatedAccountName(name, excludedId: updateDbId)) {
       return 0;
     }
 
@@ -208,8 +217,20 @@ class LonelyModel extends ChangeNotifier {
     }
 
     final removedIndex = _accounts.indexWhere((e) => e.id == updateDbId);
+    final account = _accounts.singleWhere(
+      (e) => e.id == updateDbId,
+      orElse: Account.empty,
+    );
+    if (removedIndex < 0 || account.id == null) {
+      return 0;
+    }
+
     _accounts.removeWhere((e) => e.id == updateDbId);
-    final updatedAccount = Account(id: updateDbId, name: name);
+    final updatedAccount = Account(
+      id: updateDbId,
+      name: name,
+      accountOrder: account.accountOrder,
+    );
     _accounts.insert(removedIndex, updatedAccount);
     notifyListeners();
 
@@ -288,6 +309,25 @@ class LonelyModel extends ChangeNotifier {
     return await _db.updateStocksInventoryOrder(stockId, inventoryOrder);
   }
 
+  Future<void> reorderAccounts(int oldIndex, int newIndex) async {
+    if (oldIndex < 0 ||
+        oldIndex >= _accounts.length ||
+        newIndex < 0 ||
+        newIndex > _accounts.length) {
+      return;
+    }
+
+    final normalizedIndex = oldIndex < newIndex ? newIndex - 1 : newIndex;
+    if (oldIndex == normalizedIndex) {
+      return;
+    }
+
+    final movingAccount = _accounts.removeAt(oldIndex);
+    _accounts.insert(normalizedIndex, movingAccount);
+    await _normalizeAccountOrder();
+    notifyListeners();
+  }
+
   Future<List<int>> removeAccount(List<int> idList) async {
     final removedCount = await _db.removeAccount(idList);
 
@@ -296,9 +336,36 @@ class LonelyModel extends ChangeNotifier {
       e.accountId = null;
     });
 
+    await _normalizeAccountOrder();
     notifyListeners();
 
     return removedCount;
+  }
+
+  int _nextAccountOrder() {
+    if (_accounts.isEmpty) {
+      return 0;
+    }
+
+    var maxOrder = -1;
+    for (final account in _accounts) {
+      if ((account.accountOrder ?? -1) > maxOrder) {
+        maxOrder = account.accountOrder ?? -1;
+      }
+    }
+    return maxOrder + 1;
+  }
+
+  Future<void> _normalizeAccountOrder() async {
+    final accountOrderById = <int, int>{};
+    for (var i = 0; i < _accounts.length; i++) {
+      final account = _accounts[i];
+      account.accountOrder = i;
+      if (account.id != null) {
+        accountOrderById[account.id!] = i;
+      }
+    }
+    await _db.updateAccountsOrder(accountOrderById);
   }
 
   void setEditingTransaction(Transaction? transaction) {

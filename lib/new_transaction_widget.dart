@@ -541,8 +541,13 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
   Consumer<Object?> buildAccountDropdown() {
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
-        _accountId ??=
-            (model.accounts.isNotEmpty ? model.accounts.first.id : null);
+        final selectedAccountExists =
+            model.accounts.any((account) => account.id == _accountId);
+        if (!selectedAccountExists) {
+          _accountId =
+              model.accounts.isNotEmpty ? model.accounts.first.id : null;
+        }
+
         return DropdownButton<int>(
           items: [
             // const DropdownMenuItem(value: 0, child: Text('---')),

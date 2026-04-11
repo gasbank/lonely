@@ -54,7 +54,24 @@ add_subdirectory("runner")
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
+# firebase_core pulls in the Firebase C++ SDK, whose bundled CMakeLists still
+# declares an old minimum CMake version and emits a deprecation warning with
+# recent CMake releases. Suppress deprecated warnings while configuring
+# third-party plugins so local builds stay clean.
+if(DEFINED CMAKE_WARN_DEPRECATED)
+  set(_saved_cmake_warn_deprecated "${CMAKE_WARN_DEPRECATED}")
+  set(_had_cmake_warn_deprecated TRUE)
+else()
+  set(_had_cmake_warn_deprecated FALSE)
+endif()
+set(CMAKE_WARN_DEPRECATED FALSE CACHE BOOL "" FORCE)
 include(flutter/generated_plugins.cmake)
+if(_had_cmake_warn_deprecated)
+  set(CMAKE_WARN_DEPRECATED "${_saved_cmake_warn_deprecated}" CACHE BOOL "" FORCE)
+else()
+  unset(CMAKE_WARN_DEPRECATED CACHE)
+  unset(CMAKE_WARN_DEPRECATED)
+endif()
 
 
 # === Installation ===

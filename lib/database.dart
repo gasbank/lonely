@@ -118,6 +118,26 @@ INSERT INTO $accountsTable (name) VALUES ('기본');
 ''');
 }
 
+void _createAccountsTableV2(Batch batch) {
+  batch.execute('''
+CREATE TABLE IF NOT EXISTS $accountsTable
+(
+  id              INTEGER PRIMARY KEY
+  ,
+  name            TEXT    NOT NULL
+  ,
+  accountOrder    INTEGER
+);
+''');
+  batch.execute('''
+INSERT INTO $accountsTable (name, accountOrder) VALUES ('기본', 0);
+''');
+}
+
+void _updateAccountsTableV1toV2(Batch batch) {
+  batch.execute('ALTER TABLE $accountsTable ADD accountOrder INTEGER;');
+}
+
 const String _dbFileName = 'lonely.db';
 
 Future<Database> _initDatabase() async {
@@ -128,11 +148,12 @@ Future<Database> _initDatabase() async {
       final batch = db.batch();
       _createTransactionsTableV3(batch);
       _createStocksTableV2(batch);
-      _createAccountsTableV1(batch);
+      _createAccountsTableV2(batch);
       await batch.commit();
     },
     onUpgrade: (db, oldVersion, newVersion) async {
       final batch = db.batch();
+      var needsAccountOrderBackfill = false;
       if (oldVersion == 1) {
         _createStocksTableV1(batch);
         oldVersion++;
@@ -150,9 +171,28 @@ Future<Database> _initDatabase() async {
         _updateStocksTableV1toV2(batch);
         oldVersion++;
       }
+      if (oldVersion == 5) {
+        _updateAccountsTableV1toV2(batch);
+        oldVersion++;
+        needsAccountOrderBackfill = true;
+      }
       await batch.commit();
+
+      if (needsAccountOrderBackfill) {
+        final accounts = await db.query(accountsTable, orderBy: 'id ASC');
+        final backfillBatch = db.batch();
+        for (var i = 0; i < accounts.length; i++) {
+          backfillBatch.update(
+            accountsTable,
+            {'accountOrder': i},
+            where: 'id = ?',
+            whereArgs: [accounts[i]['id']],
+          );
+        }
+        await backfillBatch.commit(noResult: true);
+      }
     },
-    version: 5,
+    version: 6,
   );
 
   final dbPath = await getDbPath();
@@ -274,7 +314,11 @@ class LonelyDatabase {
 
   Future<List<Map<String, dynamic>>> queryAccounts() async {
     final db = await _database;
-    return await db.query(accountsTable);
+    return await db.query(
+      accountsTable,
+      orderBy:
+          'CASE WHEN accountOrder IS NULL THEN 1 ELSE 0 END, accountOrder ASC, id ASC',
+    );
   }
 
   Future<int> removeTransaction(List<int> idList) async {
@@ -310,6 +354,24 @@ class LonelyDatabase {
     final db = await _database;
     return await db.update(stocksTable, {'inventoryOrder': inventoryOrder},
         where: 'stockId = ?', whereArgs: [stockId]);
+  }
+
+  Future<void> updateAccountsOrder(Map<int, int> accountOrderById) async {
+    if (accountOrderById.isEmpty) {
+      return;
+    }
+
+    final db = await _database;
+    final batch = db.batch();
+    for (final entry in accountOrderById.entries) {
+      batch.update(
+        accountsTable,
+        {'accountOrder': entry.value},
+        where: 'id = ?',
+        whereArgs: [entry.key],
+      );
+    }
+    await batch.commit(noResult: true);
   }
 
   Future<List<int>> removeAccount(List<int> idList) async {

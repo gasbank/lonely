@@ -81,8 +81,6 @@ Map<String, Item> createItemMap(
         item.accumSellCount += e.count;
         item.accumEarn += e.earn ?? 0;
         break;
-      default:
-        throw Exception('unknown transaction type');
     }
 
     itemMap[stockId] = item;

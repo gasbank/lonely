@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,7 +12,7 @@ class AccountListWidget extends StatefulWidget {
 
 class _AccountListWidgetState extends State<AccountListWidget> {
   final _accountNameController = TextEditingController();
-  final _selectedSet = <int>{};
+  int? _selectedAccountId;
 
   @override
   void dispose() {
@@ -29,57 +28,87 @@ class _AccountListWidgetState extends State<AccountListWidget> {
     ));
   }
 
-  DataRow _createAccountRow(
-      Account account, Set<int> selectedSet, LonelyModel model) {
-    return DataRow(
-      cells: [
-        DataCell(Text(account.name)),
-        const DataCell(Text('---')),
-        const DataCell(Text('---')),
-        const DataCell(Text('---')),
-      ],
-      onSelectChanged: (selected) {
-        setState(() {
-          if (selected ?? false) {
-            selectedSet.clear();
-            selectedSet.add(account.id!);
-            _accountNameController.text = account.name;
-          } else {
-            selectedSet.remove(account.id);
-            _accountNameController.text = '';
-          }
-        });
-      },
-      selected: selectedSet.contains(account.id),
-      onLongPress: () {
-        if (selectedSet.isEmpty) {
-          _showSimpleError('하나 이상 선택하고 롱 탭하세요.');
-          return;
-        }
+  void _toggleSelection(Account account) {
+    setState(() {
+      if (_selectedAccountId == account.id) {
+        _selectedAccountId = null;
+        _accountNameController.clear();
+      } else {
+        _selectedAccountId = account.id;
+        _accountNameController.text = account.name;
+      }
+    });
+  }
 
-        if (_selectedSet.isNotEmpty) {
-          showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                    title: const Text('확인'),
-                    content: Text('선택한 계좌 ${_selectedSet.length}개를 모두 지울까요?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, 'Cancel'),
-                        child: const Text('취소'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context, 'OK');
-                          removeSelectedAccount(model);
-                        },
-                        child: const Text('삭제'),
-                      ),
-                    ],
-                  ),
-              barrierDismissible: true);
-        }
-      },
+  Future<void> _showRemoveDialog(LonelyModel model, Account account) async {
+    if (account.id != null && _selectedAccountId != account.id) {
+      _toggleSelection(account);
+    }
+
+    if (_selectedAccountId == null) {
+      _showSimpleError('계좌를 선택한 뒤 길게 누르세요.');
+      return;
+    }
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        title: const Text('확인'),
+        content: Text('선택한 계좌 \'${account.name}\'를 지울까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'Cancel'),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, 'OK');
+              removeSelectedAccount(model);
+            },
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountTile(
+    BuildContext context,
+    LonelyModel model,
+    Account account,
+    int index,
+  ) {
+    final isSelected = _selectedAccountId == account.id;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      key: ValueKey(account.id),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Material(
+        color: isSelected
+            ? colorScheme.primaryContainer.withValues(alpha: 0.55)
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _toggleSelection(account),
+          onLongPress: () => _showRemoveDialog(model, account),
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            leading: const Icon(Icons.account_balance_outlined),
+            title: Text(account.name),
+            trailing: ReorderableDragStartListener(
+              index: index,
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Icon(Icons.drag_handle),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -88,52 +117,61 @@ class _AccountListWidgetState extends State<AccountListWidget> {
     final model = context.read<LonelyModel>();
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    return ListView(
+    return Column(
       children: [
-        Column(
+        Row(
           children: [
-            Row(
-              children: [
-                Flexible(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: TextField(
-                      controller: _accountNameController,
-                      decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '계좌명',
-                          contentPadding: EdgeInsets.all(4.0)),
-                      autocorrect: false,
-                      textInputAction: TextInputAction.done,
-                    ),
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                child: TextField(
+                  controller: _accountNameController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: '계좌명',
+                    contentPadding: EdgeInsets.all(4.0),
                   ),
+                  autocorrect: false,
+                  textInputAction: TextInputAction.done,
                 ),
-                _buildAddOrUpdateButton(model, scaffoldMessenger),
-              ],
+              ),
             ),
-            Consumer<LonelyModel>(
-              builder: (context, model, child) {
-                return FittedBox(
-                  child: DataTable(
-                    headingRowHeight: 40,
-                    dataRowMinHeight: 40,
-                    showCheckboxColumn: false,
-                    columns: const [
-                      DataColumn(label: Text('계좌명')),
-                      DataColumn(label: Text('종목 수')),
-                      DataColumn(label: Text('자산총계')),
-                      DataColumn(label: Text('평가액')),
-                    ],
-                    rows: model.accounts
-                        .sortedBy((e) => e.id ?? 0)
-                        .map((e) => _createAccountRow(e, _selectedSet, model))
-                        .toList(),
-                  ),
-                );
-              },
-            ),
+            _buildAddOrUpdateButton(model, scaffoldMessenger),
           ],
+        ),
+        Expanded(
+          child: Consumer<LonelyModel>(
+            builder: (context, model, child) {
+              if (_selectedAccountId != null &&
+                  !model.accounts.any((e) => e.id == _selectedAccountId)) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) {
+                    return;
+                  }
+                  setState(() {
+                    _selectedAccountId = null;
+                    _accountNameController.clear();
+                  });
+                });
+              }
+
+              if (model.accounts.isEmpty) {
+                return const Center(child: Text('계좌가 없습니다.'));
+              }
+
+              return ReorderableListView.builder(
+                buildDefaultDragHandles: false,
+                itemCount: model.accounts.length,
+                onReorder: (oldIndex, newIndex) async {
+                  await model.reorderAccounts(oldIndex, newIndex);
+                },
+                itemBuilder: (context, index) {
+                  final account = model.accounts[index];
+                  return _buildAccountTile(context, model, account, index);
+                },
+              );
+            },
+          ),
         ),
       ],
     );
@@ -146,46 +184,49 @@ class _AccountListWidgetState extends State<AccountListWidget> {
         foregroundColor: WidgetStateProperty.all<Color>(Colors.redAccent),
       ),
       onPressed: () async {
-        if (_accountNameController.text.isNotEmpty) {
-          final updateDbId =
-              _selectedSet.isNotEmpty ? _selectedSet.first : null;
-
-          if (updateDbId != null) {
-            await model.updateAccount(updateDbId, _accountNameController.text);
-          } else {
-            if ((await model.addAccount(_accountNameController.text))! > 0) {
-              _accountNameController.text = '';
-            } else {
-              scaffoldMessenger
-                  .showSnackBar(const SnackBar(content: Text('겹치는 계좌명입니다.')));
-            }
-          }
-        } else {
+        final accountName = _accountNameController.text.trim();
+        if (accountName.isEmpty) {
           scaffoldMessenger
               .showSnackBar(const SnackBar(content: Text('계좌명을 입력하세요~')));
+          return;
+        }
+
+        final updateDbId = _selectedAccountId;
+
+        if (updateDbId != null) {
+          if (await model.updateAccount(updateDbId, accountName) <= 0) {
+            scaffoldMessenger.showSnackBar(
+              const SnackBar(content: Text('겹치는 계좌명입니다.')),
+            );
+          }
+        } else {
+          if ((await model.addAccount(accountName))! > 0) {
+            _accountNameController.clear();
+          } else {
+            scaffoldMessenger.showSnackBar(
+              const SnackBar(content: Text('겹치는 계좌명입니다.')),
+            );
+          }
         }
       },
-      child: _selectedSet.isEmpty ? const Text('추가') : const Text('변경'),
+      child: _selectedAccountId == null ? const Text('추가') : const Text('변경'),
     );
   }
 
-  void removeSelectedAccount(LonelyModel model) {
-    for (final id in _selectedSet.toSet()) {
-      model.removeAccount([id]);
+  Future<void> removeSelectedAccount(LonelyModel model) async {
+    final selectedAccountId = _selectedAccountId;
+    if (selectedAccountId == null) {
+      return;
     }
+
+    await model.removeAccount([selectedAccountId]);
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
-      _selectedSet.clear();
+      _selectedAccountId = null;
+      _accountNameController.clear();
     });
-  }
-}
-
-extension MyIterable<E> on Iterable<E> {
-  Iterable<E> sortedBy(Comparable Function(E e) key) =>
-      toList()..sort((a, b) => key(a).compareTo(key(b)));
-
-  Iterable<E> stableSortedBy(Comparable Function(E e) key) {
-    final copy = toList();
-    mergeSort(copy, compare: (a, b) => key(a).compareTo(key(b)));
-    return copy;
   }
 }
