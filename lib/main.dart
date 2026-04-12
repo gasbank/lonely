@@ -9,6 +9,7 @@ import 'package:lonely/model/price_model.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'excel_converter_meritz.dart';
 import 'model/lonely_model.dart';
 import 'my_home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -28,6 +29,14 @@ Future<void> main() async {
   await initFirebase();
 
   dataTableShowLogs = false;
+
+  final file = File("C:\\Users\\gb\\Downloads\\Telegram Desktop\\pbrtp00030_hts.xlsx");
+  if (kDebugMode) {
+    print(file.path);
+  }
+
+  final converter = ConverterMeritz();
+  await converter.loadSheet(file);
 
   runApp(const MyApp());
 }

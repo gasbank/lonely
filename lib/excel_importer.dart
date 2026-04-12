@@ -29,13 +29,13 @@ int transactionTypeToOrderValue(String type) {
 
 class Importer {
 
-  static const colTransactionType = '거래명';
   static const colDateTime = '거래일자';
+  static const colTransactionType = '거래명';
+  static const colCount = '거래수량';
+  static const colCurrencyCode = '통화코드';
   static const colItemName = '종목명';
   static const colPrice = '거래단가';
-  static const colCount = '거래수량';
   static const colAccum = '잔고수량/펀드평가금액';
-  static const colCurrencyCode = '통화코드';
 
   final _colMap = <String, int>{};
   late final Sheet _sheet;
