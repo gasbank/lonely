@@ -28,6 +28,15 @@ int transactionTypeToOrderValue(String type) {
 }
 
 class Importer {
+
+  static const colTransactionType = '거래명';
+  static const colDateTime = '거래일자';
+  static const colItemName = '종목명';
+  static const colPrice = '거래단가';
+  static const colCount = '거래수량';
+  static const colAccum = '잔고수량/펀드평가금액';
+  static const colCurrencyCode = '통화코드';
+
   final _colMap = <String, int>{};
   late final Sheet _sheet;
 
@@ -56,7 +65,7 @@ class Importer {
     if (rowIndex != null) {
       rowIndex++; // 0-based이므로 1 증가시켜서 보여주자.
     }
-    return '${rowIndex ?? '?'}행 ${getColStr(row, '거래일자')} / ${getColStr(row, '거래명')} / 거래수량: ${getColStr(row, '거래수량')} / ${getColStr(row, '종목명')}';
+    return '${rowIndex ?? '?'}행 ${getColStr(row, colDateTime)} / ${getColStr(row, colTransactionType)} / 거래수량: ${getColStr(row, colCount)} / ${getColStr(row, colItemName)}';
   }
 
   Future<int> execute(
@@ -93,6 +102,7 @@ class Importer {
 
     const rowOffset = 2;
 
+    
     // 처음 두 행은 거래 내역이 아니다.
     var rows = _sheet.rows.sublist(rowOffset);
 
@@ -102,21 +112,22 @@ class Importer {
     // 하루에 같은 종목을 매수, 매도 모두 한 경우 엑셀 파일에는
     // 매수, 매도 순서가 시간상 뒤바뀌어 기록되어 있는 경우도 있기 때문이다.
     // 기본 sort() 함수는 stable하지 않기 때문에 stable한 mergeSort를 쓴다.
+
     mergeSort(rows, compare: (a, b) {
-      final dateA = getColStr(a, '거래일자')!;
-      final dateB = getColStr(b, '거래일자')!;
+      final dateA = getColStr(a, colDateTime)!;
+      final dateB = getColStr(b, colDateTime)!;
       final dateComp = dateA.compareTo(dateB);
       if (dateComp != 0) {
         return dateComp;
       } else {
-        final typeA = transactionTypeToOrderValue(getColStr(a, '거래명')!);
-        final typeB = transactionTypeToOrderValue(getColStr(b, '거래명')!);
+        final typeA = transactionTypeToOrderValue(getColStr(a, colTransactionType)!);
+        final typeB = transactionTypeToOrderValue(getColStr(b, colTransactionType)!);
         final typeComp = typeA - typeB;
         if (typeComp != 0) {
           return typeComp;
         } else {
-          final itemNameA = getColStr(a, '종목명')!;
-          final itemNameB = getColStr(b, '종목명')!;
+          final itemNameA = getColStr(a, colItemName)!;
+          final itemNameB = getColStr(b, colItemName)!;
           return itemNameA.compareTo(itemNameB);
         }
       }
@@ -128,13 +139,13 @@ class Importer {
     for (var i = 0; i < rowsList.length; i++) {
       final row = rowsList[i];
 
-      final dateTimeStr = getColStr(row, '거래일자');
+      final dateTimeStr = getColStr(row, colDateTime);
 
-      final transactionType = getColStr(row, '거래명');
-      final stockName = getColStr(row, '종목명');
-      final price = getColStr(row, '거래단가');
-      final count = getColStr(row, '거래수량');
-      final accumCount = getColStr(row, '잔고수량/펀드평가금액');
+      final transactionType = getColStr(row, colTransactionType);
+      final stockName = getColStr(row, colItemName);
+      final price = getColStr(row, colPrice);
+      final count = getColStr(row, colCount);
+      final accumCount = getColStr(row, colAccum);
 
       if (dateTimeStr == null ||
           transactionType == null ||
@@ -167,8 +178,33 @@ class Importer {
         'USD 외화약정RP',
       ];
 
+
+      final stockId = stockTxtLoader.nameToId[stockName];
+      if (stockId == null) {
+        missingStockIdNames.add(stockName);
+      }
+
+      // 크래프톤 특별 처리
+      if (stockName == '크래프톤' && dateTimeStr.compareTo('2021-07-28') < 0) {
+        continue;
+      } else if (stockName == '크래프톤' && transactionType == '타사입고') {
+        await onNewTransaction(
+          i / maxRows,
+          Transaction(
+            stockId: stockId ?? stockName,
+            price: 498000,
+            count: int.parse(accumCount.replaceAll(',', '')) ?? 0,
+            transactionType: TransactionType.buy,
+            dateTime: dateTime,
+            accountId: accountId,
+          ),
+        );
+        insertedCount++;
+        continue;
+      }
+
       if (ignoredStockNames.contains(stockName)) {
-        // 무시해도 되는 '종목명'
+        // 무시해도 되는 colItemName
       } else if (transactionType == '매수' ||
               transactionType == '매수_NXT' ||
               transactionType == '매도' ||
@@ -184,12 +220,9 @@ class Importer {
               transactionType == '신주인수권출고' ||
               transactionType == '감자출고' // 감자입고를 연이어 처리
           ) {
-        final stockId = stockTxtLoader.nameToId[stockName];
-        if (stockId == null) {
-          missingStockIdNames.add(stockName);
-        }
 
-        final currencyCode = getColStr(row, '통화코드');
+
+        final currencyCode = getColStr(row, colCurrencyCode);
 
         final priceTxt = price.toString().replaceAll(',', '');
 
@@ -208,12 +241,12 @@ class Importer {
         if (transactionType == '액면분할출고') {
           // 출고 후 입고를 전량 매도 후 전량 매수로 처리한다. (이익 0)
           final nextRow = rowsList[i + 1];
-          if (stockName != getColStr(nextRow, '종목명') ||
-              '액면분할입고' != getColStr(nextRow, '거래명')) {
+          if (stockName != getColStr(nextRow, colItemName) ||
+              '액면분할입고' != getColStr(nextRow, colTransactionType)) {
             throw Exception('inconsistent data 1a: ${rowToDebugString(row)}');
           }
 
-          final nextCount = getColStr(nextRow, '거래수량');
+          final nextCount = getColStr(nextRow, colCount);
           final nextCountInt =
               int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
 
@@ -227,12 +260,12 @@ class Importer {
         } else if (transactionType == '액면병합출고') {
           // 출고 후 입고를 전량 매도 후 전량 매수로 처리한다. (이익 0)
           final nextRow = rowsList[i + 1];
-          if (stockName != getColStr(nextRow, '종목명') ||
-              '액면병합입고' != getColStr(nextRow, '거래명')) {
+          if (stockName != getColStr(nextRow, colItemName) ||
+              '액면병합입고' != getColStr(nextRow, colTransactionType)) {
             throw Exception('inconsistent data 1b: ${rowToDebugString(row)}');
           }
 
-          final nextCount = getColStr(nextRow, '거래수량');
+          final nextCount = getColStr(nextRow, colCount);
           final nextCountInt =
               int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
 
@@ -246,12 +279,12 @@ class Importer {
         } else if (transactionType == '감자출고') {
           // 출고 후 입고를 전량 매도 후 전량 매수로 처리한다. (이익 0)
           final nextRow = rowsList[i + 1];
-          if (stockName != getColStr(nextRow, '종목명') ||
-              '감자입고' != getColStr(nextRow, '거래명')) {
+          if (stockName != getColStr(nextRow, colItemName) ||
+              '감자입고' != getColStr(nextRow, colTransactionType)) {
             throw Exception('inconsistent data 1c: ${rowToDebugString(row)}');
           }
 
-          final nextCount = getColStr(nextRow, '거래수량');
+          final nextCount = getColStr(nextRow, colCount);
           final nextCountInt =
               int.tryParse(nextCount.toString().replaceAll(',', '')) ?? 0;
 
