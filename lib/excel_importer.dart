@@ -28,7 +28,6 @@ int transactionTypeToOrderValue(String type) {
 }
 
 class Importer {
-
   static const colDateTime = '거래일자';
   static const colTransactionType = '거래명';
   static const colCount = '거래수량';
@@ -36,28 +35,71 @@ class Importer {
   static const colItemName = '종목명';
   static const colPrice = '거래단가';
   static const colAccum = '잔고수량/펀드평가금액';
+  static const requiredColumns = [
+    colDateTime,
+    colTransactionType,
+    colCount,
+    colCurrencyCode,
+    colItemName,
+    colPrice,
+    colAccum,
+  ];
 
   final _colMap = <String, int>{};
-  late final Sheet _sheet;
+  late Sheet _sheet;
 
   Future<void> loadSheet(File file) async {
-    var bytes = await file.readAsBytes();
-    var excel = Excel.decodeBytes(bytes);
+    final bytes = await file.readAsBytes();
+    final excel = Excel.decodeBytes(bytes);
+    loadExcel(excel);
+  }
 
-    for (var sheetName in excel.tables.keys) {
-      //print(sheetName);
-      _sheet = excel.tables[sheetName]!;
-
-      //print(_sheet.maxCols);
-      //print(_sheet.maxRows);
-
-      final headerRow = _sheet.rows[1];
-      for (final colInfo in headerRow.where((e) => e != null).map((e) =>
-          ColumnInfo(colIndex: e!.columnIndex, colName: e.value.toString()))) {
-        _colMap[colInfo.colName] = colInfo.colIndex;
-      }
-      break;
+  void loadExcel(Excel excel) {
+    final sheet = _firstSheet(excel);
+    if (sheet == null) {
+      throw Exception('빈 XLSX 파일입니다.');
     }
+    if (!looksLikeSamsungSheet(sheet)) {
+      throw Exception('Importer가 읽을 수 없는 XLSX 형식입니다.');
+    }
+
+    _sheet = sheet;
+    _colMap.clear();
+
+    final headerRow = _sheet.row(1);
+    for (final colInfo
+        in headerRow.where((e) => e?.value != null).map((e) => ColumnInfo(
+              colIndex: e!.columnIndex,
+              colName: e.value.toString(),
+            ))) {
+      _colMap[colInfo.colName] = colInfo.colIndex;
+    }
+  }
+
+  static bool looksLikeSamsungExcel(Excel excel) {
+    final sheet = _firstSheet(excel);
+    return sheet != null && looksLikeSamsungSheet(sheet);
+  }
+
+  static bool looksLikeSamsungSheet(Sheet sheet) {
+    if (sheet.maxRows < 2) {
+      return false;
+    }
+
+    final headerValues = sheet
+        .row(1)
+        .where((e) => e?.value != null)
+        .map((e) => e!.value.toString())
+        .toSet();
+
+    return requiredColumns.every(headerValues.contains);
+  }
+
+  static Sheet? _firstSheet(Excel excel) {
+    if (excel.tables.isEmpty) {
+      return null;
+    }
+    return excel.tables.values.first;
   }
 
   String? rowToDebugString(List<Data?> row) {
@@ -102,7 +144,6 @@ class Importer {
 
     const rowOffset = 2;
 
-    
     // 처음 두 행은 거래 내역이 아니다.
     var rows = _sheet.rows.sublist(rowOffset);
 
@@ -120,8 +161,10 @@ class Importer {
       if (dateComp != 0) {
         return dateComp;
       } else {
-        final typeA = transactionTypeToOrderValue(getColStr(a, colTransactionType)!);
-        final typeB = transactionTypeToOrderValue(getColStr(b, colTransactionType)!);
+        final typeA =
+            transactionTypeToOrderValue(getColStr(a, colTransactionType)!);
+        final typeB =
+            transactionTypeToOrderValue(getColStr(b, colTransactionType)!);
         final typeComp = typeA - typeB;
         if (typeComp != 0) {
           return typeComp;
@@ -178,7 +221,6 @@ class Importer {
         'USD 외화약정RP',
       ];
 
-
       final stockId = stockTxtLoader.nameToId[stockName];
       if (stockId == null) {
         missingStockIdNames.add(stockName);
@@ -193,7 +235,7 @@ class Importer {
           Transaction(
             stockId: stockId ?? stockName,
             price: 498000,
-            count: int.parse(accumCount.replaceAll(',', '')) ?? 0,
+            count: int.parse(accumCount.replaceAll(',', '')),
             transactionType: TransactionType.buy,
             dateTime: dateTime,
             accountId: accountId,
@@ -220,8 +262,6 @@ class Importer {
               transactionType == '신주인수권출고' ||
               transactionType == '감자출고' // 감자입고를 연이어 처리
           ) {
-
-
         final currencyCode = getColStr(row, colCurrencyCode);
 
         final priceTxt = price.toString().replaceAll(',', '');

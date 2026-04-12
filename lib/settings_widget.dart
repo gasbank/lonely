@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:lonely/transaction_message.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'database.dart';
+import 'excel_converter_meritz.dart';
 import 'excel_importer.dart';
 import 'inventory_widget.dart';
 import 'item_widget.dart';
@@ -41,8 +43,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                       child: const Text('매매 기록 불러오기'),
                     ),
                     TextButton(
-                      onPressed: () => onImportSs(context, model),
-                      child: const Text('삼성증권 XLSX 불러오기'),
+                      onPressed: () => onImportBrokerXlsx(context, model),
+                      child: const Text('증권사 XLSX 불러오기'),
                     ),
                     TextButton(
                       onPressed: () => onImportFromOtherDevice(context, model),
@@ -84,10 +86,10 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     );
   }
 
-  void onImportSs(BuildContext context, LonelyModel model) {
+  void onImportBrokerXlsx(BuildContext context, LonelyModel model) {
     Function(String)? onSetState;
-    const importAccountName = '삼성증권 XLSX';
-    onImportSsXlsx(model, importAccountName, (progress) {
+    const importAccountName = '증권사 XLSX';
+    onImportBrokerXlsxFile(model, importAccountName, (progress) {
       if (onSetState != null) {
         onSetState!(
             '$importAccountName 불러오는 중... ${(100 * progress).toStringAsFixed(1)}%');
@@ -125,7 +127,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        String progressText = '삼성증권 XLSX 불러오는 중...';
+        String progressText = '$importAccountName 불러오는 중...';
 
         return StatefulBuilder(
           builder: (context, setState) {
@@ -190,18 +192,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     ));
   }
 
-  Future<int?> onImportSsXlsx(
+  Future<int?> onImportBrokerXlsxFile(
     LonelyModel model,
     String importAccountName,
     Function(double progress) onProgress,
   ) async {
-    // XLSX 파일 하나 당 하나의 계좌인 것으로 가정
-    final accountId = await model.addAccount(importAccountName);
-    if (accountId == null) {
-      _showSimpleText('먼저 \'$importAccountName\' 계좌명을 변경하세요.');
-      return null;
-    }
-
     final result = await FilePicker.platform
         .pickFiles(allowedExtensions: ['xlsx'], type: FileType.custom);
 
@@ -211,9 +206,19 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         print(file.path);
       }
 
-      final importer = Importer();
+      final bytes = await file.readAsBytes();
+      final excel = Excel.decodeBytes(bytes);
+      final importExcel = _normalizeImportExcel(excel);
 
-      await importer.loadSheet(file);
+      // XLSX 파일 하나 당 하나의 계좌인 것으로 가정
+      final accountId = await model.addAccount(importAccountName);
+      if (accountId == null) {
+        _showSimpleText('먼저 \'$importAccountName\' 계좌명을 변경하세요.');
+        return null;
+      }
+
+      final importer = Importer();
+      importer.loadExcel(importExcel);
 
       final insertedCount = await importer.execute(
         accountId,
@@ -288,6 +293,17 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       // User canceled the picker
       return 0;
     }
+  }
+
+  Excel _normalizeImportExcel(Excel excel) {
+    if (Importer.looksLikeSamsungExcel(excel)) {
+      return excel;
+    }
+    if (ConverterMeritz.looksLikeMeritzExcel(excel)) {
+      return ConverterMeritz.convert(excel);
+    }
+
+    throw Exception('지원하지 않는 증권사 XLSX 형식입니다.');
   }
 
   Future<void> onImportDatabase(LonelyModel model) async {
