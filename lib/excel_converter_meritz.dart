@@ -9,7 +9,7 @@ class ConverterMeritz {
   static const _upperCount = '수량';
   static const _upperCurrencyCode = '통화구분';
 
-  static const _lowerItemName = '종목명';
+  static const _lowerItemName = '종목코드';
   static const _lowerPrice = '단가';
   static const _lowerAccum = '유가증권잔고';
 
@@ -110,7 +110,7 @@ class ConverterMeritz {
     final transactionType = _cellText(upperRow, header.transactionType) ?? '';
     final count = _cellNumberText(upperRow, header.count) ?? '0';
     final currencyCode = _cellText(upperRow, header.currencyCode) ?? '';
-    final itemName = _cellText(lowerRow, header.itemName) ?? '';
+    final itemName = _convertItemNameCellText(_cellText(lowerRow, header.itemName) ?? '');
     final price = _cellNumberText(lowerRow, header.price) ?? '0';
     final accum = _cellNumberText(lowerRow, header.accum) ?? '0';
 
@@ -190,6 +190,17 @@ class ConverterMeritz {
 
   static String? _cellNumberText(List<Data?> row, int columnIndex) {
     return _normalizeNumberText(_cellValue(row, columnIndex)?.toString());
+  }
+
+  static String _convertItemNameCellText(String s) {
+    final dotIndex = s.indexOf('.');
+    if (dotIndex >= 0) {
+      return s.substring(0, dotIndex);
+    } else if (s.startsWith('A')) {
+      return s.substring(1);
+    }
+
+    return s;
   }
 }
 
