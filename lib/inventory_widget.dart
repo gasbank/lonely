@@ -89,7 +89,6 @@ Map<String, Item> createItemMap(
 }
 
 class _InventoryWidgetState extends State<InventoryWidget> {
-  final Set<int> _selectedAccounts = {};
   final Set<String> _selectedItems = {};
   final _stockIdController = TextEditingController();
   final _priceController = TextEditingController();
@@ -114,11 +113,7 @@ class _InventoryWidgetState extends State<InventoryWidget> {
   Widget build(BuildContext context) {
     return Consumer2<LonelyModel, PriceModel>(
       builder: (context, model, priceModel, child) {
-        final transactions = _selectedAccounts.isNotEmpty
-            ? model.transactions
-                .where((e) => _selectedAccounts.contains(e.accountId))
-                .toList()
-            : model.transactions;
+        final transactions = model.accountFilteredTransactions;
         final orderedItems = createItemMap(transactions, model.stocks)
             .values
             .sortedBy((e) => model.getStock(e.stockId)?.inventoryOrder ?? 0)
@@ -126,29 +121,14 @@ class _InventoryWidgetState extends State<InventoryWidget> {
             .toList();
 
         final allowReorder =
-            _selectedAccounts.isEmpty && _selectedItems.isEmpty;
+            model.selectedAccountFilterId == null && _selectedItems.isEmpty;
         final buildDefaultDragHandles = Platform.isAndroid || Platform.isIOS;
 
         return Column(
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: AccountFilterWidget(
-                accounts: model.accounts,
-                selects: model.accounts
-                    .map((e) => _selectedAccounts.contains(e.id))
-                    .toList(),
-                onSelected: (index) {
-                  setState(() {
-                    if (_selectedAccounts.contains(model.accounts[index].id)) {
-                      _selectedAccounts.remove(model.accounts[index].id);
-                    } else {
-                      _selectedAccounts.clear();
-                      _selectedAccounts.add(model.accounts[index].id!);
-                    }
-                  });
-                },
-              ),
+              child: const SharedAccountFilterWidget(),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'account_list_widget.dart';
 import 'history_screen.dart';
 import 'portfolio_screen.dart';
+import 'realized_profit_screen.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -40,6 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _pages = <Widget>[
       _createPage('포트폴리오', const PortfolioScreen()),
       _createPage('기록', const HistoryScreen()),
+      _createPage('확정수익', const RealizedProfitScreen()),
       _createPage('계좌', const AccountListWidget()),
       _createPage('설정', const SettingsWidget()),
     ];
@@ -94,6 +96,10 @@ class _MyHomePageState extends State<MyHomePage> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.reorder),
                 label: '기록',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.paid),
+                label: '확정수익',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.account_balance),

@@ -1,12 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lonely/database.dart';
 import 'package:lonely/model/lonely_model.dart';
+import 'package:lonely/new_transaction_widget.dart';
+import 'package:lonely/transaction.dart';
+import 'package:lonely/transaction_message.dart';
 
 class FakeLonelyDatabase extends LonelyDatabase {
   final _accounts = <Map<String, dynamic>>[];
   final _stocks = <Map<String, dynamic>>[];
+  final _transactions = <Map<String, dynamic>>[];
   int _nextAccountId = 1;
   int _nextStockId = 1;
+  int _nextTransactionId = 1;
 
   Map<String, int?> get accountOrderByName {
     return {
@@ -92,13 +97,32 @@ class FakeLonelyDatabase extends LonelyDatabase {
     };
     return 1;
   }
+
+  @override
+  Future<int> insertTransaction(Map<String, Object?> values) async {
+    final insertedId = _nextTransactionId++;
+    _transactions.add({
+      'id': insertedId,
+      ...values,
+    });
+    return insertedId;
+  }
+}
+
+class TestLonelyModel extends LonelyModel {
+  TestLonelyModel({required super.database});
+
+  @override
+  void publish(TransactionMessageType type, dynamic payload) {}
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('LonelyModel account order', () {
     test('reorderAccounts persists normalized order', () async {
       final fakeDatabase = FakeLonelyDatabase();
-      final model = LonelyModel(database: fakeDatabase);
+      final model = TestLonelyModel(database: fakeDatabase);
 
       await model.addAccount('A');
       await model.addAccount('B');
@@ -165,6 +189,138 @@ void main() {
         'TSLA': 'Tesla',
         '000660': '에스케이하이닉스',
       });
+    });
+  });
+
+  group('LonelyModel shared account filter', () {
+    test('toggles selected account filter and filters history transactions',
+        () async {
+      final fakeDatabase = FakeLonelyDatabase();
+      final model = LonelyModel(database: fakeDatabase);
+
+      final alphaId = await model.addAccount('Alpha');
+      final betaId = await model.addAccount('Beta');
+
+      await model.addTransaction(Transaction(
+        stockId: '005930',
+        price: 70000,
+        count: 1,
+        transactionType: TransactionType.buy,
+        dateTime: DateTime.parse('2025-01-01T00:00:00.000'),
+        accountId: alphaId,
+      ));
+      await model.addTransaction(Transaction(
+        stockId: 'TSLA',
+        price: 2500000,
+        count: 2,
+        transactionType: TransactionType.buy,
+        dateTime: DateTime.parse('2025-01-02T00:00:00.000'),
+        accountId: betaId,
+      ));
+
+      expect(model.selectedAccountFilterId, isNull);
+      expect(model.historyFilteredTransactions.length, 2);
+
+      model.toggleSelectedAccountFilter(alphaId!);
+
+      expect(model.selectedAccountFilterId, alphaId);
+      expect(
+        model.historyFilteredTransactions.map((e) => e.accountId).toList(),
+        [alphaId],
+      );
+
+      model.toggleSelectedAccountFilter(alphaId);
+
+      expect(model.selectedAccountFilterId, isNull);
+      expect(model.historyFilteredTransactions.length, 2);
+    });
+
+    test('combines account filter with stock history filter and clears on removal',
+        () async {
+      final fakeDatabase = FakeLonelyDatabase();
+      final model = LonelyModel(database: fakeDatabase);
+
+      final alphaId = await model.addAccount('Alpha');
+      final betaId = await model.addAccount('Beta');
+
+      await model.addTransaction(Transaction(
+        stockId: '005930',
+        price: 70000,
+        count: 1,
+        transactionType: TransactionType.buy,
+        dateTime: DateTime.parse('2025-01-01T00:00:00.000'),
+        accountId: alphaId,
+      ));
+      await model.addTransaction(Transaction(
+        stockId: '005930',
+        price: 71000,
+        count: 1,
+        transactionType: TransactionType.buy,
+        dateTime: DateTime.parse('2025-01-02T00:00:00.000'),
+        accountId: betaId,
+      ));
+      await model.addTransaction(Transaction(
+        stockId: 'TSLA',
+        price: 2500000,
+        count: 1,
+        transactionType: TransactionType.buy,
+        dateTime: DateTime.parse('2025-01-03T00:00:00.000'),
+        accountId: alphaId,
+      ));
+
+      model.toggleSelectedAccountFilter(alphaId!);
+      model.stockIdHistoryFilter = '005930';
+
+      expect(model.historyFilteredTransactions.length, 1);
+      expect(model.historyFilteredTransactions.single.accountId, alphaId);
+      expect(model.historyFilteredTransactions.single.stockId, '005930');
+
+      await model.removeAccount([alphaId]);
+
+      expect(model.selectedAccountFilterId, isNull);
+      expect(model.historyFilteredTransactions.length, 2);
+      expect(
+        model.historyFilteredTransactions.map((e) => e.accountId).toList(),
+        [null, betaId],
+      );
+    });
+  });
+
+  group('registerNewTransaction alias earn calculation', () {
+    test('calculates earn when buy and sell use stock id alternatives',
+        () async {
+      final fakeDatabase = FakeLonelyDatabase();
+      final model = TestLonelyModel(database: fakeDatabase);
+
+      final accountId = await model.addAccount('Alpha');
+
+      await model.addTransaction(Transaction(
+        stockId: 'SPY',
+        price: 5000000,
+        count: 2,
+        transactionType: TransactionType.buy,
+        dateTime: DateTime.parse('2025-01-01T00:00:00.000'),
+        accountId: accountId,
+      ));
+
+      final sellTransaction = Transaction(
+        stockId: 'USD SPDR S&P 500 Trust ETF',
+        price: 5500000,
+        count: 1,
+        transactionType: TransactionType.sell,
+        dateTime: DateTime.parse('2025-01-02T00:00:00.000'),
+        accountId: accountId,
+      );
+
+      final ok = await registerNewTransaction(
+        sellTransaction,
+        model,
+        (_) {},
+        true,
+      );
+
+      expect(ok, isTrue);
+      expect(sellTransaction.earn, 500000);
     });
   });
 }

@@ -183,6 +183,16 @@ class _PaginatedTransactionHistoryWidgetState
 
     return Consumer<LonelyModel>(
       builder: (context, model, child) {
+        final editingTransactionId = model.editingTransaction?.id;
+        if (editingTransactionId == null) {
+          selectedSet.clear();
+        } else if (selectedSet.length != 1 ||
+            !selectedSet.contains(editingTransactionId)) {
+          selectedSet
+            ..clear()
+            ..add(editingTransactionId);
+        }
+
         return PaginatedDataTable2(
           showCheckboxColumn: false,
           headingRowHeight: rowHeight,
@@ -206,7 +216,7 @@ class _PaginatedTransactionHistoryWidgetState
             ],
           ],
           source: _TransactionDataTableSource(
-            model.stockIdFilteredTransactions.reversed.toList(),
+            model.historyFilteredTransactions.reversed.toList(),
             context,
             textStyle,
             (transaction, selected) =>

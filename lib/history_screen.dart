@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lonely/account_filter_widget.dart';
 import 'package:lonely/paginated_transaction_history_widget.dart';
 import 'package:provider/provider.dart';
 import 'model/lonely_model.dart';
@@ -28,6 +29,10 @@ class _NewHistoryState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: SharedAccountFilterWidget(),
+        ),
         Consumer<LonelyModel>(
           builder: (context, model, child) {
             return NewTransactionWidget(

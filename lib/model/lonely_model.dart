@@ -55,11 +55,28 @@ class LonelyModel extends ChangeNotifier {
   UnmodifiableListView<Transaction> get transactions =>
       UnmodifiableListView(_transactions);
 
-  UnmodifiableListView<Transaction> get stockIdFilteredTransactions {
-    return UnmodifiableListView(stockIdHistoryFilter == null
+  int? _selectedAccountFilterId;
+
+  int? get selectedAccountFilterId => _selectedAccountFilterId;
+
+  UnmodifiableListView<Transaction> get accountFilteredTransactions {
+    return UnmodifiableListView(_selectedAccountFilterId == null
         ? transactions
         : transactions
-            .where((element) => element.stockId == stockIdHistoryFilter));
+            .where((element) => element.accountId == _selectedAccountFilterId));
+  }
+
+  UnmodifiableListView<Transaction> get historyFilteredTransactions {
+    Iterable<Transaction> filtered = accountFilteredTransactions;
+    if (stockIdHistoryFilter != null) {
+      filtered =
+          filtered.where((element) => element.stockId == stockIdHistoryFilter);
+    }
+    return UnmodifiableListView(filtered);
+  }
+
+  UnmodifiableListView<Transaction> get stockIdFilteredTransactions {
+    return historyFilteredTransactions;
   }
 
   Transaction? get editingTransaction => _editingTransaction;
@@ -95,6 +112,17 @@ class LonelyModel extends ChangeNotifier {
     } else {
       _stockIdHistoryFilter = v;
     }
+    _clearEditingTransactionIfFilteredOut();
+    notifyListeners();
+  }
+
+  void toggleSelectedAccountFilter(int accountId) {
+    if (_selectedAccountFilterId == accountId) {
+      _selectedAccountFilterId = null;
+    } else {
+      _selectedAccountFilterId = accountId;
+    }
+    _clearEditingTransactionIfFilteredOut();
     notifyListeners();
   }
 
@@ -262,6 +290,7 @@ class LonelyModel extends ChangeNotifier {
 
     _accounts.clear();
     _accounts.addAll(accounts.map((e) => Account.fromMap(e)));
+    _clearSelectedAccountFilterIfMissing();
     notifyListeners();
   }
 
@@ -368,7 +397,9 @@ class LonelyModel extends ChangeNotifier {
       e.accountId = null;
     });
 
+    _clearSelectedAccountFilterIfMissing();
     await _normalizeAccountOrder();
+    _clearEditingTransactionIfFilteredOut();
     notifyListeners();
 
     return removedCount;
@@ -403,6 +434,33 @@ class LonelyModel extends ChangeNotifier {
   void setEditingTransaction(Transaction? transaction) {
     _editingTransaction = transaction;
     notifyListeners();
+  }
+
+  void _clearSelectedAccountFilterIfMissing() {
+    final selectedAccountFilterId = _selectedAccountFilterId;
+    if (selectedAccountFilterId == null) {
+      return;
+    }
+
+    if (_accounts.any((account) => account.id == selectedAccountFilterId)) {
+      return;
+    }
+
+    _selectedAccountFilterId = null;
+  }
+
+  void _clearEditingTransactionIfFilteredOut() {
+    final editingTransaction = _editingTransaction;
+    if (editingTransaction == null) {
+      return;
+    }
+
+    final isVisible = historyFilteredTransactions.any(
+      (transaction) => transaction.id == editingTransaction.id,
+    );
+    if (!isVisible) {
+      _editingTransaction = null;
+    }
   }
 
   Future<int> updateTransaction(int id, Transaction transaction) async {

@@ -55,6 +55,10 @@ Future<int> _stockSum(String stockId, Set<TransactionType> transactionType,
   return sum;
 }
 
+String _normalizedStockId(String stockId) {
+  return stockIdAlternatives[stockId] ?? stockId;
+}
+
 Future<void> transferStock(
   DateTime dateTime,
   ItemOnAccount itemOnAccount,
@@ -176,7 +180,7 @@ Future<bool> registerNewTransaction(
   // }
 
   final itemMap = createItemMap(model.transactions, model.stocks);
-  final item = itemMap[transaction.stockId];
+  final item = itemMap[_normalizedStockId(transaction.stockId)];
 
   if (transactionTypeOut.contains(transaction.transactionType)) {
     final inSum = await _stockSum(
@@ -254,7 +258,7 @@ class _NewTransactionWidgetState extends State<NewTransactionWidget> {
         model.transactions.where((e) => e.id != id);
     final item = createItemMap(
         model.transactions.where((e) => e.id != id), // 편집중인 항목은 빼고 계산
-        model.stocks)[transaction.stockId];
+        model.stocks)[_normalizedStockId(transaction.stockId)];
 
     if (transactionTypeOut.contains(transaction.transactionType)) {
       final inSum = await _stockSum(

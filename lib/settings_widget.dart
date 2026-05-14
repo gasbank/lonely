@@ -29,61 +29,52 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       padding: const EdgeInsets.all(8.0),
       child: Consumer<LonelyModel>(
         builder: (context, model, child) {
-          return Column(
+          return ListView(
             children: [
-              Expanded(
-                child: ListView(
-                  children: [
-                    TextButton(
-                      onPressed: () async => await onExportDatabase(),
-                      child: const Text('매매 기록 내보내기'),
-                    ),
-                    TextButton(
-                      onPressed: () async => await onImportDatabase(model),
-                      child: const Text('매매 기록 불러오기'),
-                    ),
-                    TextButton(
-                      onPressed: () => onImportBrokerXlsx(context, model),
-                      child: const Text('증권사 XLSX 불러오기'),
-                    ),
-                    TextButton(
-                      onPressed: () => onApplyLatestStockTxt(model),
-                      child: const Text('최신 Stock.txt 적용'),
-                    ),
-                    TextButton(
-                      onPressed: () => onImportFromOtherDevice(context, model),
-                      child: const Text('매매 기록 불러오기 (다른 기기에서)'),
-                    ),
-                    TextButton(
-                      onPressed: () async =>
-                          await onRemoveTransactionWhereNullAccountId(
-                              context, model),
-                      child: const Text(
-                        '삭제된 계좌와 관련된 매매 기록 모두 삭제',
-                        style: TextStyle(color: Colors.redAccent),
-                      ),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () => onClearAllData(context, model),
-                      child: const Text(
-                        '매매 기록 모두 삭제',
-                        style: TextStyle(color: Colors.redAccent),
-                      ),
-                    ),
-                    const Spacer(),
-                    Consumer<PackageModel>(builder: (_, packageModel, __) {
-                      return Text(
-                        '${packageModel.info.version} (${packageModel.info.buildNumber})',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                        ),
-                      );
-                    }),
-                  ],
+              TextButton(
+                onPressed: () async => await onExportDatabase(),
+                child: const Text('매매 기록 내보내기'),
+              ),
+              TextButton(
+                onPressed: () async => await onImportDatabase(model),
+                child: const Text('매매 기록 불러오기'),
+              ),
+              TextButton(
+                onPressed: () => onImportBrokerXlsx(context, model),
+                child: const Text('증권사 XLSX 불러오기'),
+              ),
+              TextButton(
+                onPressed: () => onApplyLatestStockTxt(model),
+                child: const Text('최신 Stock.txt 적용'),
+              ),
+              TextButton(
+                onPressed: () => onImportFromOtherDevice(context, model),
+                child: const Text('매매 기록 불러오기 (다른 기기에서)'),
+              ),
+              TextButton(
+                onPressed: () async =>
+                    await onRemoveTransactionWhereNullAccountId(
+                        context, model),
+                child: const Text(
+                  '삭제된 계좌와 관련된 매매 기록 모두 삭제',
+                  style: TextStyle(color: Colors.redAccent),
                 ),
               ),
-
+              TextButton(
+                onPressed: () => onClearAllData(context, model),
+                child: const Text(
+                  '매매 기록 모두 삭제',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+              Consumer<PackageModel>(builder: (_, packageModel, __) {
+                return Text(
+                  '${packageModel.info.version} (${packageModel.info.buildNumber})',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                );
+              }),
             ],
           );
         },
@@ -399,19 +390,17 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     }
 
     const outlinedButtonRadius = 8.0;
-    final cancelButton = Expanded(
-      child: OutlinedButton(
-        onPressed: () {
-          model.cancelWaitForDbSync();
-        },
-        style: OutlinedButton.styleFrom(
-            shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(outlinedButtonRadius),
-          bottomRight: Radius.circular(outlinedButtonRadius),
-        ))),
-        child: const Text('취소'),
-      ),
+    final cancelButton = OutlinedButton(
+      onPressed: () {
+        model.cancelWaitForDbSync();
+      },
+      style: OutlinedButton.styleFrom(
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+        bottomLeft: Radius.circular(outlinedButtonRadius),
+        bottomRight: Radius.circular(outlinedButtonRadius),
+      ))),
+      child: const Text('취소'),
     );
 
     AlertDialog alert = AlertDialog(

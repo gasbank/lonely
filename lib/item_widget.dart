@@ -137,6 +137,53 @@ Color colorFor(String text) {
   return color;
 }
 
+class StockCircleAvatar extends StatelessWidget {
+  final String stockId;
+  final String label;
+
+  const StockCircleAvatar({
+    super.key,
+    required this.stockId,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final circleAvatarBgColor = colorFor(stockId);
+    final circleAvatarFgColor = circleAvatarBgColor.computeLuminance() > 0.5
+        ? darken(circleAvatarBgColor, .6)
+        : lighten(circleAvatarBgColor, .6);
+
+    return CircleAvatar(
+      backgroundColor: circleAvatarBgColor,
+      child: Text(
+        label,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 10, color: circleAvatarFgColor),
+      ),
+    );
+  }
+}
+
+Color darken(Color color, [double amount = .1]) {
+  assert(amount >= 0 && amount <= 1);
+
+  final hsl = HSLColor.fromColor(color);
+  final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
+
+  return hslDark.toColor();
+}
+
+Color lighten(Color color, [double amount = .1]) {
+  assert(amount >= 0 && amount <= 1);
+
+  final hsl = HSLColor.fromColor(color);
+  final hslLight =
+      hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
+
+  return hslLight.toColor();
+}
+
 class _ItemWidgetState extends State<ItemWidget> {
   late final Stream<KrStock?> _stockStream;
 
@@ -167,25 +214,6 @@ class _ItemWidgetState extends State<ItemWidget> {
     }
   }
 
-  Color darken(Color color, [double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-
-    final hsl = HSLColor.fromColor(color);
-    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
-
-    return hslDark.toColor();
-  }
-
-  Color lighten(Color color, [double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-
-    final hsl = HSLColor.fromColor(color);
-    final hslLight =
-        hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
-
-    return hslLight.toColor();
-  }
-
   Widget buildWidget(Item item, LonelyModel model) {
     final stockId = stockIdAlternatives[item.stockId] ?? item.stockId;
 
@@ -210,11 +238,6 @@ class _ItemWidgetState extends State<ItemWidget> {
             stockId, item.diffPrice(stockPrice!.price!))
         : unknownPriceStr;
 
-    final circleAvatarBgColor = colorFor(stockId);
-    final circleAvatarFgColor = circleAvatarBgColor.computeLuminance() > 0.5
-        ? darken(circleAvatarBgColor, .6)
-        : lighten(circleAvatarBgColor, .6);
-
     var itemTitle = stock?.name ?? '? $stockId ?';
     if (widget.isStockCountVisible) {
       itemTitle += ' ${formatThousands(widget.item.count)}주';
@@ -230,13 +253,9 @@ class _ItemWidgetState extends State<ItemWidget> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: circleAvatarBgColor,
-                  child: Text(
-                    stockName,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 10, color: circleAvatarFgColor),
-                  ),
+                StockCircleAvatar(
+                  stockId: stockId,
+                  label: stockName,
                 ),
                 const SizedBox(
                   width: 4,
