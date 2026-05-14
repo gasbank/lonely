@@ -356,6 +356,12 @@ class LonelyDatabase {
         where: 'stockId = ?', whereArgs: [stockId]);
   }
 
+  Future<int> updateStockName(String stockId, String name) async {
+    final db = await _database;
+    return await db.update(stocksTable, {'name': name},
+        where: 'stockId = ?', whereArgs: [stockId]);
+  }
+
   Future<void> updateAccountsOrder(Map<int, int> accountOrderById) async {
     if (accountOrderById.isEmpty) {
       return;

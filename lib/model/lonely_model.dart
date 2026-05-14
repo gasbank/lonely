@@ -309,6 +309,38 @@ class LonelyModel extends ChangeNotifier {
     return await _db.updateStocksInventoryOrder(stockId, inventoryOrder);
   }
 
+  Future<int> refreshStockDisplayNames(Map<String, String> latestNamesById) async {
+    var updatedCount = 0;
+
+    for (final entry in _stocks.entries) {
+      final latestName = latestNamesById[entry.key];
+      final stock = entry.value;
+      if (latestName == null || latestName == stock.name) {
+        continue;
+      }
+
+      _stocks[entry.key] = Stock(
+        id: stock.id,
+        stockId: stock.stockId,
+        name: latestName,
+        inventoryOrder: stock.inventoryOrder,
+      );
+      await _db.updateStockName(stock.stockId, latestName);
+      updatedCount++;
+    }
+
+    if (updatedCount > 0) {
+      notifyListeners();
+    }
+
+    return updatedCount;
+  }
+
+  Future<int> refreshStockDisplayNamesFromStockTxt() async {
+    await _stockTxtLoader.load();
+    return refreshStockDisplayNames(_stockTxtLoader.idToName);
+  }
+
   Future<void> reorderAccounts(int oldIndex, int newIndex) async {
     if (oldIndex < 0 ||
         oldIndex >= _accounts.length ||

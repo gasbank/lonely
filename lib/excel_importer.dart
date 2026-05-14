@@ -485,6 +485,9 @@ class StockTxtLoader {
       UnmodifiableMapView(_nameToIdMap);
 
   Future<void> load() async {
+    _idToNameMap.clear();
+    _nameToIdMap.clear();
+
     final stockTxtStr = await rootBundle.loadString('assets/Stock.txt');
     const lineSplitter = LineSplitter();
     final lines = lineSplitter.convert(stockTxtStr);

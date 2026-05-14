@@ -47,6 +47,10 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                       child: const Text('증권사 XLSX 불러오기'),
                     ),
                     TextButton(
+                      onPressed: () => onApplyLatestStockTxt(model),
+                      child: const Text('최신 Stock.txt 적용'),
+                    ),
+                    TextButton(
                       onPressed: () => onImportFromOtherDevice(context, model),
                       child: const Text('매매 기록 불러오기 (다른 기기에서)'),
                     ),
@@ -59,26 +63,27 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                         style: TextStyle(color: Colors.redAccent),
                       ),
                     ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => onClearAllData(context, model),
+                      child: const Text(
+                        '매매 기록 모두 삭제',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
+                    const Spacer(),
+                    Consumer<PackageModel>(builder: (_, packageModel, __) {
+                      return Text(
+                        '${packageModel.info.version} (${packageModel.info.buildNumber})',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => onClearAllData(context, model),
-                child: const Text(
-                  '매매 기록 모두 삭제',
-                  style: TextStyle(color: Colors.redAccent),
-                ),
-              ),
-              const Spacer(),
-              Consumer<PackageModel>(builder: (_, packageModel, __) {
-                return Text(
-                  '${packageModel.info.version} (${packageModel.info.buildNumber})',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                );
-              }),
+
             ],
           );
         },
@@ -293,6 +298,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       // User canceled the picker
       return 0;
     }
+  }
+
+  Future<void> onApplyLatestStockTxt(LonelyModel model) async {
+    final updatedCount = await model.refreshStockDisplayNamesFromStockTxt();
+    _showSimpleText('$updatedCount개 종목명의 최신 표기를 적용했습니다.');
   }
 
   Excel _normalizeImportExcel(Excel excel) {
